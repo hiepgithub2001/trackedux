@@ -19,3 +19,6 @@ class RenewalReminder(Base, UUIDMixin):
     reminder_number: Mapped[int] = mapped_column(Integer, nullable=False)
     triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now(), nullable=False)
     notification_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )

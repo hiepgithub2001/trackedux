@@ -9,11 +9,15 @@ from app.models.package import Package
 from app.schemas.attendance import AttendanceBatchRequest
 
 
-async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, marked_by: UUID) -> list[dict]:
+async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, marked_by: UUID, center_id: UUID) -> list[dict]:
     results = []
     for item in data.records:
-        # Get active package for student
-        pkg_result = await db.execute(select(Package).where(Package.student_id == item.student_id, Package.is_active == True))
+        # Get active package for student (scoped to center)
+        pkg_result = await db.execute(select(Package).where(
+            Package.student_id == item.student_id,
+            Package.is_active == True,  # noqa: E712
+            Package.center_id == center_id,
+        ))
         active_pkg = pkg_result.scalar_one_or_none()
 
         # Check for existing attendance record
@@ -49,6 +53,7 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
                 class_session_id=data.class_session_id, student_id=item.student_id,
                 package_id=active_pkg.id if active_pkg else None, session_date=data.session_date,
                 status=item.status, marked_by=marked_by, notes=item.notes,
+                center_id=center_id,
             )
             db.add(record)
 

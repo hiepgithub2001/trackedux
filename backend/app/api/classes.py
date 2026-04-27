@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.class_session import (
     compute_display_ids,
     create_class_session,
@@ -71,23 +71,24 @@ async def get_classes(
     day_of_week: int | None = Query(None, ge=0, le=6),
     is_active: bool = True,
 ):
-    """List class sessions with filters."""
-    # We need all classes to correctly compute display IDs for collision resolution
-    all_classes = await list_class_sessions(db, active_only=False)
+    """List class sessions with filters, scoped to center."""
+    center_id = get_center_id(current_user)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     
-    classes = await list_class_sessions(db, teacher_id, day_of_week, is_active)
+    classes = await list_class_sessions(db, center_id=center_id, teacher_id=teacher_id, day_of_week=day_of_week, active_only=is_active)
     return [_class_to_response(c, display_ids.get(c.id, str(c.id)), current_user) for c in classes]
 
 
 @router.get("/{class_id}", response_model=ClassSessionResponse)
 async def get_class(class_id: UUID, db: DbSession, current_user: CurrentUser):
     """Get class detail with enrolled students."""
-    cs = await get_class_session_by_id(db, class_id)
+    center_id = get_center_id(current_user)
+    cs = await get_class_session_by_id(db, class_id, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
         
-    all_classes = await list_class_sessions(db, active_only=False)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
 
@@ -97,6 +98,7 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
     """Create a class session. Admin only. Returns 409 on scheduling conflict."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
 
     conflicts = await check_scheduling_conflicts(
         db,
@@ -112,10 +114,10 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
             detail={"message": "Scheduling conflict", "conflicts": conflicts},
         )
 
-    cs = await create_class_session(db, data)
-    cs = await get_class_session_by_id(db, cs.id)  # Reload with relationships
+    cs = await create_class_session(db, data, center_id)
+    cs = await get_class_session_by_id(db, cs.id, center_id)  # Reload with relationships
     
-    all_classes = await list_class_sessions(db, active_only=False)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
 
@@ -125,12 +127,13 @@ async def update_class_endpoint(class_id: UUID, data: ClassSessionUpdate, db: Db
     """Update a class session. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
 
-    cs = await update_class_session(db, class_id, data)
+    cs = await update_class_session(db, class_id, data, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
         
-    all_classes = await list_class_sessions(db, active_only=False)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
 
@@ -150,12 +153,12 @@ async def enroll_student_endpoint(class_id: UUID, data: EnrollRequest, db: DbSes
     """Add student to class. Admin only. Returns 409 only on time-overlap conflict."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
 
-    cs = await get_class_session_by_id(db, class_id)
+    cs = await get_class_session_by_id(db, class_id, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
-    # No max-capacity check (clarification 2026-04-27).
     conflicts = await check_scheduling_conflicts(
         db,
         cs.teacher_id,
@@ -172,7 +175,7 @@ async def enroll_student_endpoint(class_id: UUID, data: EnrollRequest, db: DbSes
             detail={"message": "Student scheduling conflict", "conflicts": student_conflicts},
         )
 
-    await enroll_student(db, class_id, data.student_id)
+    await enroll_student(db, class_id, data.student_id, center_id)
     return {"detail": "Student enrolled"}
 
 

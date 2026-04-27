@@ -12,38 +12,40 @@ from app.models.student import Student
 from app.schemas.student import StudentCreate, StudentUpdate
 
 
-async def create_student(db: AsyncSession, data: StudentCreate) -> Student:
-    """Create a new student."""
+async def create_student(db: AsyncSession, data: StudentCreate, center_id: UUID) -> Student:
+    """Create a new student scoped to a center."""
     class_ids = data.class_ids or []
     student_data = data.model_dump(exclude={"class_ids"})
     
     student = Student(
         **student_data,
         enrolled_at=date.today(),
+        center_id=center_id,
     )
     db.add(student)
     await db.flush()
     
     for cid in class_ids:
-        db.add(ClassEnrollment(class_session_id=cid, student_id=student.id))
+        db.add(ClassEnrollment(class_session_id=cid, student_id=student.id, center_id=center_id))
         
     await db.commit()
     await db.refresh(student, ["enrollments"])
     return student
 
 
-async def get_student_by_id(db: AsyncSession, student_id: UUID) -> Student | None:
-    """Get a student by ID with parent relationship."""
+async def get_student_by_id(db: AsyncSession, student_id: UUID, center_id: UUID) -> Student | None:
+    """Get a student by ID, scoped to a center."""
     result = await db.execute(
         select(Student)
         .options(selectinload(Student.enrollments))
-        .where(Student.id == student_id)
+        .where(Student.id == student_id, Student.center_id == center_id)
     )
     return result.scalar_one_or_none()
 
 
 async def list_students(
     db: AsyncSession,
+    center_id: UUID,
     status: str | None = None,
     search: str | None = None,
     sort_by: str = "name",
@@ -51,8 +53,8 @@ async def list_students(
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Student], int]:
-    """List students with filtering, searching, sorting, and pagination."""
-    query = select(Student)
+    """List students with filtering, searching, sorting, and pagination — scoped to center."""
+    query = select(Student).where(Student.center_id == center_id)
 
     # Filters
     if status:
@@ -88,9 +90,9 @@ async def list_students(
     return students, total
 
 
-async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate) -> Student | None:
-    """Update student fields."""
-    student = await get_student_by_id(db, student_id)
+async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate, center_id: UUID) -> Student | None:
+    """Update student fields, scoped to center."""
+    student = await get_student_by_id(db, student_id, center_id)
     if student is None:
         return None
 
@@ -115,7 +117,7 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
         # Add new ones
         for cid in new_set:
             if cid not in existing:
-                db.add(ClassEnrollment(class_session_id=cid, student_id=student.id))
+                db.add(ClassEnrollment(class_session_id=cid, student_id=student.id, center_id=center_id))
 
     await db.commit()
     # Refresh to get updated enrollments

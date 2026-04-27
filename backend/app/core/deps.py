@@ -83,3 +83,39 @@ def require_role(*roles: str):
 # Type aliases for common dependency injections
 CurrentUser = Annotated[object, Depends(get_current_user)]
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+def get_center_id(current_user) -> UUID:
+    """Extract center_id from the current user.
+
+    Raises HTTP 403 if the user is a superadmin (superadmin has no center_id
+    and must not access tenant-scoped endpoints).
+    """
+    if current_user.role == "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superadmin accounts cannot access center-scoped resources directly.",
+        )
+    if current_user.center_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no center assigned.",
+        )
+    return UUID(str(current_user.center_id))
+
+
+def require_superadmin(current_user: CurrentUser) -> object:
+    """FastAPI dependency that raises 403 for non-superadmin users.
+
+    Use as: ``current_user: Annotated[object, Depends(require_superadmin)]``
+    """
+    if current_user.role != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is restricted to system administrators.",
+        )
+    return current_user
+
+
+# Type alias for superadmin-only endpoints
+SuperAdminUser = Annotated[object, Depends(require_superadmin)]

@@ -62,14 +62,11 @@ def compute_single_display_id(
 # ── CRUD operations ───────────────────────────────────────────────────
 
 
-async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> ClassSession:
-    """Create a new class session.
-
-    No max-capacity is enforced (clarification 2026-04-27); all student_ids are enrolled.
-    """
+async def create_class_session(db: AsyncSession, data: ClassSessionCreate, center_id: UUID) -> ClassSession:
+    """Create a new class session scoped to a center."""
     lesson_kind_id = None
     if data.lesson_kind_name:
-        lk = await find_or_create_lesson_kind(db, data.lesson_kind_name)
+        lk = await find_or_create_lesson_kind(db, data.lesson_kind_name, center_id)
         lesson_kind_id = lk.id
 
     cs = ClassSession(
@@ -81,12 +78,13 @@ async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> Cl
         tuition_fee_per_lesson=data.tuition_fee_per_lesson,
         lesson_kind_id=lesson_kind_id,
         is_recurring=data.is_recurring,
+        center_id=center_id,
     )
     db.add(cs)
     await db.flush()
 
     for student_id in data.student_ids:
-        enrollment = ClassEnrollment(class_session_id=cs.id, student_id=student_id)
+        enrollment = ClassEnrollment(class_session_id=cs.id, student_id=student_id, center_id=center_id)
         db.add(enrollment)
 
     await db.commit()
@@ -95,10 +93,10 @@ async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> Cl
 
 
 async def update_class_session(
-    db: AsyncSession, class_id: UUID, data: ClassSessionUpdate
+    db: AsyncSession, class_id: UUID, data: ClassSessionUpdate, center_id: UUID
 ) -> ClassSession | None:
-    """Update a class session's mutable fields."""
-    cs = await get_class_session_by_id(db, class_id)
+    """Update a class session's mutable fields, scoped to center."""
+    cs = await get_class_session_by_id(db, class_id, center_id)
     if cs is None:
         return None
 
@@ -108,7 +106,7 @@ async def update_class_session(
             setattr(cs, field, time.fromisoformat(value))
         elif field == "lesson_kind_name":
             if value:
-                lk = await find_or_create_lesson_kind(db, value)
+                lk = await find_or_create_lesson_kind(db, value, center_id)
                 cs.lesson_kind_id = lk.id
             else:
                 cs.lesson_kind_id = None
@@ -116,21 +114,18 @@ async def update_class_session(
             setattr(cs, field, value)
 
     if student_ids is not None:
-        # Sync enrollments
         existing = {e.student_id: e for e in cs.enrollments}
         new_set = set(student_ids)
 
-        # Deactivate removed ones
         for sid, e in existing.items():
             if sid not in new_set:
                 e.is_active = False
             else:
                 e.is_active = True
 
-        # Add new ones
         for sid in new_set:
             if sid not in existing:
-                db.add(ClassEnrollment(class_session_id=cs.id, student_id=sid))
+                db.add(ClassEnrollment(class_session_id=cs.id, student_id=sid, center_id=center_id))
 
     await db.commit()
     await db.refresh(cs, ["enrollments"])
@@ -159,9 +154,9 @@ async def delete_class_session(db: AsyncSession, class_id: UUID) -> None:
     await db.commit()
 
 
-async def get_class_session_by_id(db: AsyncSession, class_id: UUID) -> ClassSession | None:
-    """Get class session by ID with enrollments."""
-    result = await db.execute(
+async def get_class_session_by_id(db: AsyncSession, class_id: UUID, center_id: UUID | None = None) -> ClassSession | None:
+    """Get class session by ID. If center_id provided, scope to that center."""
+    query = (
         select(ClassSession)
         .options(
             selectinload(ClassSession.teacher),
@@ -170,21 +165,27 @@ async def get_class_session_by_id(db: AsyncSession, class_id: UUID) -> ClassSess
         )
         .where(ClassSession.id == class_id)
     )
+    if center_id is not None:
+        query = query.where(ClassSession.center_id == center_id)
+    result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
 async def list_class_sessions(
     db: AsyncSession,
+    center_id: UUID | None = None,
     teacher_id: UUID | None = None,
     day_of_week: int | None = None,
     active_only: bool = True,
 ) -> list[ClassSession]:
-    """List class sessions with filters (no class_type filter per clarification 2026-04-27)."""
+    """List class sessions with filters, optionally scoped to a center."""
     query = select(ClassSession).options(
         selectinload(ClassSession.teacher),
         selectinload(ClassSession.enrollments).selectinload(ClassEnrollment.student),
         selectinload(ClassSession.lesson_kind)
     )
+    if center_id is not None:
+        query = query.where(ClassSession.center_id == center_id)
     if teacher_id:
         query = query.where(ClassSession.teacher_id == teacher_id)
     if day_of_week is not None:
@@ -197,9 +198,9 @@ async def list_class_sessions(
     return list(result.scalars().all())
 
 
-async def enroll_student(db: AsyncSession, class_id: UUID, student_id: UUID) -> ClassEnrollment:
-    """Add a student to a class session."""
-    enrollment = ClassEnrollment(class_session_id=class_id, student_id=student_id)
+async def enroll_student(db: AsyncSession, class_id: UUID, student_id: UUID, center_id: UUID) -> ClassEnrollment:
+    """Add a student to a class session, scoped to center."""
+    enrollment = ClassEnrollment(class_session_id=class_id, student_id=student_id, center_id=center_id)
     db.add(enrollment)
     await db.commit()
     await db.refresh(enrollment)

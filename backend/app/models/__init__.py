@@ -1,5 +1,6 @@
 """All model imports for Alembic auto-detection."""
 from app.models.attendance import AttendanceRecord  # noqa: F401
+from app.models.center import Center  # noqa: F401
 from app.models.class_enrollment import ClassEnrollment  # noqa: F401
 from app.models.class_session import ClassSession  # noqa: F401
 from app.models.lesson_kind import LessonKind  # noqa: F401

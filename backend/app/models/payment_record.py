@@ -22,6 +22,9 @@ class PaymentRecord(Base, UUIDMixin):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), server_default=func.now(), nullable=False)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     package = relationship("Package", back_populates="payments")

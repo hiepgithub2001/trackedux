@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.student import create_student, get_student_by_id, list_students, update_student
 from app.schemas.student import (
     PaginatedStudents,
@@ -31,8 +31,10 @@ async def get_students(
     page_size: int = Query(20, ge=1, le=100),
 ):
     """List students with filters, search, sort, and pagination."""
+    center_id = get_center_id(current_user)
     students, total = await list_students(
         db,
+        center_id=center_id,
         status=status_filter,
         search=search,
         sort_by=sort_by,
@@ -60,8 +62,9 @@ async def get_students(
 
 @router.get("/{student_id}", response_model=StudentResponse)
 async def get_student(student_id: UUID, db: DbSession, current_user: CurrentUser):
-    """Get student detail. Staff cannot see parent contact info."""
-    student = await get_student_by_id(db, student_id)
+    """Get student detail scoped to the authenticated user's center."""
+    center_id = get_center_id(current_user)
+    student = await get_student_by_id(db, student_id, center_id)
     if student is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
@@ -74,7 +77,8 @@ async def create_student_endpoint(data: StudentCreate, db: DbSession, current_us
     """Create a new student. Admin and Staff."""
     if current_user.role not in ("admin", "staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    student = await create_student(db, data)
+    center_id = get_center_id(current_user)
+    student = await create_student(db, data, center_id)
     return StudentResponse.model_validate(student)
 
 
@@ -85,7 +89,8 @@ async def update_student_endpoint(
     """Update student fields. Admin and Staff."""
     if current_user.role not in ("admin", "staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    student = await update_student(db, student_id, data)
+    center_id = get_center_id(current_user)
+    student = await update_student(db, student_id, data, center_id)
     if student is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
     return StudentResponse.model_validate(student)
@@ -99,9 +104,10 @@ async def change_status(
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
+    center_id = get_center_id(current_user)
     await change_student_status(
-        db, student_id, data.status, current_user.id, data.reason
+        db, student_id, data.status, current_user.id, data.reason, center_id
     )
 
-    student = await get_student_by_id(db, student_id)
+    student = await get_student_by_id(db, student_id, center_id)
     return StudentResponse.model_validate(student)

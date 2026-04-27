@@ -33,6 +33,9 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     )
     specific_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     teacher = relationship("Teacher", back_populates="classes", lazy="selectin")

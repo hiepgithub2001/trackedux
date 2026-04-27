@@ -12,35 +12,35 @@ from app.models.teacher_availability import TeacherAvailability
 from app.schemas.teacher import AvailabilitySlot, TeacherCreate, TeacherUpdate
 
 
-async def create_teacher(db: AsyncSession, data: TeacherCreate) -> Teacher:
-    """Create a new teacher."""
-    teacher = Teacher(**data.model_dump())
+async def create_teacher(db: AsyncSession, data: TeacherCreate, center_id: UUID) -> Teacher:
+    """Create a new teacher scoped to a center."""
+    teacher = Teacher(**data.model_dump(), center_id=center_id)
     db.add(teacher)
     await db.commit()
     await db.refresh(teacher)
     return teacher
 
 
-async def get_teacher_by_id(db: AsyncSession, teacher_id: UUID) -> Teacher | None:
-    """Get teacher by ID with availability."""
+async def get_teacher_by_id(db: AsyncSession, teacher_id: UUID, center_id: UUID) -> Teacher | None:
+    """Get teacher by ID scoped to center."""
     result = await db.execute(
-        select(Teacher).options(selectinload(Teacher.availability)).where(Teacher.id == teacher_id)
+        select(Teacher).options(selectinload(Teacher.availability)).where(Teacher.id == teacher_id, Teacher.center_id == center_id)
     )
     return result.scalar_one_or_none()
 
 
-async def list_teachers(db: AsyncSession, active_only: bool = False) -> list[Teacher]:
-    """List all teachers."""
-    query = select(Teacher).options(selectinload(Teacher.availability)).order_by(Teacher.full_name)
+async def list_teachers(db: AsyncSession, center_id: UUID, active_only: bool = False) -> list[Teacher]:
+    """List all teachers scoped to a center."""
+    query = select(Teacher).options(selectinload(Teacher.availability)).where(Teacher.center_id == center_id).order_by(Teacher.full_name)
     if active_only:
         query = query.where(Teacher.is_active == True)  # noqa: E712
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
-async def update_teacher(db: AsyncSession, teacher_id: UUID, data: TeacherUpdate) -> Teacher | None:
-    """Update teacher fields."""
-    teacher = await get_teacher_by_id(db, teacher_id)
+async def update_teacher(db: AsyncSession, teacher_id: UUID, data: TeacherUpdate, center_id: UUID) -> Teacher | None:
+    """Update teacher fields, scoped to center."""
+    teacher = await get_teacher_by_id(db, teacher_id, center_id)
     if teacher is None:
         return None
     update_data = data.model_dump(exclude_unset=True)
@@ -51,9 +51,9 @@ async def update_teacher(db: AsyncSession, teacher_id: UUID, data: TeacherUpdate
     return teacher
 
 
-async def replace_availability(db: AsyncSession, teacher_id: UUID, slots: list[AvailabilitySlot]) -> Teacher | None:
-    """Replace all availability slots for a teacher."""
-    teacher = await get_teacher_by_id(db, teacher_id)
+async def replace_availability(db: AsyncSession, teacher_id: UUID, slots: list[AvailabilitySlot], center_id: UUID) -> Teacher | None:
+    """Replace all availability slots for a teacher, scoped to center."""
+    teacher = await get_teacher_by_id(db, teacher_id, center_id)
     if teacher is None:
         return None
 

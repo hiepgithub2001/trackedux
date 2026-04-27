@@ -31,6 +31,9 @@ class Package(Base, UUIDMixin, TimestampMixin):
     reminder_status: Mapped[str] = mapped_column(String(20), default="none", server_default="none")
     started_at: Mapped[date] = mapped_column(Date, nullable=False)
     expired_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     student = relationship("Student", lazy="selectin")

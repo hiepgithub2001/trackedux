@@ -1,9 +1,9 @@
 """Packages/Tuition API routes."""
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.class_session import compute_display_ids, list_class_sessions
 from app.crud.package import create_package, list_packages
 from app.schemas.package import PackageCreate, PackageResponse, PaymentRecordCreate, PaymentRecordResponse
@@ -43,9 +43,10 @@ async def get_packages(
     payment_status: str | None = None,
     class_session_id: UUID | None = None
 ):
-    """List packages with filters."""
-    pkgs = await list_packages(db, student_id=student_id, payment_status=payment_status, class_session_id=class_session_id)
-    all_classes = await list_class_sessions(db, active_only=False)
+    """List packages with filters, scoped to center."""
+    center_id = get_center_id(current_user)
+    pkgs = await list_packages(db, center_id=center_id, student_id=student_id, payment_status=payment_status, class_session_id=class_session_id)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return [_pkg_to_response(p, display_ids, current_user) for p in pkgs]
 
@@ -55,10 +56,11 @@ async def create_package_endpoint(data: PackageCreate, db: DbSession, current_us
     """Create a new flexible course package. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
         
-    pkg = await create_package(db, data)
+    pkg = await create_package(db, data, center_id)
     
-    all_classes = await list_class_sessions(db, active_only=False)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _pkg_to_response(pkg, display_ids, current_user)
 

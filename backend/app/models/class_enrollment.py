@@ -31,6 +31,9 @@ class ClassEnrollment(Base, UUIDMixin):
         nullable=False,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     class_session = relationship("ClassSession", back_populates="enrollments")

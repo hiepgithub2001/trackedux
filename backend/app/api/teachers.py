@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.teacher import create_teacher, get_teacher_by_id, list_teachers, replace_availability, update_teacher
 from app.schemas.teacher import AvailabilityUpdate, TeacherCreate, TeacherResponse, TeacherUpdate
 
@@ -34,7 +34,8 @@ async def get_teachers(db: DbSession, current_user: CurrentUser):
     """List all teachers. Admin and Staff."""
     if current_user.role not in ("admin", "staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    teachers = await list_teachers(db)
+    center_id = get_center_id(current_user)
+    teachers = await list_teachers(db, center_id=center_id)
     return [_teacher_to_response(t) for t in teachers]
 
 
@@ -43,7 +44,8 @@ async def get_teacher(teacher_id: UUID, db: DbSession, current_user: CurrentUser
     """Get teacher detail with availability."""
     if current_user.role not in ("admin", "staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    teacher = await get_teacher_by_id(db, teacher_id)
+    center_id = get_center_id(current_user)
+    teacher = await get_teacher_by_id(db, teacher_id, center_id)
     if teacher is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
     return _teacher_to_response(teacher)
@@ -54,7 +56,8 @@ async def create_teacher_endpoint(data: TeacherCreate, db: DbSession, current_us
     """Create a new teacher. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    teacher = await create_teacher(db, data)
+    center_id = get_center_id(current_user)
+    teacher = await create_teacher(db, data, center_id)
     return _teacher_to_response(teacher)
 
 
@@ -63,7 +66,8 @@ async def update_teacher_endpoint(teacher_id: UUID, data: TeacherUpdate, db: DbS
     """Update teacher fields. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    teacher = await update_teacher(db, teacher_id, data)
+    center_id = get_center_id(current_user)
+    teacher = await update_teacher(db, teacher_id, data, center_id)
     if teacher is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
     return _teacher_to_response(teacher)
@@ -74,7 +78,8 @@ async def set_availability(teacher_id: UUID, data: AvailabilityUpdate, db: DbSes
     """Replace all availability slots. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    teacher = await replace_availability(db, teacher_id, data.slots)
+    center_id = get_center_id(current_user)
+    teacher = await replace_availability(db, teacher_id, data.slots, center_id)
     if teacher is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
     return _teacher_to_response(teacher)

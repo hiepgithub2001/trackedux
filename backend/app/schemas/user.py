@@ -36,6 +36,7 @@ class UserResponse(BaseModel):
     full_name: str
     language: str
     is_active: bool
+    center_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
 

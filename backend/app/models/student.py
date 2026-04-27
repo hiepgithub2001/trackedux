@@ -3,8 +3,8 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Date, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
@@ -28,6 +28,9 @@ class Student(Base, UUIDMixin, TimestampMixin):
         String(20), nullable=False, default="trial", server_default="trial", index=True
     )
     enrolled_at: Mapped[date] = mapped_column(Date, nullable=False)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     status_history = relationship("StudentStatusHistory", back_populates="student", lazy="selectin")

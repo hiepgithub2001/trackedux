@@ -15,20 +15,20 @@ from app.models.student import Student
 from app.schemas.package import PackageCreate
 
 
-async def create_package(db: AsyncSession, data: PackageCreate) -> Package:
+async def create_package(db: AsyncSession, data: PackageCreate, center_id: UUID) -> Package:
     """Create a flexible course package with enrollment validation and inline lesson kind create."""
-    # 1. Verify student exists
+    # 1. Verify student exists (within center)
     student = await db.get(Student, data.student_id)
-    if student is None:
+    if student is None or student.center_id != center_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
-    # 2. Verify class exists
-    cs = await get_class_session_by_id(db, data.class_session_id)
+    # 2. Verify class exists (within center)
+    cs = await get_class_session_by_id(db, data.class_session_id, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
     # 3. Compute display ID for error messages
-    all_classes = await list_class_sessions(db, active_only=False)
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     class_display_id = display_ids.get(cs.id, str(cs.id))
 
@@ -53,7 +53,7 @@ async def create_package(db: AsyncSession, data: PackageCreate) -> Package:
     for old_pkg in result.scalars().all():
         old_pkg.is_active = False
 
-    # 7. Create package
+    # 7. Create package scoped to center
     package = Package(
         student_id=data.student_id,
         class_session_id=data.class_session_id,
@@ -61,6 +61,7 @@ async def create_package(db: AsyncSession, data: PackageCreate) -> Package:
         remaining_sessions=data.number_of_lessons,
         price=data.tuition_fee,
         started_at=date.today(),
+        center_id=center_id,
     )
     db.add(package)
     await db.commit()
@@ -68,8 +69,9 @@ async def create_package(db: AsyncSession, data: PackageCreate) -> Package:
     return package
 
 
-async def get_package_by_id(db: AsyncSession, package_id: UUID) -> Package | None:
-    result = await db.execute(
+
+async def get_package_by_id(db: AsyncSession, package_id: UUID, center_id: UUID | None = None) -> Package | None:
+    query = (
         select(Package)
         .options(
             selectinload(Package.student),
@@ -78,11 +80,15 @@ async def get_package_by_id(db: AsyncSession, package_id: UUID) -> Package | Non
         )
         .where(Package.id == package_id)
     )
+    if center_id is not None:
+        query = query.where(Package.center_id == center_id)
+    result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
 async def list_packages(
     db: AsyncSession,
+    center_id: UUID | None = None,
     student_id: UUID | None = None,
     payment_status: str | None = None,
     class_session_id: UUID | None = None,
@@ -92,6 +98,8 @@ async def list_packages(
         selectinload(Package.student),
         selectinload(Package.class_session).selectinload(ClassSession.teacher),
     )
+    if center_id is not None:
+        query = query.where(Package.center_id == center_id)
     if student_id:
         query = query.where(Package.student_id == student_id)
     if payment_status:

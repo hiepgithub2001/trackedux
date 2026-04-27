@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.class_session import list_class_sessions
 from app.schemas.class_session import _derive_end_time
 
@@ -19,14 +19,16 @@ async def get_weekly_schedule(
     week_start: date | None = None,
     teacher_id: UUID | None = None,
 ):
-    """Get weekly calendar view data."""
+    """Get weekly calendar view data, scoped to current user's center."""
+    center_id = get_center_id(current_user)
+
     if week_start is None:
         today = date.today()
         week_start = today - timedelta(days=today.weekday())  # Monday
 
     week_end = week_start + timedelta(days=6)
 
-    classes = await list_class_sessions(db, teacher_id=teacher_id)
+    classes = await list_class_sessions(db, center_id=center_id, teacher_id=teacher_id)
 
     sessions = []
     for cs in classes:

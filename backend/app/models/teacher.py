@@ -22,6 +22,9 @@ class Teacher(Base, UUIDMixin, TimestampMixin):
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
 
     # Relationships
     availability = relationship("TeacherAvailability", back_populates="teacher", lazy="selectin", cascade="all, delete-orphan")

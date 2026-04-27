@@ -14,45 +14,41 @@ def normalize_lesson_kind_name(name: str) -> str:
     return re.sub(r"\s+", " ", name.strip()).lower()
 
 
-async def find_or_create_lesson_kind(db: AsyncSession, name: str) -> LessonKind:
-    """Atomically find an existing lesson kind or create a new one.
-
-    Uses INSERT ... ON CONFLICT DO NOTHING pattern for concurrent safety (SC-008).
-    """
+async def find_or_create_lesson_kind(db: AsyncSession, name: str, center_id: UUID) -> LessonKind:
+    """Atomically find an existing lesson kind or create a new one, scoped to a center."""
     normalized = normalize_lesson_kind_name(name)
     display_name = re.sub(r"\s+", " ", name.strip())  # preserve casing
 
-    # Try to find existing
+    # Try to find existing (within this center)
     result = await db.execute(
-        select(LessonKind).where(LessonKind.name_normalized == normalized)
+        select(LessonKind).where(LessonKind.name_normalized == normalized, LessonKind.center_id == center_id)
     )
     existing = result.scalar_one_or_none()
     if existing:
         return existing
 
-    # Insert new (race-safe: unique index on name_normalized)
-    new_kind = LessonKind(name=display_name, name_normalized=normalized)
+    # Insert new
+    new_kind = LessonKind(name=display_name, name_normalized=normalized, center_id=center_id)
     db.add(new_kind)
     try:
         await db.flush()
     except Exception:
-        # Concurrent insert — rollback the add and query again
         await db.rollback()
         result = await db.execute(
-            select(LessonKind).where(LessonKind.name_normalized == normalized)
+            select(LessonKind).where(LessonKind.name_normalized == normalized, LessonKind.center_id == center_id)
         )
         existing = result.scalar_one_or_none()
         if existing:
             return existing
-        raise  # Unexpected error
+        raise
     return new_kind
 
 
 async def list_lesson_kinds(
-    db: AsyncSession, search: str | None = None
+    db: AsyncSession, center_id: UUID, search: str | None = None
 ) -> list[LessonKind]:
-    """List lesson kinds, optionally filtered by case-insensitive substring match."""
-    query = select(LessonKind).order_by(LessonKind.name)
+    """List lesson kinds for a center, optionally filtered by search."""
+    query = select(LessonKind).where(LessonKind.center_id == center_id).order_by(LessonKind.name)
     if search:
         pattern = f"%{search.strip().lower()}%"
         query = query.where(LessonKind.name_normalized.ilike(pattern))

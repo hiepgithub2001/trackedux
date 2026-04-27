@@ -24,6 +24,9 @@ class StudentStatusHistory(Base, UUIDMixin):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    center_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
+    )
     changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
