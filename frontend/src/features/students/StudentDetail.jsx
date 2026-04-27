@@ -76,6 +76,24 @@ export default function StudentDetail() {
       ),
     },
     {
+      key: 'contact',
+      label: t('students.contactInfo'),
+      children: (
+        <Descriptions column={{ xs: 1, sm: 2 }} bordered>
+          <Descriptions.Item label={t('students.contactName')}>{student.contact?.name || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('students.relationship')}>
+            {student.contact?.relationship ? t(`students.relationship${student.contact.relationship.charAt(0).toUpperCase() + student.contact.relationship.slice(1)}`) : '-'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('common.phone')}>{student.contact?.phone || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('common.phone') + ' 2'}>{student.contact?.phone_secondary || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('common.email')}>{student.contact?.email || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('common.address')} span={2}>{student.contact?.address || '-'}</Descriptions.Item>
+          <Descriptions.Item label="Zalo ID">{student.contact?.zalo_id || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('common.notes')} span={2}>{student.contact?.notes || '-'}</Descriptions.Item>
+        </Descriptions>
+      ),
+    },
+    {
       key: 'classes',
       label: t('schedule.title'),
       children: <Text type="secondary">Coming soon...</Text>,

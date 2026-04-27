@@ -1,8 +1,10 @@
 """Packages/Tuition API routes."""
 from uuid import UUID
-from fastapi import APIRouter, HTTPException, Query, status
+
+from fastapi import APIRouter, HTTPException, status
+
 from app.core.deps import CurrentUser, DbSession
-from app.crud.package import create_package, get_package_by_id, list_packages
+from app.crud.package import create_package, list_packages
 from app.schemas.package import PackageCreate, PackageResponse, PaymentRecordCreate, PaymentRecordResponse
 from app.services.tuition_service import record_payment
 

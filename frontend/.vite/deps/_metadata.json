@@ -1,0 +1,108 @@
+{
+  "hash": "3b61818a",
+  "configHash": "542783d0",
+  "lockfileHash": "3e0636af",
+  "browserHash": "cf62b469",
+  "optimized": {
+    "@ant-design/icons": {
+      "src": "../../node_modules/@ant-design/icons/es/index.js",
+      "file": "@ant-design_icons.js",
+      "fileHash": "03a68cc5",
+      "needsInterop": false
+    },
+    "@fullcalendar/react": {
+      "src": "../../node_modules/@fullcalendar/react/dist/index.js",
+      "file": "@fullcalendar_react.js",
+      "fileHash": "29c78fb5",
+      "needsInterop": false
+    },
+    "@fullcalendar/timegrid": {
+      "src": "../../node_modules/@fullcalendar/timegrid/index.js",
+      "file": "@fullcalendar_timegrid.js",
+      "fileHash": "2f93ca60",
+      "needsInterop": false
+    },
+    "@tanstack/react-query": {
+      "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "f09b9104",
+      "needsInterop": false
+    },
+    "antd": {
+      "src": "../../node_modules/antd/es/index.js",
+      "file": "antd.js",
+      "fileHash": "718cdd10",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "4768a90f",
+      "needsInterop": false
+    },
+    "dayjs": {
+      "src": "../../node_modules/dayjs/dayjs.min.js",
+      "file": "dayjs.js",
+      "fileHash": "9aed5de4",
+      "needsInterop": true
+    },
+    "i18next": {
+      "src": "../../node_modules/i18next/dist/esm/i18next.js",
+      "file": "i18next.js",
+      "fileHash": "3f55a11c",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "55c9c6a4",
+      "needsInterop": true
+    },
+    "react-i18next": {
+      "src": "../../node_modules/react-i18next/dist/es/index.js",
+      "file": "react-i18next.js",
+      "fileHash": "40c701aa",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "f7f390a7",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "54fa3200",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "2ad2d4a7",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "DownloadOutlined-CUsN2758": {
+      "file": "DownloadOutlined-CUsN2758.js",
+      "isDynamicEntry": false
+    },
+    "chunk-CYJPkc-J": {
+      "file": "chunk-CYJPkc-J.js",
+      "isDynamicEntry": false
+    },
+    "client-BaoVCT4U": {
+      "file": "client-BaoVCT4U.js",
+      "isDynamicEntry": false
+    },
+    "internal-CAkuLHK5": {
+      "file": "internal-CAkuLHK5.js",
+      "isDynamicEntry": false
+    },
+    "react-dom-BZydYmzT": {
+      "file": "react-dom-BZydYmzT.js",
+      "isDynamicEntry": false
+    }
+  }
+}

@@ -1,10 +1,10 @@
-[lint]
 line-length = 120
 target-version = "py311"
+
+[lint]
 select = ["E", "F", "W", "I", "N", "UP"]
 
 [lint.isort]
 known-first-party = ["app"]
 
 [format]
-line-length = 120

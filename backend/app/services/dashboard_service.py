@@ -1,12 +1,14 @@
 """Dashboard service — aggregate metrics."""
 from datetime import date
-from sqlalchemy import func, select, and_
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.student import Student
-from app.models.class_session import ClassSession
+
 from app.models.attendance import AttendanceRecord
+from app.models.class_session import ClassSession
 from app.models.package import Package
 from app.models.payment_record import PaymentRecord
+from app.models.student import Student
 
 
 async def get_dashboard_metrics(db: AsyncSession, user_role: str) -> dict:

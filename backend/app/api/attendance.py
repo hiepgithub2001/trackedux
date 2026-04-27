@@ -1,11 +1,13 @@
 """Attendance API routes."""
 from uuid import UUID
-from fastapi import APIRouter, Query, status
+
+from fastapi import APIRouter
+from sqlalchemy import select
+
 from app.core.deps import CurrentUser, DbSession
+from app.models.attendance import AttendanceRecord
 from app.schemas.attendance import AttendanceBatchRequest
 from app.services.attendance_service import mark_batch_attendance
-from app.models.attendance import AttendanceRecord
-from sqlalchemy import select
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 

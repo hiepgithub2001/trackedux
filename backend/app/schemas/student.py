@@ -6,6 +6,19 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+class ContactInfo(BaseModel):
+    """Schema for student contact information."""
+
+    name: str | None = None
+    relationship: str | None = None
+    phone: str | None = None
+    phone_secondary: str | None = None
+    email: str | None = None
+    address: str | None = None
+    zalo_id: str | None = None
+    notes: str | None = None
+
+
 class StudentCreate(BaseModel):
     """Schema for creating a student."""
 
@@ -18,7 +31,7 @@ class StudentCreate(BaseModel):
     learning_speed: str | None = None
     current_issues: str | None = None
     enrollment_status: str = Field(default="trial", pattern="^(trial|active|paused|withdrawn)$")
-    parent_id: UUID
+    contact: ContactInfo | None = None
 
 
 class StudentUpdate(BaseModel):
@@ -32,6 +45,7 @@ class StudentUpdate(BaseModel):
     personality_notes: str | None = None
     learning_speed: str | None = None
     current_issues: str | None = None
+    contact: ContactInfo | None = None
 
 
 class StudentStatusChange(BaseModel):
@@ -55,7 +69,7 @@ class StudentResponse(BaseModel):
     current_issues: str | None = None
     enrollment_status: str
     enrolled_at: date
-    parent_id: UUID
+    contact: ContactInfo | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -72,7 +86,7 @@ class StudentListItem(BaseModel):
     skill_level: str
     enrollment_status: str
     enrolled_at: date
-    parent_name: str | None = None
+    contact_name: str | None = None
 
     model_config = {"from_attributes": True}
 

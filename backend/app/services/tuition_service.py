@@ -1,11 +1,12 @@
 """Tuition service — package management, payment recording."""
-from datetime import date
 from uuid import UUID
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.crud.package import get_package_by_id
 from app.models.payment_record import PaymentRecord
 from app.schemas.package import PaymentRecordCreate
-from fastapi import HTTPException, status
 
 
 async def record_payment(db: AsyncSession, package_id: UUID, data: PaymentRecordCreate, recorded_by: UUID) -> PaymentRecord:

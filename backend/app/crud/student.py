@@ -5,7 +5,6 @@ from uuid import UUID
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.student import Student
 from app.schemas.student import StudentCreate, StudentUpdate
@@ -26,7 +25,7 @@ async def create_student(db: AsyncSession, data: StudentCreate) -> Student:
 async def get_student_by_id(db: AsyncSession, student_id: UUID) -> Student | None:
     """Get a student by ID with parent relationship."""
     result = await db.execute(
-        select(Student).options(selectinload(Student.parent)).where(Student.id == student_id)
+        select(Student).where(Student.id == student_id)
     )
     return result.scalar_one_or_none()
 
@@ -42,7 +41,7 @@ async def list_students(
     page_size: int = 20,
 ) -> tuple[list[Student], int]:
     """List students with filtering, searching, sorting, and pagination."""
-    query = select(Student).options(selectinload(Student.parent))
+    query = select(Student)
 
     # Filters
     if status:
