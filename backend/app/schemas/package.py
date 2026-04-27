@@ -32,8 +32,7 @@ class PackageResponse(BaseModel):
 
 
 class PaymentRecordCreate(BaseModel):
-    amount: int = Field(..., ge=0)
-    payment_date: date
+    payment_date: date | None = None
     payment_method: str | None = None
     notes: str | None = None
 

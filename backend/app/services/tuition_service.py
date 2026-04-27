@@ -14,8 +14,11 @@ async def record_payment(db: AsyncSession, package_id: UUID, data: PaymentRecord
     if pkg is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
+    from datetime import datetime, UTC
+    payment_date = data.payment_date or datetime.now(UTC).date()
+    
     payment = PaymentRecord(
-        package_id=package_id, amount=data.amount, payment_date=data.payment_date,
+        package_id=package_id, amount=pkg.price, payment_date=payment_date,
         payment_method=data.payment_method, notes=data.notes, recorded_by=recorded_by,
     )
     db.add(payment)

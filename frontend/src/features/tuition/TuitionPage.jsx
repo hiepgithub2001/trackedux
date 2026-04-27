@@ -26,7 +26,10 @@ export default function TuitionPage() {
   });
 
   const paymentMutation = useMutation({
-    mutationFn: ({ packageId, ...data }) => recordPayment(packageId, { ...data, payment_date: data.payment_date.format('YYYY-MM-DD') }),
+    mutationFn: ({ packageId, ...data }) => recordPayment(packageId, { 
+      ...data, 
+      payment_date: data.payment_date ? data.payment_date.format('YYYY-MM-DD') : undefined 
+    }),
     onSuccess: () => {
       messageApi.success('Payment recorded');
       queryClient.invalidateQueries({ queryKey: ['packages'] });
@@ -91,14 +94,8 @@ export default function TuitionPage() {
 
       <Modal title={t('tuition.recordPayment')} open={!!paymentModal} onCancel={() => setPaymentModal(null)} footer={null}>
         <Form layout="vertical" onFinish={(v) => paymentMutation.mutate({ packageId: paymentModal, ...v })}>
-          <Form.Item name="amount" label={t('tuition.amount')} rules={[{ required: true }]}>
-            <InputNumber min={0} style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
-          </Form.Item>
-          <Form.Item name="payment_date" label={t('tuition.paymentDate')} rules={[{ required: true }]} initialValue={dayjs()}>
+          <Form.Item name="payment_date" label={t('tuition.paymentDate')} initialValue={dayjs()}>
             <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="payment_method" label={t('tuition.paymentMethod')}>
-            <Select options={[{ label: 'Cash', value: 'cash' }, { label: 'Bank Transfer', value: 'bank' }, { label: 'MoMo', value: 'momo' }]} />
           </Form.Item>
           <Form.Item name="notes" label={t('common.notes')}><Input.TextArea rows={2} /></Form.Item>
           <Button type="primary" htmlType="submit" loading={paymentMutation.isPending}>{t('common.save')}</Button>
