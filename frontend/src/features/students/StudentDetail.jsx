@@ -1,10 +1,11 @@
-import { Descriptions, Tag, Card, Typography, Button, Space, Tabs, Modal, Input, Select, message } from 'antd';
+import { Descriptions, Tag, Card, Typography, Button, Space, Tabs, Modal, Input, Select, message, Table } from 'antd';
 import { EditOutlined, ArrowLeftOutlined, SwapOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { getStudent, changeStudentStatus } from '../../api/students';
+import { listPackages } from '../../api/packages';
 import { useAuth } from '../../auth/AuthContext';
 
 const { Title, Text } = Typography;
@@ -30,6 +31,11 @@ export default function StudentDetail() {
   const { data: student, isLoading } = useQuery({
     queryKey: ['student', id],
     queryFn: () => getStudent(id).then((r) => r.data),
+  });
+
+  const { data: packages, isLoading: isLoadingPackages } = useQuery({
+    queryKey: ['packages', { student_id: id }],
+    queryFn: () => listPackages({ student_id: id }).then((r) => r.data),
   });
 
   const statusMutation = useMutation({
@@ -58,7 +64,6 @@ export default function StudentDetail() {
           <Descriptions.Item label={t('students.nickname')}>{student.nickname || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('students.dateOfBirth')}>{student.date_of_birth || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('students.age')}>{student.age || '-'}</Descriptions.Item>
-          <Descriptions.Item label={t('students.skillLevel')}>{student.skill_level}</Descriptions.Item>
           <Descriptions.Item label={t('students.learningSpeed')}>{student.learning_speed || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('students.personalityNotes')} span={2}>
             {student.personality_notes || '-'}
@@ -106,7 +111,27 @@ export default function StudentDetail() {
     {
       key: 'tuition',
       label: t('tuition.title'),
-      children: <Text type="secondary">Coming soon...</Text>,
+      children: (
+        <Table 
+          size="small" 
+          dataSource={packages || []} 
+          rowKey="id" 
+          loading={isLoadingPackages}
+          columns={[
+            { title: t('package.class'), dataIndex: 'class_display_id', key: 'class_display_id' },
+            { title: t('package.lessonKind'), dataIndex: 'lesson_kind_name', key: 'lesson_kind_name' },
+            { title: t('package.numberOfLessons'), dataIndex: 'number_of_lessons', key: 'number_of_lessons' },
+            {
+              title: t('tuition.remainingSessions'), dataIndex: 'remaining_sessions', key: 'remaining_sessions',
+              render: (val) => <Tag color={val <= 2 ? 'red' : val <= 5 ? 'orange' : 'green'}>{val}</Tag>,
+            },
+            {
+              title: t('tuition.paymentStatus'), dataIndex: 'payment_status', key: 'payment_status',
+              render: (status) => <Tag color={status === 'paid' ? 'green' : 'red'}>{t(`tuition.${status}`)}</Tag>,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

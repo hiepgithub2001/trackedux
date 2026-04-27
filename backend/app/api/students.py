@@ -24,7 +24,6 @@ async def get_students(
     db: DbSession,
     current_user: CurrentUser,
     status_filter: str | None = Query(None, alias="status"),
-    skill_level: str | None = None,
     search: str | None = None,
     sort_by: str = "name",
     sort_order: str = "asc",
@@ -35,7 +34,6 @@ async def get_students(
     students, total = await list_students(
         db,
         status=status_filter,
-        skill_level=skill_level,
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
@@ -51,7 +49,6 @@ async def get_students(
                 name=s.name,
                 nickname=s.nickname,
                 age=s.age,
-                skill_level=s.skill_level,
                 enrollment_status=s.enrollment_status,
                 enrolled_at=s.enrolled_at,
                 contact_name=(s.contact or {}).get("name") if s.contact else None,

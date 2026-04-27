@@ -40,11 +40,26 @@
     "dashboard": "Dashboard",
     "students": "Students",
     "schedule": "Schedule",
+    "classes": "Classes",
     "attendance": "Attendance",
     "teachers": "Teachers",
     "tuition": "Tuition",
     "reports": "Reports",
     "notifications": "Notifications"
+  },
+  "classes": {
+    "title": "Classes",
+    "displayId": "Class ID",
+    "teacher": "Teacher",
+    "weekday": "Weekday",
+    "time": "Time",
+    "duration": "Duration",
+    "enrolled": "Enrolled",
+    "feePerLesson": "Fee / Lesson",
+    "createClass": "Create Class",
+    "noClasses": "No classes found",
+    "deleteConfirm": "Are you sure you want to delete this class?",
+    "deleteBlocked": "Cannot delete class with associated packages. Deactivate them first."
   },
   "students": {
     "title": "Student Management",
@@ -56,6 +71,7 @@
     "skillLevel": "Skill Level",
     "personalityNotes": "Personality Notes",
     "learningSpeed": "Learning Speed",
+    "notesPlaceholder": "e.g., currently at intermediate level, struggles with sight-reading",
     "currentIssues": "Current Issues",
     "enrollmentStatus": "Status",
     "enrolledAt": "Enrolled Date",
@@ -143,6 +159,19 @@
     "sessions24": "24 Sessions",
     "sessions36": "36 Sessions"
   },
+  "package": {
+    "class": "Class",
+    "lessonKind": "Lesson Kind",
+    "numberOfLessons": "Number of Lessons",
+    "tuitionFee": "Tuition Fee",
+    "assignPackage": "Assign Package",
+    "resetAutoFill": "Reset to Auto-fill",
+    "notEnrolled": "Student is not enrolled in this class.",
+    "createKindOption": "Create new: {{kind}}"
+  },
+  "lessonKind": {
+    "title": "Lesson Kinds"
+  },
   "dashboard": {
     "title": "Dashboard",
     "activeStudents": "Active Students",
@@ -188,7 +217,7 @@
   },
   "pwa": {
     "installTitle": "Install App",
-    "installMessage": "Install TrackedUX for a better experience",
+    "installMessage": "Install TrackEduX for a better experience",
     "install": "Install",
     "dismiss": "Dismiss",
     "offline": "No Connection",

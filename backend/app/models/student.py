@@ -19,7 +19,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
     nickname: Mapped[str | None] = mapped_column(String(100), nullable=True)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    skill_level: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+
     personality_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     learning_speed: Mapped[str | None] = mapped_column(String(50), nullable=True)
     current_issues: Mapped[str | None] = mapped_column(Text, nullable=True)

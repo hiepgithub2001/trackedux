@@ -82,7 +82,7 @@ export default function StudentForm() {
           layout="vertical"
           onFinish={(values) => mutation.mutate(values)}
           onFinishFailed={onFinishFailed}
-          initialValues={{ enrollment_status: 'trial', skill_level: 'Beginner', contact: {} }}
+          initialValues={{ enrollment_status: 'trial', contact: {} }}
         >
           <Form.Item
             name="name"
@@ -106,21 +106,7 @@ export default function StudentForm() {
             </Form.Item>
           </Space>
 
-          <Form.Item
-            name="skill_level"
-            label={t('students.skillLevel')}
-            rules={[{ required: true, message: t('validation.required') }]}
-          >
-            <Select
-              id="skill-level-select"
-              options={[
-                { label: t('students.skillBeginner'), value: 'Beginner' },
-                { label: t('students.skillElementary'), value: 'Elementary' },
-                { label: t('students.skillIntermediate'), value: 'Intermediate' },
-                { label: t('students.skillAdvanced'), value: 'Advanced' },
-              ]}
-            />
-          </Form.Item>
+
 
           <Form.Item name="learning_speed" label={t('students.learningSpeed')}>
             <Select
@@ -135,7 +121,7 @@ export default function StudentForm() {
           </Form.Item>
 
           <Form.Item name="personality_notes" label={t('students.personalityNotes')}>
-            <TextArea id="personality-notes" rows={3} />
+            <TextArea id="personality-notes" rows={3} placeholder={t('students.notesPlaceholder')} />
           </Form.Item>
 
           <Form.Item name="current_issues" label={t('students.currentIssues')}>

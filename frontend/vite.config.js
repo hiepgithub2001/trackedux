@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'TrackedUX - Piano Center',
-        short_name: 'TrackedUX',
+        name: 'TrackEduX - Piano Center',
+        short_name: 'TrackEduX',
         description: 'Piano Center Management System',
         theme_color: '#1677ff',
         background_color: '#ffffff',

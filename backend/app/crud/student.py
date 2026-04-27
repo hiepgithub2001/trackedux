@@ -33,7 +33,6 @@ async def get_student_by_id(db: AsyncSession, student_id: UUID) -> Student | Non
 async def list_students(
     db: AsyncSession,
     status: str | None = None,
-    skill_level: str | None = None,
     search: str | None = None,
     sort_by: str = "name",
     sort_order: str = "asc",
@@ -46,8 +45,6 @@ async def list_students(
     # Filters
     if status:
         query = query.where(Student.enrollment_status == status)
-    if skill_level:
-        query = query.where(Student.skill_level == skill_level)
     if search:
         search_term = f"%{search}%"
         query = query.where(

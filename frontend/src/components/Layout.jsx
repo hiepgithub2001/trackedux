@@ -12,6 +12,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +33,7 @@ export default function Layout() {
     { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
     { key: '/students', icon: <UserOutlined />, label: t('nav.students') },
     { key: '/schedule', icon: <CalendarOutlined />, label: t('nav.schedule') },
+    { key: '/classes', icon: <AppstoreOutlined />, label: t('nav.classes') },
     { key: '/attendance', icon: <CheckSquareOutlined />, label: t('nav.attendance') },
     { key: '/teachers', icon: <TeamOutlined />, label: t('nav.teachers') },
     { key: '/tuition', icon: <DollarOutlined />, label: t('nav.tuition') },
@@ -95,7 +97,7 @@ export default function Layout() {
               letterSpacing: -0.5,
             }}
           >
-            {collapsed ? '🎹' : '🎹 TrackedUX'}
+            {collapsed ? '🎹' : '🎹 TrackEduX'}
           </Text>
         </div>
         <Menu

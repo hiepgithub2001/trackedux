@@ -10,6 +10,7 @@ import TeacherList from '../features/teachers/TeacherList';
 import TeacherForm from '../features/teachers/TeacherForm';
 import TeacherDetail from '../features/teachers/TeacherDetail';
 import WeeklyCalendar from '../features/schedule/WeeklyCalendar';
+import ClassesPage from '../features/classes/ClassesPage';
 import ClassForm from '../features/schedule/ClassForm';
 import ClassDetail from '../features/schedule/ClassDetail';
 import AttendancePage from '../features/attendance/AttendancePage';
@@ -38,8 +39,10 @@ const router = createBrowserRouter([
       { path: 'students/:id', element: <StudentDetail /> },
       { path: 'students/:id/edit', element: <StudentForm /> },
       { path: 'schedule', element: <WeeklyCalendar /> },
+      { path: 'classes', element: <ClassesPage /> },
       { path: 'classes/new', element: <ClassForm /> },
       { path: 'classes/:id', element: <ClassDetail /> },
+      { path: 'classes/:id/edit', element: <ClassForm /> },
       { path: 'attendance', element: <AttendancePage /> },
       { path: 'teachers', element: <TeacherList /> },
       { path: 'teachers/new', element: <TeacherForm /> },
