@@ -8,30 +8,34 @@ from app.core.deps import CurrentUser, DbSession
 from app.crud.class_session import (
     create_class_session,
     enroll_student,
-    get_active_enrollment_count,
     get_class_session_by_id,
     list_class_sessions,
     unenroll_student,
 )
-from app.schemas.class_session import ClassSessionCreate, ClassSessionResponse, EnrollRequest
+from app.schemas.class_session import (
+    ClassSessionCreate,
+    ClassSessionResponse,
+    EnrollRequest,
+    _derive_end_time,
+)
 from app.services.schedule_service import check_scheduling_conflicts
 
 router = APIRouter(prefix="/classes", tags=["Classes"])
 
 
 def _class_to_response(cs) -> ClassSessionResponse:
-    """Convert class session model to response."""
+    """Convert class session model to response, with derived end_time."""
+    start_str = cs.start_time.strftime("%H:%M")
     return ClassSessionResponse(
         id=cs.id,
         teacher_id=cs.teacher_id,
-        class_type=cs.class_type,
-        title=cs.title,
+        name=cs.name,
         day_of_week=cs.day_of_week,
-        start_time=cs.start_time.strftime("%H:%M"),
-        end_time=cs.end_time.strftime("%H:%M"),
+        start_time=start_str,
+        duration_minutes=cs.duration_minutes,
+        end_time=_derive_end_time(start_str, cs.duration_minutes),
         is_recurring=cs.is_recurring,
         is_makeup=cs.is_makeup,
-        max_students=cs.max_students,
         is_active=cs.is_active,
         teacher_name=cs.teacher.full_name if cs.teacher else None,
         enrolled_students=[
@@ -49,12 +53,11 @@ async def get_classes(
     db: DbSession,
     current_user: CurrentUser,
     teacher_id: UUID | None = None,
-    class_type: str | None = None,
     day_of_week: int | None = Query(None, ge=0, le=6),
     is_active: bool = True,
 ):
     """List class sessions with filters."""
-    classes = await list_class_sessions(db, teacher_id, class_type, day_of_week, is_active)
+    classes = await list_class_sessions(db, teacher_id, day_of_week, is_active)
     return [_class_to_response(c) for c in classes]
 
 
@@ -73,9 +76,13 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    # Check for conflicts
     conflicts = await check_scheduling_conflicts(
-        db, data.teacher_id, data.day_of_week, data.start_time, data.end_time, data.student_ids
+        db,
+        data.teacher_id,
+        data.day_of_week,
+        data.start_time,
+        data.duration_minutes,
+        data.student_ids,
     )
     if conflicts:
         raise HTTPException(
@@ -90,7 +97,7 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
 
 @router.post("/{class_id}/enroll")
 async def enroll_student_endpoint(class_id: UUID, data: EnrollRequest, db: DbSession, current_user: CurrentUser):
-    """Add student to class. Admin only."""
+    """Add student to class. Admin only. Returns 409 only on time-overlap conflict."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
@@ -98,19 +105,22 @@ async def enroll_student_endpoint(class_id: UUID, data: EnrollRequest, db: DbSes
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
-    # Capacity check
-    count = await get_active_enrollment_count(db, class_id)
-    if count >= cs.max_students:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Class at max capacity")
-
-    # Conflict check
+    # No max-capacity check (clarification 2026-04-27).
     conflicts = await check_scheduling_conflicts(
-        db, cs.teacher_id, cs.day_of_week, cs.start_time.strftime("%H:%M"),
-        cs.end_time.strftime("%H:%M"), [data.student_id], exclude_class_id=class_id,
+        db,
+        cs.teacher_id,
+        cs.day_of_week,
+        cs.start_time.strftime("%H:%M"),
+        cs.duration_minutes,
+        [data.student_id],
+        exclude_class_id=class_id,
     )
     student_conflicts = [c for c in conflicts if c["type"] == "student"]
     if student_conflicts:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"message": "Student scheduling conflict", "conflicts": student_conflicts})
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "Student scheduling conflict", "conflicts": student_conflicts},
+        )
 
     await enroll_student(db, class_id, data.student_id)
     return {"detail": "Student enrolled"}

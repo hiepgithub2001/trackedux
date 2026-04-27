@@ -89,19 +89,20 @@
   "schedule": {
     "title": "Weekly Schedule",
     "createClass": "Create Class",
-    "classType": "Class Type",
-    "individual": "Individual (1:1)",
-    "pair": "Pair",
-    "group": "Group",
+    "name": "Class Name",
+    "namePlaceholder": "e.g. Beginner Piano A",
     "teacher": "Teacher",
     "students": "Students",
     "dayOfWeek": "Day",
     "startTime": "Start Time",
-    "endTime": "End Time",
+    "duration": "Duration",
+    "minutes": "minutes",
     "recurring": "Recurring",
     "makeup": "Makeup",
+    "makeupBadge": "Makeup",
     "conflict": "Scheduling Conflict",
-    "maxStudents": "Max Students"
+    "created": "Class created",
+    "createError": "Error creating class"
   },
   "attendance": {
     "title": "Attendance",

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Typography, Select, Space } from 'antd';
+import { Card, Typography, Select, Space, Tag } from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useQuery } from '@tanstack/react-query';
@@ -10,11 +10,8 @@ import { listTeachers } from '../../api/teachers';
 
 const { Title } = Typography;
 
-const TYPE_COLORS = {
-  individual: '#4096ff',
-  pair: '#52c41a',
-  group: '#722ed1',
-};
+const REGULAR_COLOR = '#1677ff';
+const MAKEUP_COLOR = '#fa8c16';
 
 export default function WeeklyCalendar() {
   const { t } = useTranslation();
@@ -31,15 +28,37 @@ export default function WeeklyCalendar() {
     queryFn: () => listTeachers().then((r) => r.data),
   });
 
-  const events = (scheduleData?.sessions || []).map((s) => ({
-    id: s.id,
-    title: `${s.title || s.class_type}\n${s.teacher.full_name}`,
-    start: `${s.date}T${s.start_time}`,
-    end: `${s.date}T${s.end_time}`,
-    backgroundColor: TYPE_COLORS[s.class_type] || '#1677ff',
-    borderColor: TYPE_COLORS[s.class_type] || '#1677ff',
-    extendedProps: s,
-  }));
+  const events = (scheduleData?.sessions || []).map((s) => {
+    const color = s.is_makeup ? MAKEUP_COLOR : REGULAR_COLOR;
+    return {
+      id: s.id,
+      title: `${s.name}\n${s.teacher.full_name}`,
+      start: `${s.date}T${s.start_time}`,
+      end: `${s.date}T${s.end_time}`,
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: s,
+    };
+  });
+
+  const renderEventContent = (eventInfo) => {
+    const { is_makeup, name, teacher } = eventInfo.event.extendedProps;
+    return (
+      <div style={{ padding: '2px 4px', overflow: 'hidden', lineHeight: 1.25 }}>
+        {is_makeup && (
+          <Tag
+            color="orange"
+            style={{ marginRight: 0, marginBottom: 2, padding: '0 6px', fontSize: 10, lineHeight: '16px' }}
+          >
+            {t('schedule.makeupBadge')}
+          </Tag>
+        )}
+        <div style={{ fontSize: 12, fontWeight: 600 }}>{eventInfo.timeText}</div>
+        <div style={{ fontSize: 12, fontWeight: 600 }}>{name}</div>
+        <div style={{ fontSize: 11, opacity: 0.85 }}>{teacher?.full_name}</div>
+      </div>
+    );
+  };
 
   return (
     <div className="fade-in">
@@ -53,7 +72,7 @@ export default function WeeklyCalendar() {
             onChange={setTeacherFilter}
             style={{ width: 200 }}
             allowClear
-            options={(teachers || []).map((t) => ({ label: t.full_name, value: t.id }))}
+            options={(teachers || []).map((teacher) => ({ label: teacher.full_name, value: teacher.id }))}
           />
         </Space>
       </div>
@@ -62,6 +81,7 @@ export default function WeeklyCalendar() {
           plugins={[timeGridPlugin]}
           initialView="timeGridWeek"
           events={events}
+          eventContent={renderEventContent}
           slotMinTime="07:00:00"
           slotMaxTime="21:00:00"
           allDaySlot={false}

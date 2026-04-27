@@ -5,6 +5,8 @@
 **Base URL**: `/api/v1`  
 **Auth**: Bearer JWT token in `Authorization` header
 
+> **Session policy (Phase 1, clarification 2026-04-27)**: admin/staff sessions persist until manual logout. The access token is issued with a long lifetime (recommend 30 days) and the refresh token is rotated only on explicit logout. No idle-timeout enforcement, no account lockout. Phase 2 (parent portal) will revisit this.
+
 ---
 
 ## Authentication
@@ -284,13 +286,31 @@ List classes with optional filters.
 | Param | Type | Description |
 |-------|------|-------------|
 | `teacher_id` | uuid | Filter by teacher |
-| `class_type` | string | individual / pair / group |
 | `day_of_week` | integer | 0-6 |
 | `is_active` | boolean | Active only |
+
+> Note (clarification 2026-04-27): the `class_type` filter is removed — classes have no type classification.
 
 ### GET `/api/v1/classes/{id}`
 
 Get class detail with enrolled students.
+
+**Response 200** (excerpt):
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "teacher": { "id": "uuid", "full_name": "string" },
+  "day_of_week": 0,
+  "start_time": "HH:MM",
+  "duration_minutes": 60,
+  "end_time": "HH:MM",
+  "is_recurring": true,
+  "is_makeup": false,
+  "students": [{ "id": "uuid", "name": "string" }]
+}
+```
+`end_time` is derived (`start_time + duration_minutes`), returned for client convenience.
 
 ### POST `/api/v1/classes`
 
@@ -300,17 +320,16 @@ Create a class session. **Role**: Admin.
 ```json
 {
   "teacher_id": "uuid (required)",
-  "class_type": "individual | pair | group (required)",
-  "title": "string | null",
+  "name": "string (required)",
   "day_of_week": "integer 0-6 (required)",
   "start_time": "HH:MM (required)",
-  "end_time": "HH:MM (required)",
+  "duration_minutes": "integer >= 1 (required)",
   "is_recurring": "boolean (default: true)",
-  "student_ids": ["uuid"] 
+  "student_ids": ["uuid"]
 }
 ```
 
-**Response 409**: `{ "detail": "Scheduling conflict", "conflicts": [...] }` if student or teacher has overlapping sessions.
+**Response 409**: `{ "detail": "Scheduling conflict", "conflicts": [...] }` if student or teacher has overlapping sessions. Overlap is computed against the half-open range `[start_time, start_time + duration_minutes)`.
 
 ### PATCH `/api/v1/classes/{id}`
 
@@ -327,8 +346,9 @@ Add student to class. **Role**: Admin.
 }
 ```
 
-**Response 409**: Conflict (time overlap or class full).  
-**Response 422**: Class at max capacity.
+**Response 409**: Time overlap conflict with another class the student is already enrolled in.
+
+> Note (clarification 2026-04-27): the previous `422 Class at max capacity` response is removed — classes have no upper bound on student count.
 
 ### DELETE `/api/v1/classes/{id}/enroll/{student_id}`
 
@@ -352,13 +372,13 @@ Weekly calendar view data.
   "sessions": [
     {
       "id": "uuid",
-      "title": "string",
-      "class_type": "string",
+      "name": "string",
       "teacher": { "id": "uuid", "full_name": "string" },
       "students": [{ "id": "uuid", "name": "string" }],
       "day_of_week": "integer",
       "start_time": "HH:MM",
-      "end_time": "HH:MM",
+      "duration_minutes": "integer",
+      "end_time": "HH:MM (derived)",
       "date": "date",
       "is_makeup": "boolean",
       "attendance_marked": "boolean"

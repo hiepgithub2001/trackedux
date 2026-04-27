@@ -30,6 +30,11 @@ client.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // Do not handle 401 globally for the login endpoint
+      if (originalRequest.url?.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {

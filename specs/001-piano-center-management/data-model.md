@@ -175,25 +175,25 @@ A recurring or one-off class session.
 |-------|------|-------------|-------------|
 | `id` | UUID | PK | Primary key |
 | `teacher_id` | UUID | FK → Teacher, NOT NULL | Assigned teacher |
-| `class_type` | ENUM('individual', 'pair', 'group') | NOT NULL | 1:1, pair, or group |
-| `title` | VARCHAR(200) | nullable | Optional class title |
+| `name` | VARCHAR(200) | NOT NULL | Class name (e.g., "Beginner Piano A") |
 | `day_of_week` | INTEGER | NOT NULL, 0-6 | Recurring day (0=Monday) |
 | `start_time` | TIME | NOT NULL | Session start time |
-| `end_time` | TIME | NOT NULL | Session end time |
+| `duration_minutes` | INTEGER | NOT NULL, CHECK > 0 | Session duration in minutes |
 | `is_recurring` | BOOLEAN | DEFAULT true | Recurring weekly |
-| `is_makeup` | BOOLEAN | DEFAULT false | Makeup session flag |
+| `is_makeup` | BOOLEAN | DEFAULT false | Makeup session flag (rendered with "Makeup" badge on calendar) |
 | `makeup_for_id` | UUID | FK → ClassSession, nullable | Original missed session |
 | `specific_date` | DATE | nullable | For non-recurring/makeup sessions |
-| `max_students` | INTEGER | NOT NULL | Max capacity (1, 2, or 4) |
 | `is_active` | BOOLEAN | DEFAULT true | Class is active |
 | `created_at` | TIMESTAMPTZ | NOT NULL | Creation timestamp |
 | `updated_at` | TIMESTAMPTZ | NOT NULL | Last update timestamp |
 
 **Indexes**: `teacher_id`, `day_of_week`, (`day_of_week`, `start_time`), `is_active`  
 **Validation**:
-- `max_students` must match `class_type`: individual=1, pair=2, group=4
-- `start_time < end_time`
+- `duration_minutes >= 1`
 - If `is_makeup=true`, `specific_date` is required
+- Overlap is computed as the half-open range `[start_time, start_time + duration_minutes)`
+
+**Note (clarification 2026-04-27)**: No type classification (1:1 / pair / group) and no `max_students` constraint. Any number of students may enroll.
 
 ---
 
@@ -210,7 +210,7 @@ Links students to class sessions.
 | `is_active` | BOOLEAN | DEFAULT true | Currently enrolled |
 
 **Indexes**: (`class_session_id`, `student_id`) UNIQUE, `student_id`  
-**Validation**: Cannot exceed `ClassSession.max_students` active enrollments
+**Validation**: A student may only be enrolled in a given class once (UNIQUE constraint). No upper bound on number of students per class (clarification 2026-04-27).
 
 ---
 
@@ -237,6 +237,7 @@ A purchased bundle of sessions assigned to a student.
 **Indexes**: `student_id`, (`student_id`, `is_active`), `payment_status`  
 **Validation**:
 - `total_sessions >= 1` (edge case: reject 0)
+- `price > 0` (admin sets the VND amount at assignment time per clarification 2026-04-27)
 - Only one active package per student at a time
 - `remaining_sessions` can go negative (owing status)
 
@@ -366,6 +367,7 @@ Following the user-specified sequential numbering:
 | 007 | `007_attendance.py` | AttendanceRecord table |
 | 008 | `008_session_notes.py` | SessionNote table (Phase 2, can be created early) |
 | 009 | `009_notifications.py` | Notification table (Phase 2, can be created early) |
+| 010 | `010_drop_class_type_and_max_students.py` | Drops `class_type` enum and `max_students` column from `ClassSession`; adds `name NOT NULL` and `duration_minutes NOT NULL CHECK (>0)`; drops `end_time` column (clarification 2026-04-27) |
 
 ---
 
@@ -374,7 +376,7 @@ Following the user-specified sequential numbering:
 ```sql
 CREATE TYPE user_role AS ENUM ('admin', 'staff', 'parent');
 CREATE TYPE enrollment_status AS ENUM ('trial', 'active', 'paused', 'withdrawn');
-CREATE TYPE class_type AS ENUM ('individual', 'pair', 'group');
+-- class_type enum removed per clarification 2026-04-27 (no count-based class typing)
 CREATE TYPE payment_status AS ENUM ('paid', 'unpaid');
 CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'absent_with_notice');
 CREATE TYPE notification_type AS ENUM ('schedule_reminder', 'payment_due', 'payment_overdue', 'renewal_reminder');

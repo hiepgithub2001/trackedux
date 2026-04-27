@@ -89,19 +89,20 @@
   "schedule": {
     "title": "Lịch học tuần",
     "createClass": "Tạo lớp",
-    "classType": "Loại lớp",
-    "individual": "Cá nhân (1:1)",
-    "pair": "Đôi",
-    "group": "Nhóm",
+    "name": "Tên lớp",
+    "namePlaceholder": "VD: Piano cơ bản A",
     "teacher": "Giáo viên",
     "students": "Học sinh",
     "dayOfWeek": "Thứ",
     "startTime": "Giờ bắt đầu",
-    "endTime": "Giờ kết thúc",
+    "duration": "Thời lượng",
+    "minutes": "phút",
     "recurring": "Định kỳ",
     "makeup": "Học bù",
+    "makeupBadge": "Học bù",
     "conflict": "Trùng lịch",
-    "maxStudents": "Số học sinh tối đa"
+    "created": "Đã tạo lớp",
+    "createError": "Lỗi khi tạo lớp"
   },
   "attendance": {
     "title": "Điểm danh",

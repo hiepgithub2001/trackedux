@@ -1,4 +1,4 @@
-import { Descriptions, Tag, Card, Typography, Button, Space, Table } from 'antd';
+import { Descriptions, Card, Typography, Button, Space, Table, Tag } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { getClass } from '../../api/classes';
 
 const { Title } = Typography;
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const TYPE_COLORS = { individual: 'blue', pair: 'green', group: 'purple' };
 
 export default function ClassDetail() {
   const { id } = useParams();
@@ -27,15 +26,15 @@ export default function ClassDetail() {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/schedule')}>{t('common.back')}</Button>
       </Space>
       <Card>
-        <Title level={3}>{classData.title || `${classData.class_type.charAt(0).toUpperCase() + classData.class_type.slice(1)} Class`}</Title>
+        <Space style={{ marginBottom: 12 }}>
+          <Title level={3} style={{ margin: 0 }}>{classData.name}</Title>
+          {classData.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
+        </Space>
         <Descriptions column={{ xs: 1, sm: 2 }} bordered>
-          <Descriptions.Item label={t('schedule.classType')}>
-            <Tag color={TYPE_COLORS[classData.class_type]}>{t(`schedule.${classData.class_type}`)}</Tag>
-          </Descriptions.Item>
           <Descriptions.Item label={t('schedule.teacher')}>{classData.teacher_name}</Descriptions.Item>
           <Descriptions.Item label={t('schedule.dayOfWeek')}>{DAYS[classData.day_of_week]}</Descriptions.Item>
           <Descriptions.Item label={t('common.time')}>{classData.start_time} - {classData.end_time}</Descriptions.Item>
-          <Descriptions.Item label={t('schedule.maxStudents')}>{classData.max_students}</Descriptions.Item>
+          <Descriptions.Item label={t('schedule.duration')}>{classData.duration_minutes} {t('schedule.minutes')}</Descriptions.Item>
           <Descriptions.Item label={t('schedule.recurring')}>{classData.is_recurring ? '✓' : '✗'}</Descriptions.Item>
         </Descriptions>
         <Title level={5} style={{ marginTop: 24 }}>{t('schedule.students')} ({classData.enrolled_students?.length || 0})</Title>

@@ -81,9 +81,22 @@
 ### WeeklyCalendar
 - **Props**: `weekStart`, `teacherFilter`, `onSessionClick`
 - **Display**: 7-day grid, time slots from 07:00-21:00
-- **Session Cards**: Color-coded by class_type (individual=blue, pair=green, group=purple)
-- **Info shown**: Time, teacher name, student names, class type icon
+- **Session Cards**: Single base color for regular sessions; cards render the class `name`, teacher name, and student count
+- **Makeup marker** (clarification 2026-04-27): when `is_makeup === true`, render an Ant Design `<Tag color="orange">Makeup</Tag>` (i18n key: `schedule.makeupBadge`) above the time range so makeup sessions are visually distinct from regular recurring sessions
+- **Info shown**: Time range (`start_time` → `start_time + duration_minutes`), teacher name, student names, makeup badge when applicable
 - **Interactions**: Click to view/edit, drag to reschedule (stretch goal)
+
+### ClassForm (create / edit)
+- **Props**: `mode` (`'create' | 'edit'`), `initialValues`, `onSubmit`
+- **Fields**:
+  - `name` — text input, required (replaces the previous "Class type" dropdown per clarification 2026-04-27)
+  - `teacher_id` — searchable select
+  - `day_of_week` — select (Mon–Sun)
+  - `start_time` — time picker (15-min step)
+  - `duration_minutes` — number input, default 60, minimum 1 (replaces the previous "End time" picker)
+  - `student_ids` — multi-select with no upper bound (no "max capacity" enforcement)
+  - `is_recurring` — toggle, default on
+- **Submit**: Calls `POST /api/v1/classes` (or `PATCH` for edit). On `409` conflict, surfaces a toast listing the conflicting sessions.
 
 ### AttendanceBatchForm
 - **Props**: `classSessionId`, `sessionDate`, `students`

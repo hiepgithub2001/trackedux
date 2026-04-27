@@ -5,6 +5,17 @@
 **Status**: Draft  
 **Input**: User description: "Web application (PWA) for managing a piano learning center — student CRM, class scheduling, attendance tracking, tuition management, teacher assignment, and parent portal. Bilingual (Vietnamese/English). Phase 1: Operations management. Phase 2: Parent portal, reports, teacher notes, auto-notifications."
 
+## Clarifications
+
+### Session 2026-04-27
+
+- Q: Does removing the student limit apply to all class types or only Group? → A: Group is unlimited; 1:1 stays at exactly 1 student; Pair stays at exactly 2 *(superseded below)*
+- Q: Since class type won't be based on student count, should classes still have a type or label field? → A: No type field — a class has a name, teacher, time slot, and student list only; no classification based on student count
+- Q: How is session duration tracked for overlap conflict detection? → A: Each class stores its own duration in minutes; overlap is computed as a start-to-end time range
+- Q: Does the system record the monetary amount of each tuition package? → A: Admin sets a price (VND) per package at assignment time; stored in the Package entity
+- Q: What is the expected session management behavior for admin/staff login? → A: Sessions persist until manual logout; no idle timeout or account lockout required for Phase 1
+- Q: How are makeup sessions visually distinguished from regular sessions on the calendar? → A: Makeup sessions display with a distinct visual marker (e.g., "Makeup" label or badge) on the calendar
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Admin Manages Students (Priority: P1)
@@ -26,7 +37,7 @@ An admin logs into the system and registers a new student, entering their name (
 
 ### User Story 2 - Admin Creates Classes and Schedules (Priority: P1)
 
-An admin creates class sessions (1:1, pair, or group of 3-4), assigns a teacher, assigns students to the class, and sets a recurring weekly time slot. The system displays the schedule in a calendar view (weekly). The system prevents booking a student into overlapping time slots and notifies the admin of conflicts.
+An admin creates a class with a name, assigns a teacher, assigns any number of students to the class, and sets a recurring weekly time slot. The system displays the schedule in a calendar view (weekly). The system prevents booking a student into overlapping time slots and notifies the admin of conflicts. Classes have no type classification based on student count.
 
 **Why this priority**: Scheduling is the core operational workflow — without it, the center cannot function day-to-day.
 
@@ -34,10 +45,9 @@ An admin creates class sessions (1:1, pair, or group of 3-4), assigns a teacher,
 
 **Acceptance Scenarios**:
 
-1. **Given** admin is on the scheduling screen, **When** they create a new 1:1 class with a teacher, student, and time slot, **Then** the class appears on the weekly calendar
+1. **Given** admin is on the scheduling screen, **When** they create a new class with a name, teacher, student(s), and time slot, **Then** the class appears on the weekly calendar
 2. **Given** a student is already booked at 17:00 Monday, **When** admin tries to assign them to another class at 17:00 Monday, **Then** the system displays a conflict notification and prevents the booking
-3. **Given** a group class exists with 3 students, **When** admin adds a 4th student, **Then** the student is added successfully (max 4 for group)
-4. **Given** a group class has 4 students, **When** admin tries to add a 5th, **Then** the system prevents it and shows an error
+3. **Given** a class exists with 3 students, **When** admin adds more students, **Then** each student is added successfully with no upper limit enforced
 
 ---
 
@@ -52,9 +62,9 @@ Before or after each session, the teacher or admin marks attendance for each stu
 **Acceptance Scenarios**:
 
 1. **Given** a class is scheduled today, **When** admin marks a student as "present," **Then** one session is deducted from their active package and the attendance record is saved
-2. **Given** a student is marked "absent with notice," **When** admin schedules a makeup session, **Then** the makeup session appears on the calendar and will deduct from the package when attended
+2. **Given** a student is marked "absent with notice," **When** admin schedules a makeup session, **Then** the makeup session appears on the calendar with a "Makeup" label and will deduct from the package when attended
 3. **Given** a student has 2 sessions remaining, **When** they attend a class, **Then** the system shows 1 session remaining and triggers a renewal reminder
-4. **Given** a group class has 3 students and 1 is absent, **When** the class time arrives, **Then** the class still runs for the remaining 2 students
+4. **Given** a class has 3 students and 1 is absent, **When** the class time arrives, **Then** the class still runs for the remaining 2 students
 
 ---
 
@@ -183,7 +193,7 @@ The system sends automated reminders via Zalo or SMS to parents: before upcoming
 ### Functional Requirements
 
 **Authentication & Authorization**
-- **FR-001**: System MUST support role-based access with three roles: Admin, Staff, and Parent
+- **FR-001**: System MUST support role-based access with three roles: Admin, Staff, and Parent; admin/staff sessions persist until manual logout (no idle timeout for Phase 1)
 - **FR-002**: Admin MUST have full access to all features including tuition and parent contact information
 - **FR-003**: Staff MUST have access to student management, scheduling, and attendance but MUST NOT see tuition details or parent phone numbers/addresses
 - **FR-004**: Parents MUST only have read-only access to their own child's data through a separate portal
@@ -200,25 +210,25 @@ The system sends automated reminders via Zalo or SMS to parents: before upcoming
 - **FR-011**: System MUST allow assigning teachers to specific class sessions
 
 **Class & Scheduling**
-- **FR-012**: System MUST support class types: 1:1 (one student), Pair (2 students), Group (3-4 students)
+- **FR-012**: Classes MUST have a name, an assigned teacher, a start time, a duration (in minutes), and an unrestricted list of enrolled students; no type classification based on student count
 - **FR-013**: System MUST display schedules in a weekly calendar view
-- **FR-014**: System MUST prevent scheduling a student into overlapping time slots and display a conflict notification
+- **FR-014**: System MUST prevent scheduling a student into overlapping time slots (checked as start-time + duration range) and display a conflict notification
 - **FR-015**: System MUST allow recurring weekly schedules
-- **FR-016**: Group classes MUST continue running regardless of individual student absences
+- **FR-016**: Classes MUST continue running regardless of individual student absences
 
 **Attendance**
 - **FR-017**: System MUST support attendance states: Present, Absent, Absent with Notice
-- **FR-018**: System MUST allow scheduling makeup sessions for absent students
+- **FR-018**: System MUST allow scheduling makeup sessions for absent students; makeup sessions MUST be visually distinguished on the calendar with a "Makeup" label or badge
 - **FR-019**: Makeup sessions MUST be deducted from the student's active package
 - **FR-020**: System MUST maintain complete attendance history per student
 - **FR-021**: System MUST display remaining sessions in the active package after each attendance record
 
 **Tuition & Packages**
-- **FR-022**: System MUST support predefined packages (12, 24, 36 sessions) and custom session counts
+- **FR-022**: System MUST support predefined packages (12, 24, 36 sessions) and custom session counts; admin sets the price (VND) for each package at assignment time
 - **FR-023**: System MUST track payment status per package: Paid, Unpaid
 - **FR-024**: System MUST allow students to continue attending after package expiration, recording negative session balance (owing status)
 - **FR-025**: System MUST trigger a renewal reminder when a student has approximately 2 sessions remaining
-- **FR-026**: System MUST maintain payment history (date paid, amount, package details)
+- **FR-026**: System MUST maintain payment history (date paid, amount in VND, package details); amount is the price set by admin at assignment time
 - **FR-027**: System MUST support reminder status tracking: Reminded once, Reminded twice
 
 **Dashboard**
@@ -247,8 +257,8 @@ The system sends automated reminders via Zalo or SMS to parents: before upcoming
 - **Student**: Represents a learner enrolled at the center. Has personal info, skill level, enrollment status, notes, and is linked to packages, classes, and a parent.
 - **Parent**: Guardian of one or more students. Has contact info and portal login credentials.
 - **Teacher**: Instructor who teaches classes. Has availability schedule and is assigned to class sessions.
-- **Class**: A recurring session with a type (1:1/pair/group), assigned teacher, enrolled students, and time slot.
-- **Package**: A purchased bundle of sessions (12/24/36/custom) assigned to a student. Tracks remaining sessions and payment status.
+- **Class**: A recurring session with a name, assigned teacher, enrolled students (no count limit), start time, and duration in minutes.
+- **Package**: A purchased bundle of sessions (12/24/36/custom) assigned to a student. Stores session count, price (VND set by admin at assignment), remaining sessions, and payment status.
 - **Attendance Record**: Per-student, per-session log of presence status. Links to package for session deduction.
 - **Session Note**: Teacher's post-class entry documenting lesson, progress, and homework.
 - **Notification**: An automated message sent to parents via Zalo/SMS for schedule or payment reminders.

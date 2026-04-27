@@ -1,12 +1,13 @@
 """Schedule API route — weekly calendar data."""
 
 from datetime import date, timedelta
-
-from fastapi import APIRouter, Query
 from uuid import UUID
+
+from fastapi import APIRouter
 
 from app.core.deps import CurrentUser, DbSession
 from app.crud.class_session import list_class_sessions
+from app.schemas.class_session import _derive_end_time
 
 router = APIRouter(prefix="/schedule", tags=["Schedule"])
 
@@ -30,10 +31,10 @@ async def get_weekly_schedule(
     sessions = []
     for cs in classes:
         session_date = week_start + timedelta(days=cs.day_of_week)
+        start_str = cs.start_time.strftime("%H:%M")
         sessions.append({
             "id": str(cs.id),
-            "title": cs.title or f"{cs.class_type.capitalize()} Class",
-            "class_type": cs.class_type,
+            "name": cs.name,
             "teacher": {
                 "id": str(cs.teacher.id) if cs.teacher else None,
                 "full_name": cs.teacher.full_name if cs.teacher else "Unknown",
@@ -44,8 +45,9 @@ async def get_weekly_schedule(
                 if e.is_active
             ],
             "day_of_week": cs.day_of_week,
-            "start_time": cs.start_time.strftime("%H:%M"),
-            "end_time": cs.end_time.strftime("%H:%M"),
+            "start_time": start_str,
+            "duration_minutes": cs.duration_minutes,
+            "end_time": _derive_end_time(start_str, cs.duration_minutes),
             "date": session_date.isoformat(),
             "is_makeup": cs.is_makeup,
             "attendance_marked": False,

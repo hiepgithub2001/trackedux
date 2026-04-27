@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, Input, Select, DatePicker, InputNumber, Button, Card, Typography, Space, message } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { createStudent, getStudent, updateStudent } from '../../api/students';
 import { listParents } from '../../api/parents';
 import dayjs from 'dayjs';
+import ParentFormModal from './ParentFormModal';
+import { PlusOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -19,6 +21,7 @@ export default function StudentForm() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
+  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
 
   const { data: student } = useQuery({
     queryKey: ['student', id],
@@ -83,16 +86,24 @@ export default function StudentForm() {
             label={t('students.parent')}
             rules={[{ required: true, message: t('validation.required') }]}
           >
-            <Select
-              id="parent-select"
-              placeholder={t('students.parent')}
-              showSearch
-              optionFilterProp="label"
-              options={(parentsData || []).map((p) => ({
-                label: `${p.full_name} (${p.phone})`,
-                value: p.id,
-              }))}
-            />
+            <Space.Compact style={{ width: '100%' }}>
+              <Select
+                id="parent-select"
+                placeholder={t('students.parent')}
+                showSearch
+                optionFilterProp="label"
+                options={(parentsData || []).map((p) => ({
+                  label: `${p.full_name} (${p.phone})`,
+                  value: p.id,
+                }))}
+                style={{ width: '100%' }}
+              />
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => setIsParentModalOpen(true)}
+              />
+            </Space.Compact>
           </Form.Item>
 
           <Form.Item
@@ -184,6 +195,15 @@ export default function StudentForm() {
           </Form.Item>
         </Form>
       </Card>
+
+      <ParentFormModal
+        open={isParentModalOpen}
+        onCancel={() => setIsParentModalOpen(false)}
+        onSuccess={(newParentId) => {
+          setIsParentModalOpen(false);
+          form.setFieldValue('parent_id', newParentId);
+        }}
+      />
     </div>
   );
 }

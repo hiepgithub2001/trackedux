@@ -67,7 +67,8 @@ export default function AttendancePage() {
               style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined }}>
               <Space>
                 <Tag color="blue">{session.start_time} - {session.end_time}</Tag>
-                <span>{session.title || session.class_type}</span>
+                {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
+                <span>{session.name}</span>
                 <span>({session.teacher.full_name})</span>
                 <Tag>{session.students.length} students</Tag>
               </Space>
@@ -77,7 +78,7 @@ export default function AttendancePage() {
       </Card>
 
       {selectedSession && (
-        <Card title={`${t('attendance.markAttendance')}: ${selectedSession.title || selectedSession.class_type}`}>
+        <Card title={`${t('attendance.markAttendance')}: ${selectedSession.name}`}>
           <Table
             dataSource={selectedSession.students}
             rowKey="id"

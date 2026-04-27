@@ -9,29 +9,26 @@ from sqlalchemy.orm import selectinload
 
 from app.models.class_enrollment import ClassEnrollment
 from app.models.class_session import ClassSession
-from app.schemas.class_session import ClassSessionCreate, ClassSessionUpdate
-
-CLASS_TYPE_MAX = {"individual": 1, "pair": 2, "group": 4}
+from app.schemas.class_session import ClassSessionCreate
 
 
 async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> ClassSession:
-    """Create a new class session."""
-    max_students = CLASS_TYPE_MAX.get(data.class_type, 4)
+    """Create a new class session.
+
+    No max-capacity is enforced (clarification 2026-04-27); all student_ids are enrolled.
+    """
     cs = ClassSession(
         teacher_id=data.teacher_id,
-        class_type=data.class_type,
-        title=data.title,
+        name=data.name,
         day_of_week=data.day_of_week,
         start_time=time.fromisoformat(data.start_time),
-        end_time=time.fromisoformat(data.end_time),
+        duration_minutes=data.duration_minutes,
         is_recurring=data.is_recurring,
-        max_students=max_students,
     )
     db.add(cs)
     await db.flush()
 
-    # Enroll initial students
-    for student_id in data.student_ids[:max_students]:
+    for student_id in data.student_ids:
         enrollment = ClassEnrollment(class_session_id=cs.id, student_id=student_id)
         db.add(enrollment)
 
@@ -53,18 +50,15 @@ async def get_class_session_by_id(db: AsyncSession, class_id: UUID) -> ClassSess
 async def list_class_sessions(
     db: AsyncSession,
     teacher_id: UUID | None = None,
-    class_type: str | None = None,
     day_of_week: int | None = None,
     active_only: bool = True,
 ) -> list[ClassSession]:
-    """List class sessions with filters."""
+    """List class sessions with filters (no class_type filter per clarification 2026-04-27)."""
     query = select(ClassSession).options(
         selectinload(ClassSession.teacher), selectinload(ClassSession.enrollments)
     )
     if teacher_id:
         query = query.where(ClassSession.teacher_id == teacher_id)
-    if class_type:
-        query = query.where(ClassSession.class_type == class_type)
     if day_of_week is not None:
         query = query.where(ClassSession.day_of_week == day_of_week)
     if active_only:

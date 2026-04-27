@@ -1,20 +1,26 @@
 """ClassSession Pydantic schemas."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+
+def _derive_end_time(start_time_str: str, duration_minutes: int) -> str:
+    """Compute end time string from a HH:MM start and a duration in minutes."""
+    st = time.fromisoformat(start_time_str)
+    anchor = datetime.combine(date.today(), st)
+    return (anchor + timedelta(minutes=duration_minutes)).time().strftime("%H:%M")
 
 
 class ClassSessionCreate(BaseModel):
     """Schema for creating a class session."""
 
     teacher_id: UUID
-    class_type: str = Field(..., pattern="^(individual|pair|group)$")
-    title: str | None = None
+    name: str = Field(..., min_length=1, max_length=200)
     day_of_week: int = Field(..., ge=0, le=6)
     start_time: str  # HH:MM format
-    end_time: str
+    duration_minutes: int = Field(..., gt=0)
     is_recurring: bool = True
     student_ids: list[UUID] = []
 
@@ -22,10 +28,10 @@ class ClassSessionCreate(BaseModel):
 class ClassSessionUpdate(BaseModel):
     """Schema for updating a class session."""
 
-    title: str | None = None
-    day_of_week: int | None = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    day_of_week: int | None = Field(None, ge=0, le=6)
     start_time: str | None = None
-    end_time: str | None = None
+    duration_minutes: int | None = Field(None, gt=0)
     is_active: bool | None = None
 
 
@@ -40,14 +46,13 @@ class ClassSessionResponse(BaseModel):
 
     id: UUID
     teacher_id: UUID
-    class_type: str
-    title: str | None = None
+    name: str
     day_of_week: int
     start_time: str
-    end_time: str
+    duration_minutes: int
+    end_time: str  # derived: start_time + duration_minutes
     is_recurring: bool
     is_makeup: bool
-    max_students: int
     is_active: bool
     teacher_name: str | None = None
     enrolled_students: list[dict] = []

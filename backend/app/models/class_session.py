@@ -18,20 +18,26 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     teacher_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("teachers.id"), nullable=False, index=True
     )
-    class_type: Mapped[str] = mapped_column(String(20), nullable=False)  # individual, pair, group
-    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, index=True)  # 0=Monday
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
-    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_makeup: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     makeup_for_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True
     )
     specific_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    max_students: Mapped[int] = mapped_column(Integer, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
 
     # Relationships
     teacher = relationship("Teacher", back_populates="classes", lazy="selectin")
     enrollments = relationship("ClassEnrollment", back_populates="class_session", lazy="selectin")
+
+    @property
+    def end_time(self) -> time:
+        """Derived end time = start_time + duration_minutes (wraps within a single day)."""
+        from datetime import datetime, timedelta
+
+        anchor = datetime.combine(date.today(), self.start_time)
+        return (anchor + timedelta(minutes=self.duration_minutes)).time()
