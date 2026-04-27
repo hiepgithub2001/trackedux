@@ -38,6 +38,10 @@ export default function AttendancePage() {
     onSuccess: (res) => {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['student'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
       const renewals = res.data.records?.filter((r) => r.renewal_reminder_triggered);
       if (renewals?.length > 0) {
         messageApi.warning(`${renewals.length} student(s) have ≤2 sessions remaining`);

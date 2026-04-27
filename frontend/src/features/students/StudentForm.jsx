@@ -57,6 +57,7 @@ export default function StudentForm() {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['class'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate(isEdit ? `/students/${id}` : '/students');
     },
     onError: (err) => {

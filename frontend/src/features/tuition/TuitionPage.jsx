@@ -30,6 +30,7 @@ export default function TuitionPage() {
     onSuccess: () => {
       messageApi.success('Payment recorded');
       queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setPaymentModal(null);
     },
     onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),

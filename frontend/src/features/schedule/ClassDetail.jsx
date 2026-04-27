@@ -29,6 +29,7 @@ export default function ClassDetail() {
       messageApi.success(t('common.deleted'));
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate('/classes');
     },
     onError: (err) => {

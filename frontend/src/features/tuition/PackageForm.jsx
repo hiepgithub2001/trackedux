@@ -66,6 +66,7 @@ export default function PackageForm({ open, onCancel }) {
     onSuccess: () => {
       messageApi.success(t('common.save'));
       queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       form.resetFields();
       setIsManualFeeEdit(false);
       onCancel();

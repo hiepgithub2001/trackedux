@@ -49,6 +49,8 @@ export default function StudentDetail() {
     onSuccess: () => {
       messageApi.success('Status updated');
       queryClient.invalidateQueries({ queryKey: ['student', id] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setStatusModal(false);
     },
     onError: (err) => {
