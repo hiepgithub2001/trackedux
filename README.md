@@ -1,4 +1,4 @@
-# TrackedUX — Piano Center Management System
+# TrackEduX — Piano Center Management System
 
 A bilingual (Vietnamese/English) piano learning center management system. Built with FastAPI (Python) and React (Vite). Installable as a Progressive Web App (PWA).
 
@@ -166,7 +166,7 @@ npm run test:e2e       # Playwright smoke (login → schedule → attendance)
 
 ## PWA Mobile Support
 
-TrackedUX is installable as a Progressive Web App (PWA) on Android and iOS devices.
+TrackEduX is installable as a Progressive Web App (PWA) on Android and iOS devices.
 
 ### Install on Mobile
 

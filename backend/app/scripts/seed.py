@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.core.security import hash_password
 from app.db.session import async_session_factory
 from app.models.user import User
+from app.crud.lesson_kind import find_or_create_lesson_kind
 
 
 async def seed_admin():
@@ -32,11 +33,20 @@ async def seed_admin():
         await db.commit()
         print("✅ Admin user created (admin / admin123)")
 
+async def seed_lesson_kinds():
+    """Seed initial lesson kinds."""
+    async with async_session_factory() as db:
+        kinds = ["Beginner", "Elementary", "Intermediate", "Advanced"]
+        for kind in kinds:
+            await find_or_create_lesson_kind(db, kind)
+        print("✅ Lesson kinds seeded")
+
 
 async def main():
     """Run all seed operations."""
     print("🌱 Seeding database...")
     await seed_admin()
+    await seed_lesson_kinds()
     print("🌱 Seeding complete!")
 
 

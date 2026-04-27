@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TrackedUX - Piano Center Management",
+    title="TrackEduX - Piano Center Management",
     description="API for managing piano learning center operations",
     version="0.1.0",
     lifespan=lifespan,

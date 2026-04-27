@@ -2,6 +2,7 @@
 from app.models.attendance import AttendanceRecord  # noqa: F401
 from app.models.class_enrollment import ClassEnrollment  # noqa: F401
 from app.models.class_session import ClassSession  # noqa: F401
+from app.models.lesson_kind import LessonKind  # noqa: F401
 from app.models.package import Package  # noqa: F401
 from app.models.payment_record import PaymentRecord  # noqa: F401
 from app.models.renewal_reminder import RenewalReminder  # noqa: F401

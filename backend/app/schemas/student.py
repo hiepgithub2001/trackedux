@@ -26,7 +26,7 @@ class StudentCreate(BaseModel):
     nickname: str | None = None
     date_of_birth: date | None = None
     age: int | None = None
-    skill_level: str = Field(..., min_length=1, max_length=50)
+
     personality_notes: str | None = None
     learning_speed: str | None = None
     current_issues: str | None = None
@@ -41,7 +41,7 @@ class StudentUpdate(BaseModel):
     nickname: str | None = None
     date_of_birth: date | None = None
     age: int | None = None
-    skill_level: str | None = None
+
     personality_notes: str | None = None
     learning_speed: str | None = None
     current_issues: str | None = None
@@ -63,7 +63,7 @@ class StudentResponse(BaseModel):
     nickname: str | None = None
     date_of_birth: date | None = None
     age: int | None = None
-    skill_level: str
+
     personality_notes: str | None = None
     learning_speed: str | None = None
     current_issues: str | None = None
@@ -83,7 +83,7 @@ class StudentListItem(BaseModel):
     name: str
     nickname: str | None = None
     age: int | None = None
-    skill_level: str
+
     enrollment_status: str
     enrolled_at: date
     contact_name: str | None = None

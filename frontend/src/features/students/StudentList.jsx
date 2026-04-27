@@ -20,7 +20,6 @@ export default function StudentList() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
     status: undefined,
-    skill_level: undefined,
     search: '',
     page: 1,
     page_size: 20,
@@ -52,12 +51,7 @@ export default function StudentList() {
       key: 'age',
       width: 80,
     },
-    {
-      title: t('students.skillLevel'),
-      dataIndex: 'skill_level',
-      key: 'skill_level',
-      width: 130,
-    },
+
     {
       title: t('students.enrollmentStatus'),
       dataIndex: 'enrollment_status',
@@ -137,20 +131,7 @@ export default function StudentList() {
               { label: t('students.statusWithdrawn'), value: 'withdrawn' },
             ]}
           />
-          <Select
-            id="skill-filter"
-            placeholder={t('students.skillLevel')}
-            value={filters.skill_level}
-            onChange={(val) => setFilters((prev) => ({ ...prev, skill_level: val, page: 1 }))}
-            style={{ width: 160 }}
-            allowClear
-            options={[
-              { label: t('students.skillBeginner'), value: 'Beginner' },
-              { label: t('students.skillElementary'), value: 'Elementary' },
-              { label: t('students.skillIntermediate'), value: 'Intermediate' },
-              { label: t('students.skillAdvanced'), value: 'Advanced' },
-            ]}
-          />
+
         </Space>
 
         <Table

@@ -40,11 +40,26 @@
     "dashboard": "Tổng quan",
     "students": "Học sinh",
     "schedule": "Lịch học",
+    "classes": "Lớp học",
     "attendance": "Điểm danh",
     "teachers": "Giáo viên",
     "tuition": "Học phí",
     "reports": "Báo cáo",
     "notifications": "Thông báo"
+  },
+  "classes": {
+    "title": "Danh sách Lớp học",
+    "displayId": "Mã Lớp",
+    "teacher": "Giáo viên",
+    "weekday": "Thứ",
+    "time": "Giờ học",
+    "duration": "Thời lượng",
+    "enrolled": "Sĩ số",
+    "feePerLesson": "Học phí / Buổi",
+    "createClass": "Tạo Lớp",
+    "noClasses": "Chưa có lớp học nào",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa lớp này?",
+    "deleteBlocked": "Không thể xóa lớp đang có gói học viên. Vui lòng vô hiệu hóa các gói trước."
   },
   "students": {
     "title": "Quản lý Học sinh",
@@ -56,6 +71,7 @@
     "skillLevel": "Trình độ",
     "personalityNotes": "Tính cách",
     "learningSpeed": "Tốc độ học",
+    "notesPlaceholder": "VD: hiện ở trình độ trung cấp, gặp khó khăn với đọc bản nhạc",
     "currentIssues": "Vấn đề hiện tại",
     "enrollmentStatus": "Trạng thái",
     "enrolledAt": "Ngày nhập học",
@@ -143,6 +159,19 @@
     "sessions24": "24 buổi",
     "sessions36": "36 buổi"
   },
+  "package": {
+    "class": "Lớp học",
+    "lessonKind": "Loại bài học",
+    "numberOfLessons": "Số buổi",
+    "tuitionFee": "Học phí",
+    "assignPackage": "Chỉ định Gói học",
+    "resetAutoFill": "Tự động tính",
+    "notEnrolled": "Học sinh chưa được xếp vào lớp này.",
+    "createKindOption": "Tạo mới: {{kind}}"
+  },
+  "lessonKind": {
+    "title": "Loại bài học"
+  },
   "dashboard": {
     "title": "Tổng quan",
     "activeStudents": "Học sinh đang học",
@@ -188,7 +217,7 @@
   },
   "pwa": {
     "installTitle": "Cài đặt ứng dụng",
-    "installMessage": "Cài đặt TrackedUX để trải nghiệm tốt hơn",
+    "installMessage": "Cài đặt TrackEduX để trải nghiệm tốt hơn",
     "install": "Cài đặt",
     "dismiss": "Bỏ qua",
     "offline": "Mất kết nối",
