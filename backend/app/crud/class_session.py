@@ -102,7 +102,8 @@ async def update_class_session(
     if cs is None:
         return None
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    student_ids = data.student_ids
+    for field, value in data.model_dump(exclude_unset=True, exclude={"student_ids"}).items():
         if field == "start_time" and value is not None:
             setattr(cs, field, time.fromisoformat(value))
         elif field == "lesson_kind_name":
@@ -114,8 +115,25 @@ async def update_class_session(
         else:
             setattr(cs, field, value)
 
+    if student_ids is not None:
+        # Sync enrollments
+        existing = {e.student_id: e for e in cs.enrollments}
+        new_set = set(student_ids)
+
+        # Deactivate removed ones
+        for sid, e in existing.items():
+            if sid not in new_set:
+                e.is_active = False
+            else:
+                e.is_active = True
+
+        # Add new ones
+        for sid in new_set:
+            if sid not in existing:
+                db.add(ClassEnrollment(class_session_id=cs.id, student_id=sid))
+
     await db.commit()
-    await db.refresh(cs)
+    await db.refresh(cs, ["enrollments"])
     return cs
 
 
@@ -147,7 +165,7 @@ async def get_class_session_by_id(db: AsyncSession, class_id: UUID) -> ClassSess
         select(ClassSession)
         .options(
             selectinload(ClassSession.teacher),
-            selectinload(ClassSession.enrollments),
+            selectinload(ClassSession.enrollments).selectinload(ClassEnrollment.student),
             selectinload(ClassSession.lesson_kind)
         )
         .where(ClassSession.id == class_id)
@@ -164,7 +182,7 @@ async def list_class_sessions(
     """List class sessions with filters (no class_type filter per clarification 2026-04-27)."""
     query = select(ClassSession).options(
         selectinload(ClassSession.teacher),
-        selectinload(ClassSession.enrollments),
+        selectinload(ClassSession.enrollments).selectinload(ClassEnrollment.student),
         selectinload(ClassSession.lesson_kind)
     )
     if teacher_id:

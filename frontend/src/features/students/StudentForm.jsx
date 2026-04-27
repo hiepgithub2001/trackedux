@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createStudent, getStudent, updateStudent } from '../../api/students';
+import { listClasses } from '../../api/classes';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -26,7 +27,10 @@ export default function StudentForm() {
     enabled: isEdit,
   });
 
-
+  const { data: classes, isLoading: isLoadingClasses } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => listClasses().then((r) => r.data),
+  });
 
   useEffect(() => {
     if (student && isEdit) {
@@ -49,6 +53,9 @@ export default function StudentForm() {
     onSuccess: () => {
       messageApi.success(isEdit ? 'Student updated' : 'Student created');
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['class'] });
       navigate(isEdit ? `/students/${id}` : '/students');
     },
     onError: (err) => {
@@ -82,7 +89,7 @@ export default function StudentForm() {
           layout="vertical"
           onFinish={(values) => mutation.mutate(values)}
           onFinishFailed={onFinishFailed}
-          initialValues={{ enrollment_status: 'trial', contact: {} }}
+          initialValues={{ enrollment_status: 'trial', contact: {}, class_ids: [] }}
         >
           <Form.Item
             name="name"
@@ -106,7 +113,22 @@ export default function StudentForm() {
             </Form.Item>
           </Space>
 
-
+          <Form.Item name="class_ids" label={t('schedule.title')}>
+            <Select
+              id="student-classes-select"
+              mode="multiple"
+              allowClear
+              placeholder={t('common.select')}
+              loading={isLoadingClasses}
+              options={classes?.map(c => ({
+                label: `${c.display_id} - ${c.name}`,
+                value: c.id
+              })) || []}
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+            />
+          </Form.Item>
 
           <Form.Item name="learning_speed" label={t('students.learningSpeed')}>
             <Select

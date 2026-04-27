@@ -5,27 +5,39 @@ from uuid import UUID
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.models.class_enrollment import ClassEnrollment
 from app.models.student import Student
 from app.schemas.student import StudentCreate, StudentUpdate
 
 
 async def create_student(db: AsyncSession, data: StudentCreate) -> Student:
     """Create a new student."""
+    class_ids = data.class_ids or []
+    student_data = data.model_dump(exclude={"class_ids"})
+    
     student = Student(
-        **data.model_dump(),
+        **student_data,
         enrolled_at=date.today(),
     )
     db.add(student)
+    await db.flush()
+    
+    for cid in class_ids:
+        db.add(ClassEnrollment(class_session_id=cid, student_id=student.id))
+        
     await db.commit()
-    await db.refresh(student)
+    await db.refresh(student, ["enrollments"])
     return student
 
 
 async def get_student_by_id(db: AsyncSession, student_id: UUID) -> Student | None:
     """Get a student by ID with parent relationship."""
     result = await db.execute(
-        select(Student).where(Student.id == student_id)
+        select(Student)
+        .options(selectinload(Student.enrollments))
+        .where(Student.id == student_id)
     )
     return result.scalar_one_or_none()
 
@@ -82,10 +94,30 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
     if student is None:
         return None
 
-    update_data = data.model_dump(exclude_unset=True)
+    class_ids = data.class_ids
+    update_data = data.model_dump(exclude_unset=True, exclude={"class_ids"})
+    
     for field, value in update_data.items():
         setattr(student, field, value)
 
+    if class_ids is not None:
+        # Sync enrollments
+        existing = {e.class_session_id: e for e in student.enrollments}
+        new_set = set(class_ids)
+        
+        # Deactivate removed ones
+        for cid, e in existing.items():
+            if cid not in new_set:
+                e.is_active = False
+            else:
+                e.is_active = True
+                
+        # Add new ones
+        for cid in new_set:
+            if cid not in existing:
+                db.add(ClassEnrollment(class_session_id=cid, student_id=student.id))
+
     await db.commit()
-    await db.refresh(student)
+    # Refresh to get updated enrollments
+    await db.refresh(student, ["enrollments"])
     return student

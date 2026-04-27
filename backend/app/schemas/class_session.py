@@ -37,6 +37,7 @@ class ClassSessionUpdate(BaseModel):
     tuition_fee_per_lesson: int | None = Field(None, ge=1, le=100_000_000)
     lesson_kind_name: str | None = Field(None, min_length=1, max_length=100)
     is_active: bool | None = None
+    student_ids: list[UUID] | None = None
 
 
 class EnrollRequest(BaseModel):

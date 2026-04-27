@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { getStudent, changeStudentStatus } from '../../api/students';
 import { listPackages } from '../../api/packages';
+import { listClasses } from '../../api/classes';
 import { useAuth } from '../../auth/AuthContext';
 
 const { Title, Text } = Typography;
@@ -36,6 +37,11 @@ export default function StudentDetail() {
   const { data: packages, isLoading: isLoadingPackages } = useQuery({
     queryKey: ['packages', { student_id: id }],
     queryFn: () => listPackages({ student_id: id }).then((r) => r.data),
+  });
+
+  const { data: classes, isLoading: isLoadingClasses } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => listClasses().then((r) => r.data),
   });
 
   const statusMutation = useMutation({
@@ -101,7 +107,21 @@ export default function StudentDetail() {
     {
       key: 'classes',
       label: t('schedule.title'),
-      children: <Text type="secondary">Coming soon...</Text>,
+      children: (
+        <Table
+          size="small"
+          dataSource={(classes || []).filter(c => student.class_ids?.includes(c.id))}
+          rowKey="id"
+          loading={isLoadingClasses}
+          columns={[
+            { title: t('schedule.name'), dataIndex: 'name', key: 'name' },
+            { title: t('schedule.teacher'), dataIndex: 'teacher_name', key: 'teacher_name' },
+            { title: t('schedule.dayOfWeek'), dataIndex: 'day_of_week', key: 'day_of_week', render: val => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][val] },
+            { title: t('schedule.startTime'), dataIndex: 'start_time', key: 'start_time' },
+            { title: t('schedule.duration'), dataIndex: 'duration_minutes', key: 'duration_minutes', render: val => `${val} min` },
+          ]}
+        />
+      ),
     },
     {
       key: 'attendance',
@@ -164,7 +184,7 @@ export default function StudentDetail() {
               id="edit-student-btn"
               type="primary"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/students/${id}`, { state: { edit: true } })}
+              onClick={() => navigate(`/students/${id}/edit`)}
             >
               {t('common.edit')}
             </Button>

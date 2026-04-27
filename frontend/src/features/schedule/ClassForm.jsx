@@ -51,7 +51,7 @@ export default function ClassForm() {
         tuition_fee_per_lesson: values.tuition_fee_per_lesson,
         lesson_kind_name: values.lesson_kind_name,
         is_recurring: values.is_recurring,
-        ...(!isEdit && { student_ids: values.student_ids || [] }),
+        student_ids: values.student_ids || [],
       };
       if (isEdit) {
         return updateClass(id, payload);
@@ -62,6 +62,9 @@ export default function ClassForm() {
       messageApi.success(isEdit ? t('common.updated') : t('schedule.created'));
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['class'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student'] });
       navigate(isEdit ? `/classes/${id}` : '/classes');
     },
     onError: (err) => {
@@ -151,17 +154,15 @@ export default function ClassForm() {
               parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
             />
           </Form.Item>
-          {!isEdit && (
-            <Form.Item name="student_ids" label={t('schedule.students')}>
-              <Select
-                id="class-students-select"
-                mode="multiple"
-                showSearch
-                optionFilterProp="label"
-                options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))}
-              />
-            </Form.Item>
-          )}
+          <Form.Item name="student_ids" label={t('schedule.students')}>
+            <Select
+              id="class-students-select"
+              mode="multiple"
+              showSearch
+              optionFilterProp="label"
+              options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))}
+            />
+          </Form.Item>
           <Form.Item name="is_recurring" valuePropName="checked" label={t('schedule.recurring')}>
             <Switch />
           </Form.Item>

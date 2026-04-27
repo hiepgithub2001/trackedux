@@ -3,8 +3,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, computed_field
 
 class ContactInfo(BaseModel):
     """Schema for student contact information."""
@@ -32,6 +31,7 @@ class StudentCreate(BaseModel):
     current_issues: str | None = None
     enrollment_status: str = Field(default="trial", pattern="^(trial|active|paused|withdrawn)$")
     contact: ContactInfo | None = None
+    class_ids: list[UUID] | None = None
 
 
 class StudentUpdate(BaseModel):
@@ -46,6 +46,7 @@ class StudentUpdate(BaseModel):
     learning_speed: str | None = None
     current_issues: str | None = None
     contact: ContactInfo | None = None
+    class_ids: list[UUID] | None = None
 
 
 class StudentStatusChange(BaseModel):
@@ -72,6 +73,7 @@ class StudentResponse(BaseModel):
     contact: ContactInfo | None = None
     created_at: datetime
     updated_at: datetime
+    class_ids: list[UUID] = []
 
     model_config = {"from_attributes": True}
 

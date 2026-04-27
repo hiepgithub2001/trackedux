@@ -1,5 +1,6 @@
 """Student SQLAlchemy ORM model."""
 
+import uuid
 from datetime import date
 
 from sqlalchemy import Date, Integer, String, Text
@@ -30,3 +31,9 @@ class Student(Base, UUIDMixin, TimestampMixin):
 
     # Relationships
     status_history = relationship("StudentStatusHistory", back_populates="student", lazy="selectin")
+    enrollments = relationship("ClassEnrollment", back_populates="student", lazy="selectin")
+
+    @property
+    def class_ids(self) -> list[uuid.UUID]:
+        """Return the list of active class IDs for this student."""
+        return [e.class_session_id for e in self.enrollments if getattr(e, "is_active", False)]
