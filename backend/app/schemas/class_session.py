@@ -21,6 +21,8 @@ class ClassSessionCreate(BaseModel):
     day_of_week: int = Field(..., ge=0, le=6)
     start_time: str  # HH:MM format
     duration_minutes: int = Field(..., gt=0)
+    tuition_fee_per_lesson: int | None = Field(None, ge=1, le=100_000_000)
+    lesson_kind_name: str | None = Field(None, min_length=1, max_length=100)
     is_recurring: bool = True
     student_ids: list[UUID] = []
 
@@ -32,6 +34,8 @@ class ClassSessionUpdate(BaseModel):
     day_of_week: int | None = Field(None, ge=0, le=6)
     start_time: str | None = None
     duration_minutes: int | None = Field(None, gt=0)
+    tuition_fee_per_lesson: int | None = Field(None, ge=1, le=100_000_000)
+    lesson_kind_name: str | None = Field(None, min_length=1, max_length=100)
     is_active: bool | None = None
 
 
@@ -55,6 +59,11 @@ class ClassSessionResponse(BaseModel):
     is_makeup: bool
     is_active: bool
     teacher_name: str | None = None
+    display_id: str | None = None
+    enrolled_count: int = 0
+    tuition_fee_per_lesson: int | None = None
+    lesson_kind_id: UUID | None = None
+    lesson_kind_name: str | None = None
     enrolled_students: list[dict] = []
     created_at: datetime
     updated_at: datetime

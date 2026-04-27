@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, time
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String, Time
+from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Integer, String, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,10 +22,14 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False, index=True)  # 0=Monday
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    tuition_fee_per_lesson: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_makeup: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     makeup_for_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True
+    )
+    lesson_kind_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lesson_kinds.id"), nullable=True, index=True
     )
     specific_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
@@ -33,6 +37,8 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     # Relationships
     teacher = relationship("Teacher", back_populates="classes", lazy="selectin")
     enrollments = relationship("ClassEnrollment", back_populates="class_session", lazy="selectin")
+    packages = relationship("Package", back_populates="class_session", lazy="noload")
+    lesson_kind = relationship("LessonKind", lazy="selectin")
 
     @property
     def end_time(self) -> time:

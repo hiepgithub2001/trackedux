@@ -3,13 +3,63 @@
 from datetime import time
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.class_enrollment import ClassEnrollment
 from app.models.class_session import ClassSession
-from app.schemas.class_session import ClassSessionCreate
+from app.models.package import Package
+from app.schemas.class_session import ClassSessionCreate, ClassSessionUpdate
+from app.crud.lesson_kind import find_or_create_lesson_kind
+
+# ── Display ID utilities ──────────────────────────────────────────────
+
+DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def _display_id_key(cs: ClassSession) -> tuple[str, str, str]:
+    """Return the grouping key for display ID disambiguation."""
+    teacher_first = (cs.teacher.full_name or "").split()[0] if cs.teacher else "Unknown"
+    day = DAY_ABBR[cs.day_of_week] if 0 <= cs.day_of_week <= 6 else "?"
+    t = cs.start_time.strftime("%H%M") if cs.start_time else "0000"
+    return (teacher_first, day, t)
+
+
+def compute_display_ids(classes: list[ClassSession]) -> dict[UUID, str]:
+    """Compute human-readable display IDs for a list of class sessions.
+
+    Groups by (TeacherFirstName, Weekday3, HHMM) and assigns disambiguator
+    suffix (-2, -3, …) for collisions, ordered by created_at.
+    """
+    from collections import defaultdict
+
+    groups: dict[tuple, list[ClassSession]] = defaultdict(list)
+    for cs in classes:
+        groups[_display_id_key(cs)].append(cs)
+
+    result: dict[UUID, str] = {}
+    for key, members in groups.items():
+        members.sort(key=lambda c: c.created_at)
+        base = f"{key[0]}-{key[1]}-{key[2]}"
+        for idx, cs in enumerate(members):
+            if idx == 0:
+                result[cs.id] = base
+            else:
+                result[cs.id] = f"{base}-{idx + 1}"
+    return result
+
+
+def compute_single_display_id(
+    cs: ClassSession, all_classes: list[ClassSession]
+) -> str:
+    """Convenience: compute display ID for a single class against its peers."""
+    ids = compute_display_ids(all_classes)
+    return ids.get(cs.id, "Unknown")
+
+
+# ── CRUD operations ───────────────────────────────────────────────────
 
 
 async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> ClassSession:
@@ -17,12 +67,19 @@ async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> Cl
 
     No max-capacity is enforced (clarification 2026-04-27); all student_ids are enrolled.
     """
+    lesson_kind_id = None
+    if data.lesson_kind_name:
+        lk = await find_or_create_lesson_kind(db, data.lesson_kind_name)
+        lesson_kind_id = lk.id
+
     cs = ClassSession(
         teacher_id=data.teacher_id,
         name=data.name,
         day_of_week=data.day_of_week,
         start_time=time.fromisoformat(data.start_time),
         duration_minutes=data.duration_minutes,
+        tuition_fee_per_lesson=data.tuition_fee_per_lesson,
+        lesson_kind_id=lesson_kind_id,
         is_recurring=data.is_recurring,
     )
     db.add(cs)
@@ -37,11 +94,62 @@ async def create_class_session(db: AsyncSession, data: ClassSessionCreate) -> Cl
     return cs
 
 
+async def update_class_session(
+    db: AsyncSession, class_id: UUID, data: ClassSessionUpdate
+) -> ClassSession | None:
+    """Update a class session's mutable fields."""
+    cs = await get_class_session_by_id(db, class_id)
+    if cs is None:
+        return None
+
+    for field, value in data.model_dump(exclude_unset=True).items():
+        if field == "start_time" and value is not None:
+            setattr(cs, field, time.fromisoformat(value))
+        elif field == "lesson_kind_name":
+            if value:
+                lk = await find_or_create_lesson_kind(db, value)
+                cs.lesson_kind_id = lk.id
+            else:
+                cs.lesson_kind_id = None
+        else:
+            setattr(cs, field, value)
+
+    await db.commit()
+    await db.refresh(cs)
+    return cs
+
+
+async def delete_class_session(db: AsyncSession, class_id: UUID) -> None:
+    """Delete a class if no packages reference it (active or historical)."""
+    cs = await get_class_session_by_id(db, class_id)
+    if cs is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Class not found"
+        )
+
+    # Check for referencing packages (any status)
+    pkg_count = await db.execute(
+        select(func.count()).where(Package.class_session_id == class_id)
+    )
+    if (pkg_count.scalar() or 0) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete class with associated packages. Deactivate referencing packages first.",
+        )
+
+    await db.delete(cs)
+    await db.commit()
+
+
 async def get_class_session_by_id(db: AsyncSession, class_id: UUID) -> ClassSession | None:
     """Get class session by ID with enrollments."""
     result = await db.execute(
         select(ClassSession)
-        .options(selectinload(ClassSession.teacher), selectinload(ClassSession.enrollments))
+        .options(
+            selectinload(ClassSession.teacher),
+            selectinload(ClassSession.enrollments),
+            selectinload(ClassSession.lesson_kind)
+        )
         .where(ClassSession.id == class_id)
     )
     return result.scalar_one_or_none()
@@ -55,7 +163,9 @@ async def list_class_sessions(
 ) -> list[ClassSession]:
     """List class sessions with filters (no class_type filter per clarification 2026-04-27)."""
     query = select(ClassSession).options(
-        selectinload(ClassSession.teacher), selectinload(ClassSession.enrollments)
+        selectinload(ClassSession.teacher),
+        selectinload(ClassSession.enrollments),
+        selectinload(ClassSession.lesson_kind)
     )
     if teacher_id:
         query = query.where(ClassSession.teacher_id == teacher_id)

@@ -1,4 +1,4 @@
-"""Package Pydantic schemas."""
+"""Package Pydantic schemas — restructured for flexible course packages."""
 from datetime import date, datetime
 from uuid import UUID
 
@@ -7,24 +7,25 @@ from pydantic import BaseModel, Field
 
 class PackageCreate(BaseModel):
     student_id: UUID
-    total_sessions: int = Field(..., ge=1)
-    package_type: str  # 12, 24, 36, custom
-    price: int = Field(..., ge=0)
+    class_session_id: UUID
+    number_of_lessons: int = Field(..., ge=1, le=500)
+    tuition_fee: int = Field(..., ge=1, le=1_000_000_000)
 
 
 class PackageResponse(BaseModel):
     id: UUID
     student_id: UUID
-    total_sessions: int
+    student_name: str | None = None
+    class_session_id: UUID
+    class_display_id: str | None = None
+    number_of_lessons: int
     remaining_sessions: int
-    package_type: str
-    price: int
+    price: int | None = None  # None when hidden from non-admin
     payment_status: str
     is_active: bool
     reminder_status: str
     started_at: date
     expired_at: date | None = None
-    student_name: str | None = None
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}

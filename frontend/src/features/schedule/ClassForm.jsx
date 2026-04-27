@@ -1,11 +1,14 @@
-import { Form, Select, Input, TimePicker, InputNumber, Switch, Button, Card, Typography, Space, message } from 'antd';
+import { Form, Select, Input, TimePicker, InputNumber, Switch, Button, Card, Typography, Space, message, Spin, AutoComplete } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createClass } from '../../api/classes';
+import { createClass, updateClass, getClass } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { listStudents } from '../../api/students';
+import { fetchLessonKinds } from '../../api/lessonKinds';
+import dayjs from 'dayjs';
+import { useState } from 'react';
 
 const { Title } = Typography;
 const DAYS = [
@@ -14,13 +17,28 @@ const DAYS = [
 ];
 
 export default function ClassForm() {
+  const { id } = useParams();
+  const isEdit = !!id;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
+  const [lessonKindSearch, setLessonKindSearch] = useState('');
 
   const { data: teachers } = useQuery({ queryKey: ['teachers'], queryFn: () => listTeachers().then((r) => r.data) });
   const { data: studentsData } = useQuery({ queryKey: ['students', { page_size: 100 }], queryFn: () => listStudents({ page_size: 100 }).then((r) => r.data) });
+
+  const { data: classData, isLoading: isClassLoading } = useQuery({
+    queryKey: ['class', id],
+    queryFn: () => getClass(id).then((r) => r.data),
+    enabled: isEdit,
+  });
+
+  const { data: lessonKindsData } = useQuery({
+    queryKey: ['lessonKinds', lessonKindSearch],
+    queryFn: () => fetchLessonKinds(lessonKindSearch).then((r) => r.data),
+  });
 
   const mutation = useMutation({
     mutationFn: (values) => {
@@ -30,39 +48,62 @@ export default function ClassForm() {
         day_of_week: values.day_of_week,
         start_time: values.start_time.format('HH:mm'),
         duration_minutes: values.duration_minutes,
+        tuition_fee_per_lesson: values.tuition_fee_per_lesson,
+        lesson_kind_name: values.lesson_kind_name,
         is_recurring: values.is_recurring,
-        student_ids: values.student_ids || [],
+        ...(!isEdit && { student_ids: values.student_ids || [] }),
       };
+      if (isEdit) {
+        return updateClass(id, payload);
+      }
       return createClass(payload);
     },
     onSuccess: () => {
-      messageApi.success(t('schedule.created'));
+      messageApi.success(isEdit ? t('common.updated') : t('schedule.created'));
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
-      navigate('/schedule');
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      navigate(isEdit ? `/classes/${id}` : '/classes');
     },
     onError: (err) => {
       const detail = err.response?.data?.detail;
       if (typeof detail === 'object' && detail.conflicts) {
         messageApi.error(`${t('schedule.conflict')}: ${detail.conflicts.map((c) => c.message).join('; ')}`);
       } else {
-        messageApi.error(detail || t('schedule.createError'));
+        messageApi.error(detail || (isEdit ? t('common.updateError') : t('schedule.createError')));
       }
     },
   });
+
+  if (isEdit && isClassLoading) return <Spin size="large" />;
+
+  const initialValues = isEdit && classData ? {
+    ...classData,
+    start_time: dayjs(classData.start_time, 'HH:mm'),
+    student_ids: classData.enrolled_students?.map(s => s.id) || [],
+  } : {
+    is_recurring: true, 
+    duration_minutes: 60,
+  };
+
+  const lessonKindOptions = (lessonKindsData || []).map(k => ({ value: k.name }));
+  if (lessonKindSearch && !lessonKindsData?.some(k => k.name.toLowerCase() === lessonKindSearch.toLowerCase())) {
+    lessonKindOptions.push({ value: lessonKindSearch, label: t('package.createKindOption', { kind: lessonKindSearch }) });
+  }
 
   return (
     <div className="fade-in">
       {contextHolder}
       <Space style={{ marginBottom: 24 }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>{t('common.back')}</Button>
-        <Title level={3} style={{ margin: 0 }}>{t('schedule.createClass')}</Title>
+        <Title level={3} style={{ margin: 0 }}>{isEdit ? t('common.edit') : t('schedule.createClass')}</Title>
       </Space>
       <Card style={{ maxWidth: 640 }}>
         <Form
+          form={form}
           id="class-form"
           layout="vertical"
           onFinish={(v) => mutation.mutate(v)}
-          initialValues={{ is_recurring: true, duration_minutes: 60 }}
+          initialValues={initialValues}
         >
           <Form.Item name="name" label={t('schedule.name')} rules={[{ required: true, message: t('validation.required') }]}>
             <Input id="class-name-input" placeholder={t('schedule.namePlaceholder')} maxLength={200} />
@@ -88,15 +129,39 @@ export default function ClassForm() {
           >
             <InputNumber id="class-duration-input" min={1} max={600} step={15} style={{ width: '100%' }} addonAfter={t('schedule.minutes')} />
           </Form.Item>
-          <Form.Item name="student_ids" label={t('schedule.students')}>
-            <Select
-              id="class-students-select"
-              mode="multiple"
-              showSearch
-              optionFilterProp="label"
-              options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))}
+          <Form.Item name="lesson_kind_name" label={t('package.lessonKind')} rules={[{ required: true }]}>
+            <AutoComplete
+              options={lessonKindOptions}
+              onSearch={setLessonKindSearch}
+              placeholder={t('package.lessonKind')}
             />
           </Form.Item>
+          <Form.Item
+            name="tuition_fee_per_lesson"
+            label={t('classes.feePerLesson')}
+            rules={[{ required: true, type: 'number', min: 1, message: t('validation.required') }]}
+          >
+            <InputNumber 
+              id="class-form-tuition-fee-per-lesson" 
+              min={1} 
+              max={100000000} 
+              style={{ width: '100%' }} 
+              addonAfter="VND"
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+            />
+          </Form.Item>
+          {!isEdit && (
+            <Form.Item name="student_ids" label={t('schedule.students')}>
+              <Select
+                id="class-students-select"
+                mode="multiple"
+                showSearch
+                optionFilterProp="label"
+                options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))}
+              />
+            </Form.Item>
+          )}
           <Form.Item name="is_recurring" valuePropName="checked" label={t('schedule.recurring')}>
             <Switch />
           </Form.Item>
