@@ -53,6 +53,7 @@ export default function StudentForm() {
     onSuccess: () => {
       messageApi.success(isEdit ? 'Student updated' : 'Student created');
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student'] });
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['class'] });
