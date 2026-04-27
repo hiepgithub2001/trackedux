@@ -1,5 +1,6 @@
 """Dashboard API route."""
 from fastapi import APIRouter
+
 from app.core.deps import CurrentUser, DbSession
 from app.services.dashboard_service import get_dashboard_metrics
 

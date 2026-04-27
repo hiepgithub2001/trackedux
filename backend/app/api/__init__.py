@@ -1,14 +1,15 @@
 """API router registry — includes all route modules under /api/v1."""
 from fastapi import APIRouter
+
+from app.api.attendance import router as attendance_router
 from app.api.auth import router as auth_router
+from app.api.classes import router as classes_router
+from app.api.dashboard import router as dashboard_router
+from app.api.packages import router as packages_router
 from app.api.parents import router as parents_router
+from app.api.schedule import router as schedule_router
 from app.api.students import router as students_router
 from app.api.teachers import router as teachers_router
-from app.api.classes import router as classes_router
-from app.api.schedule import router as schedule_router
-from app.api.attendance import router as attendance_router
-from app.api.packages import router as packages_router
-from app.api.dashboard import router as dashboard_router
 
 api_router = APIRouter(prefix="/api/v1")
 

@@ -54,7 +54,7 @@ async def get_students(
                 skill_level=s.skill_level,
                 enrollment_status=s.enrollment_status,
                 enrolled_at=s.enrolled_at,
-                parent_name=s.parent.full_name if s.parent else None,
+                contact_name=(s.contact or {}).get("name") if s.contact else None,
             )
         )
 

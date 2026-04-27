@@ -1,7 +1,7 @@
 """ClassEnrollment SQLAlchemy ORM model (join table)."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -26,7 +26,7 @@ class ClassEnrollment(Base, UUIDMixin):
     )
     enrolled_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         server_default=func.now(),
         nullable=False,
     )

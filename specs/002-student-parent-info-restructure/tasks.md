@@ -28,7 +28,7 @@ description: "Task list for Student & Parent Info Restructure"
 
 **Purpose**: Confirm the dev environment is ready for backend + frontend changes.
 
-- [ ] T001 Verify backend dev environment is ready: PostgreSQL reachable, `alembic current` runs cleanly from `backend/`, frontend dev server boots via `npm run dev` in `frontend/`
+- [X] T001 Verify backend dev environment is ready: PostgreSQL reachable, `alembic current` runs cleanly from `backend/`, frontend dev server boots via `npm run dev` in `frontend/`
 
 ---
 
@@ -38,13 +38,13 @@ description: "Task list for Student & Parent Info Restructure"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Update `Student` model in `backend/app/models/student.py`: add `contact: Mapped[dict | None] = mapped_column(JSONB, nullable=True)` (import `JSONB` from `sqlalchemy.dialects.postgresql`); remove `parent_id` column and the `parent = relationship("Parent", ...)` line
-- [ ] T003 [P] Update `Parent` model in `backend/app/models/parent.py`: remove the `students = relationship("Student", back_populates="parent", lazy="selectin")` line (no FK from students anymore)
-- [ ] T004 Update Pydantic schemas in `backend/app/schemas/student.py`: add `ContactInfo` model (fields: `name`, `relationship`, `phone`, `phone_secondary`, `email`, `address`, `zalo_id`, `notes` — all `str | None = None`); update `StudentCreate` (remove `parent_id`, add `contact: ContactInfo | None = None`); update `StudentUpdate` (add `contact: ContactInfo | None = None`); update `StudentResponse` (remove `parent_id`, add `contact: ContactInfo | None = None`); update `StudentListItem` (rename `parent_name` → `contact_name`)
-- [ ] T005 Update student CRUD in `backend/app/crud/student.py`: remove all `selectinload(Student.parent)` calls in `get_student_by_id` and `list_students`; ensure `create_student` writes the `contact` dict from `data.contact.model_dump() if data.contact else None`; ensure `update_student` writes `contact` similarly when present in the update payload
-- [ ] T006 Update students API in `backend/app/api/students.py`: replace `parent_name=s.parent.full_name if s.parent else None` with `contact_name=(s.contact or {}).get('name') if s.contact else None` in the list endpoint; verify `StudentResponse.model_validate(student)` still works for `contact`
-- [ ] T007 [P] Create Alembic migration `backend/alembic/versions/010_student_contact.py`: upgrade adds `contact JSONB NULL` to `students`, runs `UPDATE students s SET contact = jsonb_build_object('name', p.full_name, 'relationship', 'parent', 'phone', p.phone, 'phone_secondary', p.phone_secondary, 'email', null, 'address', p.address, 'zalo_id', p.zalo_id, 'notes', p.notes) FROM parents p WHERE p.id = s.parent_id`, drops `students_parent_id_fkey`, drops `ix_students_parent_id`, drops `parent_id` column; downgrade adds back `parent_id UUID` (best-effort) and drops `contact`
-- [ ] T008 Apply migration: run `cd backend && alembic upgrade head` and confirm `students` table has the new `contact` column with migrated data via `psql` spot-check
+- [X] T002 [P] Update `Student` model in `backend/app/models/student.py`: add `contact: Mapped[dict | None] = mapped_column(JSONB, nullable=True)` (import `JSONB` from `sqlalchemy.dialects.postgresql`); remove `parent_id` column and the `parent = relationship("Parent", ...)` line
+- [X] T003 [P] Update `Parent` model in `backend/app/models/parent.py`: remove the `students = relationship("Student", back_populates="parent", lazy="selectin")` line (no FK from students anymore)
+- [X] T004 Update Pydantic schemas in `backend/app/schemas/student.py`: add `ContactInfo` model (fields: `name`, `relationship`, `phone`, `phone_secondary`, `email`, `address`, `zalo_id`, `notes` — all `str | None = None`); update `StudentCreate` (remove `parent_id`, add `contact: ContactInfo | None = None`); update `StudentUpdate` (add `contact: ContactInfo | None = None`); update `StudentResponse` (remove `parent_id`, add `contact: ContactInfo | None = None`); update `StudentListItem` (rename `parent_name` → `contact_name`)
+- [X] T005 Update student CRUD in `backend/app/crud/student.py`: remove all `selectinload(Student.parent)` calls in `get_student_by_id` and `list_students`; ensure `create_student` writes the `contact` dict from `data.contact.model_dump() if data.contact else None`; ensure `update_student` writes `contact` similarly when present in the update payload
+- [X] T006 Update students API in `backend/app/api/students.py`: replace `parent_name=s.parent.full_name if s.parent else None` with `contact_name=(s.contact or {}).get('name') if s.contact else None` in the list endpoint; verify `StudentResponse.model_validate(student)` still works for `contact`
+- [X] T007 [P] Create Alembic migration `backend/alembic/versions/010_student_contact.py`: upgrade adds `contact JSONB NULL` to `students`, runs `UPDATE students s SET contact = jsonb_build_object('name', p.full_name, 'relationship', 'parent', 'phone', p.phone, 'phone_secondary', p.phone_secondary, 'email', null, 'address', p.address, 'zalo_id', p.zalo_id, 'notes', p.notes) FROM parents p WHERE p.id = s.parent_id`, drops `students_parent_id_fkey`, drops `ix_students_parent_id`, drops `parent_id` column; downgrade adds back `parent_id UUID` (best-effort) and drops `contact`
+- [X] T008 Apply migration: run `cd backend && alembic upgrade head` and confirm `students` table has the new `contact` column with migrated data via `psql` spot-check
 
 **Checkpoint**: Backend now exposes `contact` as a JSON object on student endpoints; `parent_id` is gone from the schema. Foundation ready — user story implementation can now begin.
 
@@ -58,12 +58,12 @@ description: "Task list for Student & Parent Info Restructure"
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] In `frontend/src/features/students/StudentForm.jsx`: import `Collapse` from `antd`; remove the `parent_id` `<Form.Item>` (Select + ParentFormModal trigger), the `listParents` query, and the `ParentFormModal` import + state (`isParentModalOpen`)
-- [ ] T010 [US1] In `frontend/src/features/students/StudentForm.jsx`: add a `<Collapse>` panel with header "Contact Information" (i18n: `students.contactInfo`), `defaultActiveKey={[]}` (collapsed by default); inside the panel add `<Form.Item>` fields for `contact.name`, `contact.relationship` (Select with options: parent, guardian, self, other — values free-text), `contact.phone`, `contact.phone_secondary`, `contact.email`, `contact.address`, `contact.zalo_id`, `contact.notes`. Use Ant Design `Form.Item name={['contact', 'name']}` (array path) for nested form values
-- [ ] T011 [US1] In `frontend/src/features/students/StudentForm.jsx`: update the edit-mode `useEffect` to populate contact subfields via `form.setFieldsValue({ ...student, contact: student.contact || {}, date_of_birth: ... })`; ensure null `student.contact` resolves to an empty object so the form doesn't crash
-- [ ] T012 [US1] In `frontend/src/features/students/StudentForm.jsx`: configure the Collapse to programmatically open when `form.getFieldError(['contact', ...])` is non-empty after submit failure — track active key in component state and set it on `onFinishFailed`
-- [ ] T013 [P] [US1] In `frontend/src/features/students/StudentDetail.jsx`: replace any old `parent_id` / `parent.full_name` rendering with display of `student.contact.name`, `student.contact.phone`, `student.contact.email`, `student.contact.relationship`, etc. (show "—" for null fields)
-- [ ] T014 [P] [US1] Add i18n keys in `frontend/src/i18n/en.json` and `frontend/src/i18n/vi.json` under `students`: `contactInfo`, `contactName`, `relationship`, `relationshipParent`, `relationshipGuardian`, `relationshipSelf`, `relationshipOther`, `email` (keep existing `phone`, `phoneSecondary`, `address`, `zaloId`, `notes`)
+- [X] T009 [US1] In `frontend/src/features/students/StudentForm.jsx`: import `Collapse` from `antd`; remove the `parent_id` `<Form.Item>` (Select + ParentFormModal trigger), the `listParents` query, and the `ParentFormModal` import + state (`isParentModalOpen`)
+- [X] T010 [US1] In `frontend/src/features/students/StudentForm.jsx`: add a `<Collapse>` panel with header "Contact Information" (i18n: `students.contactInfo`), `defaultActiveKey={[]}` (collapsed by default); inside the panel add `<Form.Item>` fields for `contact.name`, `contact.relationship` (Select with options: parent, guardian, self, other — values free-text), `contact.phone`, `contact.phone_secondary`, `contact.email`, `contact.address`, `contact.zalo_id`, `contact.notes`. Use Ant Design `Form.Item name={['contact', 'name']}` (array path) for nested form values
+- [X] T011 [US1] In `frontend/src/features/students/StudentForm.jsx`: update the edit-mode `useEffect` to populate contact subfields via `form.setFieldsValue({ ...student, contact: student.contact || {}, date_of_birth: ... })`; ensure null `student.contact` resolves to an empty object so the form doesn't crash
+- [X] T012 [US1] In `frontend/src/features/students/StudentForm.jsx`: configure the Collapse to programmatically open when `form.getFieldError(['contact', ...])` is non-empty after submit failure — track active key in component state and set it on `onFinishFailed`
+- [X] T013 [P] [US1] In `frontend/src/features/students/StudentDetail.jsx`: replace any old `parent_id` / `parent.full_name` rendering with display of `student.contact.name`, `student.contact.phone`, `student.contact.email`, `student.contact.relationship`, etc. (show "—" for null fields)
+- [X] T014 [P] [US1] Add i18n keys in `frontend/src/i18n/en.json` and `frontend/src/i18n/vi.json` under `students`: `contactInfo`, `contactName`, `relationship`, `relationshipParent`, `relationshipGuardian`, `relationshipSelf`, `relationshipOther`, `email` (keep existing `phone`, `phoneSecondary`, `address`, `zaloId`, `notes`)
 
 **Checkpoint**: User Story 1 is fully functional. Editing an existing student's contact info via the inline collapsible section works end-to-end and persists.
 
@@ -77,9 +77,9 @@ description: "Task list for Student & Parent Info Restructure"
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] In `frontend/src/features/students/StudentForm.jsx`: confirm `initialValues` include `contact: {}` so the create-mode form starts with an empty contact object (the same form component already handles both create and edit modes)
-- [ ] T016 [US2] Verify `frontend/src/api/students.js` `createStudent` and `updateStudent` pass through the `contact` object unchanged (axios serializes nested objects as JSON automatically — no client-side change required if the wrapper just forwards the payload). Read the file and confirm; only edit if a transform strips fields
-- [ ] T017 [US2] In `frontend/src/features/students/StudentList.jsx`: rename references to `parent_name` → `contact_name` in the list table column (header label can remain "Parent" or change to "Contact" — use i18n key `students.contact` or similar)
+- [X] T015 [US2] In `frontend/src/features/students/StudentForm.jsx`: confirm `initialValues` include `contact: {}` so the create-mode form starts with an empty contact object (the same form component already handles both create and edit modes)
+- [X] T016 [US2] Verify `frontend/src/api/students.js` `createStudent` and `updateStudent` pass through the `contact` object unchanged (axios serializes nested objects as JSON automatically — no client-side change required if the wrapper just forwards the payload). Read the file and confirm; only edit if a transform strips fields
+- [X] T017 [US2] In `frontend/src/features/students/StudentList.jsx`: rename references to `parent_name` → `contact_name` in the list table column (header label can remain "Parent" or change to "Contact" — use i18n key `students.contact` or similar)
 
 **Checkpoint**: Both create and edit flows use the same inline collapsible contact section. User Stories 1 and 2 both work independently.
 
@@ -93,8 +93,8 @@ description: "Task list for Student & Parent Info Restructure"
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Verify migration data integrity: from `backend/`, run `psql $DATABASE_URL -c "SELECT COUNT(*) FROM students WHERE contact IS NOT NULL"` and compare to `psql $DATABASE_URL -c "SELECT COUNT(*) FROM parents p JOIN (the pre-migration student-parent link)"` — confirm 100% of pre-migration students with parents now have `contact` populated. Document the verification commands in a comment at the top of `backend/alembic/versions/010_student_contact.py`
-- [ ] T019 [US3] Verify API contract: `curl http://localhost:8000/students/<id>` returns a `contact` object embedded in the response (not a separate `parent_id` field). `curl http://localhost:8000/students` list response contains `contact_name` for each item (not `parent_name`)
+- [X] T018 [US3] Verify migration data integrity: from `backend/`, run `psql $DATABASE_URL -c "SELECT COUNT(*) FROM students WHERE contact IS NOT NULL"` and compare to `psql $DATABASE_URL -c "SELECT COUNT(*) FROM parents p JOIN (the pre-migration student-parent link)"` — confirm 100% of pre-migration students with parents now have `contact` populated. Document the verification commands in a comment at the top of `backend/alembic/versions/010_student_contact.py`
+- [X] T019 [US3] Verify API contract: `curl http://localhost:8000/students/<id>` returns a `contact` object embedded in the response (not a separate `parent_id` field). `curl http://localhost:8000/students` list response contains `contact_name` for each item (not `parent_name`)
 
 **Checkpoint**: All three user stories independently verified. Data layer correctly stores contact as embedded JSON.
 
@@ -104,10 +104,10 @@ description: "Task list for Student & Parent Info Restructure"
 
 **Purpose**: Remove dead code, validate end-to-end, and ensure no regressions.
 
-- [ ] T020 Delete `frontend/src/features/students/ParentFormModal.jsx` (no longer referenced anywhere after T009)
-- [ ] T021 [P] Search the frontend for remaining references to `parent_id`, `parent_name`, `listParents`, `createParent` in student-related files and clean up: `grep -r "parent_id\|parent_name\|listParents\|createParent" frontend/src/features/students frontend/src/api/students.js`
-- [ ] T022 [P] Run linters: `cd backend && ruff check app/` and `cd frontend && npm run lint`
-- [ ] T023 End-to-end smoke test in browser at `http://localhost:5173`: (a) create new student with contact info filled (incl. relationship="self", null name); (b) edit an existing student, expand contact section, change a field, save; (c) confirm the student list shows the correct `contact_name`; (d) confirm the student detail page displays contact info
+- [X] T020 Delete `frontend/src/features/students/ParentFormModal.jsx` (no longer referenced anywhere after T009)
+- [X] T021 [P] Search the frontend for remaining references to `parent_id`, `parent_name`, `listParents`, `createParent` in student-related files and clean up: `grep -r "parent_id\|parent_name\|listParents\|createParent" frontend/src/features/students frontend/src/api/students.js`
+- [X] T022 [P] Run linters: `cd backend && ruff check app/` and `cd frontend && npm run lint`
+- [X] T023 End-to-end smoke test in browser at `http://localhost:5173`: (a) create new student with contact info filled (incl. relationship="self", null name); (b) edit an existing student, expand contact section, change a field, save; (c) confirm the student list shows the correct `contact_name`; (d) confirm the student detail page displays contact info
 
 ---
 

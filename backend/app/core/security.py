@@ -1,6 +1,6 @@
 """JWT security utilities and password hashing."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -23,7 +23,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict) -> str:
     """Create a long-lived JWT access token (Phase 1: persists until manual logout)."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.ACCESS_TOKEN_TTL_DAYS)
+    expire = datetime.now(UTC) + timedelta(days=settings.ACCESS_TOKEN_TTL_DAYS)
     to_encode.update({"exp": expire, "type": "access"})
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
@@ -31,7 +31,7 @@ def create_access_token(data: dict) -> str:
 def create_refresh_token(data: dict) -> str:
     """Create a long-lived JWT refresh token."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS)
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS)
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 

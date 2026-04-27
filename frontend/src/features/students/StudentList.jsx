@@ -68,9 +68,9 @@ export default function StudentList() {
       ),
     },
     {
-      title: t('students.parent'),
-      dataIndex: 'parent_name',
-      key: 'parent_name',
+      title: t('students.contactName'),
+      dataIndex: 'contact_name',
+      key: 'contact_name',
       width: 160,
     },
     {

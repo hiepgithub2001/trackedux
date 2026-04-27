@@ -1,7 +1,9 @@
 """Attendance service — batch marking, package session deduction."""
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.attendance import AttendanceRecord
 from app.models.package import Package
 from app.schemas.attendance import AttendanceBatchRequest
@@ -30,7 +32,7 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
         if existing_record:
             old_status = existing_record.status
             new_status = item.status
-            
+
             existing_record.status = new_status
             existing_record.notes = item.notes
             existing_record.marked_by = marked_by
@@ -40,7 +42,7 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
                     active_pkg.remaining_sessions += 1
                 elif old_status != "present" and new_status == "present":
                     active_pkg.remaining_sessions -= 1
-                
+
                 remaining = active_pkg.remaining_sessions
         else:
             record = AttendanceRecord(

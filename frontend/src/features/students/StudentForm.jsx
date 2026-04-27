@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Form, Input, Select, DatePicker, InputNumber, Button, Card, Typography, Space, message } from 'antd';
+import { Form, Input, Select, DatePicker, InputNumber, Button, Card, Typography, Space, message, Collapse } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createStudent, getStudent, updateStudent } from '../../api/students';
-import { listParents } from '../../api/parents';
 import dayjs from 'dayjs';
-import ParentFormModal from './ParentFormModal';
-import { PlusOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -21,7 +18,7 @@ export default function StudentForm() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
-  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
+  const [activeKeys, setActiveKeys] = useState([]);
 
   const { data: student } = useQuery({
     queryKey: ['student', id],
@@ -29,15 +26,13 @@ export default function StudentForm() {
     enabled: isEdit,
   });
 
-  const { data: parentsData } = useQuery({
-    queryKey: ['parents'],
-    queryFn: () => listParents().then((r) => r.data),
-  });
+
 
   useEffect(() => {
     if (student && isEdit) {
       form.setFieldsValue({
         ...student,
+        contact: student.contact || {},
         date_of_birth: student.date_of_birth ? dayjs(student.date_of_birth) : null,
       });
     }
@@ -61,6 +56,13 @@ export default function StudentForm() {
     },
   });
 
+  const onFinishFailed = ({ errorFields }) => {
+    const hasContactError = errorFields.some(field => field.name[0] === 'contact');
+    if (hasContactError && !activeKeys.includes('contact')) {
+      setActiveKeys(['contact']);
+    }
+  };
+
   return (
     <div className="fade-in">
       {contextHolder}
@@ -79,33 +81,9 @@ export default function StudentForm() {
           form={form}
           layout="vertical"
           onFinish={(values) => mutation.mutate(values)}
-          initialValues={{ enrollment_status: 'trial', skill_level: 'Beginner' }}
+          onFinishFailed={onFinishFailed}
+          initialValues={{ enrollment_status: 'trial', skill_level: 'Beginner', contact: {} }}
         >
-          <Form.Item
-            name="parent_id"
-            label={t('students.parent')}
-            rules={[{ required: true, message: t('validation.required') }]}
-          >
-            <Space.Compact style={{ width: '100%' }}>
-              <Select
-                id="parent-select"
-                placeholder={t('students.parent')}
-                showSearch
-                optionFilterProp="label"
-                options={(parentsData || []).map((p) => ({
-                  label: `${p.full_name} (${p.phone})`,
-                  value: p.id,
-                }))}
-                style={{ width: '100%' }}
-              />
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={() => setIsParentModalOpen(true)}
-              />
-            </Space.Compact>
-          </Form.Item>
-
           <Form.Item
             name="name"
             label={t('students.studentName')}
@@ -164,6 +142,54 @@ export default function StudentForm() {
             <TextArea id="current-issues" rows={3} />
           </Form.Item>
 
+          <Collapse 
+            activeKey={activeKeys} 
+            onChange={setActiveKeys}
+            style={{ marginBottom: 24 }}
+            items={[
+              {
+                key: 'contact',
+                label: t('students.contactInfo'),
+                children: (
+                  <>
+                    <Form.Item name={['contact', 'name']} label={t('students.contactName')}>
+                      <Input />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'relationship']} label={t('students.relationship')}>
+                      <Select
+                        allowClear
+                        options={[
+                          { label: t('students.relationshipParent'), value: 'parent' },
+                          { label: t('students.relationshipGuardian'), value: 'guardian' },
+                          { label: t('students.relationshipSelf'), value: 'self' },
+                          { label: t('students.relationshipOther'), value: 'other' },
+                        ]}
+                      />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'phone']} label={t('common.phone')}>
+                      <Input />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'phone_secondary']} label={t('common.phone') + ' 2'}>
+                      <Input />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'email']} label={t('common.email')}>
+                      <Input type="email" />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'address']} label={t('common.address')}>
+                      <TextArea rows={2} />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'zalo_id']} label="Zalo ID">
+                      <Input />
+                    </Form.Item>
+                    <Form.Item name={['contact', 'notes']} label={t('common.notes')}>
+                      <TextArea rows={2} />
+                    </Form.Item>
+                  </>
+                )
+              }
+            ]}
+          />
+
           {!isEdit && (
             <Form.Item name="enrollment_status" label={t('students.enrollmentStatus')}>
               <Select
@@ -195,15 +221,6 @@ export default function StudentForm() {
           </Form.Item>
         </Form>
       </Card>
-
-      <ParentFormModal
-        open={isParentModalOpen}
-        onCancel={() => setIsParentModalOpen(false)}
-        onSuccess={(newParentId) => {
-          setIsParentModalOpen(false);
-          form.setFieldValue('parent_id', newParentId);
-        }}
-      />
     </div>
   );
 }
