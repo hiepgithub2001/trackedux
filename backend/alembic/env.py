@@ -1,6 +1,7 @@
 """Alembic async migration environment."""
 
 import asyncio
+import re
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -22,13 +23,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-import re
-
 def process_revision_directives(migration_context, revision, directives):
     """Generate sequential revision IDs (e.g. 015)."""
     # Extract the script
     script = directives[0]
-    
+
     # Don't generate empty migrations for autogenerate
     if getattr(config.cmd_opts, "autogenerate", False):
         if script.upgrade_ops.is_empty():
@@ -66,7 +65,7 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection) -> None:
     """Run migrations with the given connection."""
     context.configure(
-        connection=connection, 
+        connection=connection,
         target_metadata=target_metadata,
         process_revision_directives=process_revision_directives,
     )
