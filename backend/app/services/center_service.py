@@ -34,13 +34,12 @@ async def create_center_with_admin(
     # 1. Check if admin username or email already exists globally
     query = select(User).where(User.username == admin_username)
     if admin_email:
-        query = query.where(User.email == admin_email, User.username != admin_username) # Handle or condition properly
-        
+        query = query.where(User.email == admin_email, User.username != admin_username)  # Handle or condition properly
+
     result = await db.execute(select(User).where((User.username == admin_username) | (User.email == admin_email)))
     if result.scalars().first():
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username or email already exists in the system."
+            status_code=status.HTTP_409_CONFLICT, detail="Username or email already exists in the system."
         )
 
     # 2. Create the center
@@ -59,19 +58,18 @@ async def create_center_with_admin(
         center_id=center.id,
     )
     db.add(admin_user)
-    
+
     try:
         await db.commit()
     except Exception:
         await db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create center and admin user"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create center and admin user"
         )
-        
+
     await db.refresh(center)
     await db.refresh(admin_user)
-    
+
     # Format the response tuple
     center_dict = {
         "id": center.id,
@@ -82,11 +80,11 @@ async def create_center_with_admin(
         "created_at": center.created_at,
         "updated_at": center.updated_at,
     }
-    
+
     admin_credentials = {
         "username": admin_user.username,
         "temporary_password": plain_password,
-        "note": "Please copy and save this password immediately. It will not be shown again."
+        "note": "Please copy and save this password immediately. It will not be shown again.",
     }
 
     return center_dict, admin_credentials

@@ -83,9 +83,7 @@ async def create_student_endpoint(data: StudentCreate, db: DbSession, current_us
 
 
 @router.patch("/{student_id}", response_model=StudentResponse)
-async def update_student_endpoint(
-    student_id: UUID, data: StudentUpdate, db: DbSession, current_user: CurrentUser
-):
+async def update_student_endpoint(student_id: UUID, data: StudentUpdate, db: DbSession, current_user: CurrentUser):
     """Update student fields. Admin and Staff."""
     if current_user.role not in ("admin", "staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
@@ -97,17 +95,13 @@ async def update_student_endpoint(
 
 
 @router.patch("/{student_id}/status", response_model=StudentResponse)
-async def change_status(
-    student_id: UUID, data: StudentStatusChange, db: DbSession, current_user: CurrentUser
-):
+async def change_status(student_id: UUID, data: StudentStatusChange, db: DbSession, current_user: CurrentUser):
     """Change enrollment status. Admin only. Creates audit trail."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     center_id = get_center_id(current_user)
-    await change_student_status(
-        db, student_id, data.status, current_user.id, data.reason, center_id
-    )
+    await change_student_status(db, student_id, data.status, current_user.id, data.reason, center_id)
 
     student = await get_student_by_id(db, student_id, center_id)
     return StudentResponse.model_validate(student)

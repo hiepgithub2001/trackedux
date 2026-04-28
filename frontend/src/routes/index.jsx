@@ -19,13 +19,7 @@ import TuitionPage from '../features/tuition/TuitionPage';
 
 import CenterListPage from '../features/system/CenterListPage';
 import CenterFormPage from '../features/system/CenterFormPage';
-
-const PlaceholderPage = ({ title }) => (
-  <div style={{ padding: 24 }}>
-    <h2>{title}</h2>
-    <p>Coming soon...</p>
-  </div>
-);
+import PlaceholderPage from '../components/PlaceholderPage';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -51,7 +45,6 @@ const router = createBrowserRouter([
       { path: 'teachers', element: <TeacherList /> },
       { path: 'teachers/new', element: <TeacherForm /> },
       { path: 'teachers/:id', element: <TeacherDetail /> },
-      { path: 'teachers/:id/edit', element: <TeacherForm /> },
       { path: 'tuition', element: <TuitionPage /> },
       { path: 'reports', element: <PlaceholderPage title="Reports" /> },
       { path: 'notifications', element: <PlaceholderPage title="Notifications" /> },

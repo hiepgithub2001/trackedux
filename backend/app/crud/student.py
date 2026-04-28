@@ -16,7 +16,7 @@ async def create_student(db: AsyncSession, data: StudentCreate, center_id: UUID)
     """Create a new student scoped to a center."""
     class_ids = data.class_ids or []
     student_data = data.model_dump(exclude={"class_ids"})
-    
+
     student = Student(
         **student_data,
         enrolled_at=date.today(),
@@ -24,10 +24,10 @@ async def create_student(db: AsyncSession, data: StudentCreate, center_id: UUID)
     )
     db.add(student)
     await db.flush()
-    
+
     for cid in class_ids:
         db.add(ClassEnrollment(class_session_id=cid, student_id=student.id, center_id=center_id))
-        
+
     await db.commit()
     await db.refresh(student, ["enrollments"])
     return student
@@ -98,7 +98,7 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
 
     class_ids = data.class_ids
     update_data = data.model_dump(exclude_unset=True, exclude={"class_ids"})
-    
+
     for field, value in update_data.items():
         setattr(student, field, value)
 
@@ -106,14 +106,14 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
         # Sync enrollments
         existing = {e.class_session_id: e for e in student.enrollments}
         new_set = set(class_ids)
-        
+
         # Deactivate removed ones
         for cid, e in existing.items():
             if cid not in new_set:
                 e.is_active = False
             else:
                 e.is_active = True
-                
+
         # Add new ones
         for cid in new_set:
             if cid not in existing:

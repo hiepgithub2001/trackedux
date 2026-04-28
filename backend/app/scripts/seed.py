@@ -5,9 +5,9 @@ import asyncio
 from sqlalchemy import select
 
 from app.core.security import hash_password
+from app.crud.lesson_kind import find_or_create_lesson_kind
 from app.db.session import async_session_factory
 from app.models.user import User
-from app.crud.lesson_kind import find_or_create_lesson_kind
 
 
 async def seed_admin():
@@ -32,6 +32,7 @@ async def seed_admin():
         db.add(admin)
         await db.commit()
         print("✅ Admin user created (admin / admin123)")
+
 
 async def seed_lesson_kinds():
     """Seed initial lesson kinds."""

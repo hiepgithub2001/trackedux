@@ -30,16 +30,16 @@ router = APIRouter(prefix="/classes", tags=["Classes"])
 def _class_to_response(cs, display_id: str, current_user) -> ClassSessionResponse:
     """Convert class session model to response, with derived fields and role-based visibility."""
     start_str = cs.start_time.strftime("%H:%M")
-    
+
     # Only admins see the fee
     fee = cs.tuition_fee_per_lesson if current_user.role == "admin" else None
-    
+
     active_enrollments = [
         {"id": str(e.student_id), "name": e.student.name if e.student else ""}
         for e in (cs.enrollments or [])
         if e.is_active
     ]
-    
+
     return ClassSessionResponse(
         id=cs.id,
         teacher_id=cs.teacher_id,
@@ -76,8 +76,10 @@ async def get_classes(
     center_id = get_center_id(current_user)
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
-    
-    classes = await list_class_sessions(db, center_id=center_id, teacher_id=teacher_id, day_of_week=day_of_week, active_only=is_active)
+
+    classes = await list_class_sessions(
+        db, center_id=center_id, teacher_id=teacher_id, day_of_week=day_of_week, active_only=is_active
+    )
     return [_class_to_response(c, display_ids.get(c.id, str(c.id)), current_user) for c in classes]
 
 
@@ -88,7 +90,7 @@ async def get_class(class_id: UUID, db: DbSession, current_user: CurrentUser):
     cs = await get_class_session_by_id(db, class_id, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
-        
+
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
@@ -117,7 +119,7 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
 
     cs = await create_class_session(db, data, center_id)
     cs = await get_class_session_by_id(db, cs.id, center_id)  # Reload with relationships
-    
+
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
@@ -133,7 +135,7 @@ async def update_class_endpoint(class_id: UUID, data: ClassSessionUpdate, db: Db
     cs = await update_class_session(db, class_id, data, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
-        
+
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
     return _class_to_response(cs, display_ids.get(cs.id, str(cs.id)), current_user)
@@ -144,7 +146,7 @@ async def delete_class_endpoint(class_id: UUID, db: DbSession, current_user: Cur
     """Delete a class session. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-        
+
     await delete_class_session(db, class_id)
     return {"detail": "Class deleted"}
 

@@ -3,7 +3,7 @@
 import re
 from uuid import UUID
 
-from sqlalchemy import func, select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.lesson_kind import LessonKind
@@ -44,9 +44,7 @@ async def find_or_create_lesson_kind(db: AsyncSession, name: str, center_id: UUI
     return new_kind
 
 
-async def list_lesson_kinds(
-    db: AsyncSession, center_id: UUID, search: str | None = None
-) -> list[LessonKind]:
+async def list_lesson_kinds(db: AsyncSession, center_id: UUID, search: str | None = None) -> list[LessonKind]:
     """List lesson kinds for a center, optionally filtered by search."""
     query = select(LessonKind).where(LessonKind.center_id == center_id).order_by(LessonKind.name)
     if search:

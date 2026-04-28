@@ -17,6 +17,7 @@ dist/
 build/
 *.log
 .cache/
+.vite/
 
 # Environment variables
 .env
@@ -40,6 +41,8 @@ coverage/
 htmlcov/
 .pytest_cache/
 .nyc_output/
+playwright-report/
+test-results/
 
 # Misc
 *.bak

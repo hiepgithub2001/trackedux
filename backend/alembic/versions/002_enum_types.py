@@ -4,15 +4,15 @@ Revision ID: 002
 Revises: 001
 Create Date: 2026-04-27
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
 
-
 revision: str = "002"
-down_revision: Union[str, None] = "001"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "001"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -21,7 +21,9 @@ def upgrade() -> None:
     op.execute("CREATE TYPE class_type AS ENUM ('individual', 'pair', 'group')")
     op.execute("CREATE TYPE payment_status AS ENUM ('paid', 'unpaid')")
     op.execute("CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'absent_with_notice')")
-    op.execute("CREATE TYPE notification_type AS ENUM ('schedule_reminder', 'payment_due', 'payment_overdue', 'renewal_reminder')")
+    op.execute(
+        "CREATE TYPE notification_type AS ENUM ('schedule_reminder', 'payment_due', 'payment_overdue', 'renewal_reminder')"
+    )
     op.execute("CREATE TYPE notification_channel AS ENUM ('zalo', 'sms')")
     op.execute("CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'failed')")
 

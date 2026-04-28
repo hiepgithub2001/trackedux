@@ -8,11 +8,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.crud.lesson_kind import find_or_create_lesson_kind
 from app.models.class_enrollment import ClassEnrollment
 from app.models.class_session import ClassSession
 from app.models.package import Package
 from app.schemas.class_session import ClassSessionCreate, ClassSessionUpdate
-from app.crud.lesson_kind import find_or_create_lesson_kind
 
 # ── Display ID utilities ──────────────────────────────────────────────
 
@@ -51,9 +51,7 @@ def compute_display_ids(classes: list[ClassSession]) -> dict[UUID, str]:
     return result
 
 
-def compute_single_display_id(
-    cs: ClassSession, all_classes: list[ClassSession]
-) -> str:
+def compute_single_display_id(cs: ClassSession, all_classes: list[ClassSession]) -> str:
     """Convenience: compute display ID for a single class against its peers."""
     ids = compute_display_ids(all_classes)
     return ids.get(cs.id, "Unknown")
@@ -137,14 +135,10 @@ async def delete_class_session(db: AsyncSession, class_id: UUID) -> None:
     """Delete a class if no packages reference it (active or historical)."""
     cs = await get_class_session_by_id(db, class_id)
     if cs is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Class not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
     # Check for referencing packages (any status)
-    pkg_count = await db.execute(
-        select(func.count()).where(Package.class_session_id == class_id)
-    )
+    pkg_count = await db.execute(select(func.count()).where(Package.class_session_id == class_id))
     if (pkg_count.scalar() or 0) > 0:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -155,14 +149,16 @@ async def delete_class_session(db: AsyncSession, class_id: UUID) -> None:
     await db.commit()
 
 
-async def get_class_session_by_id(db: AsyncSession, class_id: UUID, center_id: UUID | None = None) -> ClassSession | None:
+async def get_class_session_by_id(
+    db: AsyncSession, class_id: UUID, center_id: UUID | None = None
+) -> ClassSession | None:
     """Get class session by ID. If center_id provided, scope to that center."""
     query = (
         select(ClassSession)
         .options(
             selectinload(ClassSession.teacher),
             selectinload(ClassSession.enrollments).selectinload(ClassEnrollment.student),
-            selectinload(ClassSession.lesson_kind)
+            selectinload(ClassSession.lesson_kind),
         )
         .where(ClassSession.id == class_id)
     )
@@ -183,7 +179,7 @@ async def list_class_sessions(
     query = select(ClassSession).options(
         selectinload(ClassSession.teacher),
         selectinload(ClassSession.enrollments).selectinload(ClassEnrollment.student),
-        selectinload(ClassSession.lesson_kind)
+        selectinload(ClassSession.lesson_kind),
     )
     if center_id is not None:
         query = query.where(ClassSession.center_id == center_id)

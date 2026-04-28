@@ -55,5 +55,6 @@ async def update_center(
     center = await patch_center(db, center_id, is_active=is_active)
     if not center:
         from fastapi import HTTPException, status
+
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Center not found")
     return {"id": center.id, "is_active": center.is_active}

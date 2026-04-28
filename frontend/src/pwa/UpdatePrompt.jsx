@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Button, notification } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';

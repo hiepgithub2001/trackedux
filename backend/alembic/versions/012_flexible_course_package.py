@@ -4,16 +4,18 @@ Revision ID: 012
 Revises: 011
 Create Date: 2026-04-27
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
+from alembic import op
+
 revision: str = "012"
-down_revision: Union[str, None] = "011"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "011"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -41,7 +43,10 @@ def upgrade() -> None:
 
     # 3. Add tuition_fee_per_lesson to class_sessions (nullable for existing rows)
     op.add_column("class_sessions", sa.Column("tuition_fee_per_lesson", sa.BigInteger(), nullable=True))
-    op.add_column("class_sessions", sa.Column("lesson_kind_id", UUID(as_uuid=True), sa.ForeignKey("lesson_kinds.id"), nullable=True))
+    op.add_column(
+        "class_sessions",
+        sa.Column("lesson_kind_id", UUID(as_uuid=True), sa.ForeignKey("lesson_kinds.id"), nullable=True),
+    )
     op.create_index("ix_class_sessions_lesson_kind_id", "class_sessions", ["lesson_kind_id"])
     op.execute("""
         ALTER TABLE class_sessions
@@ -86,7 +91,9 @@ def upgrade() -> None:
     op.create_index("ix_packages_is_active", "packages", ["is_active"])
 
     # Recreate FK for attendance_records
-    op.create_foreign_key("attendance_records_package_id_fkey", "attendance_records", "packages", ["package_id"], ["id"])
+    op.create_foreign_key(
+        "attendance_records_package_id_fkey", "attendance_records", "packages", ["package_id"], ["id"]
+    )
 
     # 7. Recreate payment_records (same schema, FK to new packages)
     op.create_table(
@@ -145,7 +152,9 @@ def downgrade() -> None:
     op.create_index("ix_packages_student_id", "packages", ["student_id"])
     op.create_index("ix_packages_payment_status", "packages", ["payment_status"])
 
-    op.create_foreign_key("attendance_records_package_id_fkey", "attendance_records", "packages", ["package_id"], ["id"])
+    op.create_foreign_key(
+        "attendance_records_package_id_fkey", "attendance_records", "packages", ["package_id"], ["id"]
+    )
 
     # Recreate old payment_records
     op.create_table(

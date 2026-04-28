@@ -1,4 +1,5 @@
 """Attendance service — batch marking, package session deduction."""
+
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,15 +10,19 @@ from app.models.package import Package
 from app.schemas.attendance import AttendanceBatchRequest
 
 
-async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, marked_by: UUID, center_id: UUID) -> list[dict]:
+async def mark_batch_attendance(
+    db: AsyncSession, data: AttendanceBatchRequest, marked_by: UUID, center_id: UUID
+) -> list[dict]:
     results = []
     for item in data.records:
         # Get active package for student (scoped to center)
-        pkg_result = await db.execute(select(Package).where(
-            Package.student_id == item.student_id,
-            Package.is_active == True,  # noqa: E712
-            Package.center_id == center_id,
-        ))
+        pkg_result = await db.execute(
+            select(Package).where(
+                Package.student_id == item.student_id,
+                Package.is_active == True,  # noqa: E712
+                Package.center_id == center_id,
+            )
+        )
         active_pkg = pkg_result.scalar_one_or_none()
 
         # Check for existing attendance record
@@ -25,7 +30,7 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
             select(AttendanceRecord).where(
                 AttendanceRecord.class_session_id == data.class_session_id,
                 AttendanceRecord.student_id == item.student_id,
-                AttendanceRecord.session_date == data.session_date
+                AttendanceRecord.session_date == data.session_date,
             )
         )
         existing_record = existing_res.scalar_one_or_none()
@@ -50,9 +55,13 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
                 remaining = active_pkg.remaining_sessions
         else:
             record = AttendanceRecord(
-                class_session_id=data.class_session_id, student_id=item.student_id,
-                package_id=active_pkg.id if active_pkg else None, session_date=data.session_date,
-                status=item.status, marked_by=marked_by, notes=item.notes,
+                class_session_id=data.class_session_id,
+                student_id=item.student_id,
+                package_id=active_pkg.id if active_pkg else None,
+                session_date=data.session_date,
+                status=item.status,
+                marked_by=marked_by,
+                notes=item.notes,
                 center_id=center_id,
             )
             db.add(record)
@@ -65,10 +74,14 @@ async def mark_batch_attendance(db: AsyncSession, data: AttendanceBatchRequest, 
             active_pkg.reminder_status = "reminded_once"
             renewal_triggered = True
 
-        results.append({
-            "student_id": str(item.student_id), "status": item.status,
-            "package_remaining": remaining, "renewal_reminder_triggered": renewal_triggered,
-        })
+        results.append(
+            {
+                "student_id": str(item.student_id),
+                "status": item.status,
+                "package_remaining": remaining,
+                "renewal_reminder_triggered": renewal_triggered,
+            }
+        )
 
     await db.commit()
     return results

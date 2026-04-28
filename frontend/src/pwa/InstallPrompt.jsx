@@ -14,6 +14,7 @@ export default function InstallPrompt() {
   useEffect(() => {
     // Detect iOS
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsIOS(ios);
 
     // Check if already dismissed

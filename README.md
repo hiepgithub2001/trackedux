@@ -250,3 +250,9 @@ trackedux/
 ├── README.md
 └── .gitignore
 ```
+
+---
+
+## Continuous Integration
+
+Every pull request to `main` and every push to `main` runs `.github/workflows/ci.yml`, which executes six parallel jobs (backend lint/test/build, frontend lint/test/build) and aggregates them into a single `ci` status check. To replicate locally before pushing, run `make ci-local` from the repo root (and `make help` for individual targets). When a check fails, the failing job's logs are directly addressable from the PR's **Checks** tab; for Playwright failures the run uploads `playwright-report` and `playwright-results` as artifacts (kept 14 days). See [`specs/005-simple-cicd/quickstart.md`](specs/005-simple-cicd/quickstart.md) for how to retry a flaky job, modify the pipeline, and configure `ci` as a required check in branch protection.

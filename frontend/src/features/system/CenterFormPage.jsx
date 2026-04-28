@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Modal, Space, Layout, Alert, message } from 'antd';
-import { ArrowLeftOutlined, CopyOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
@@ -38,11 +38,6 @@ export default function CenterFormPage() {
 
   const onFinish = (values) => {
     createMutation.mutate(values);
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    message.success(t('common.copied', 'Copied to clipboard'));
   };
 
   const handleModalDone = () => {

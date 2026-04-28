@@ -24,14 +24,21 @@ async def create_teacher(db: AsyncSession, data: TeacherCreate, center_id: UUID)
 async def get_teacher_by_id(db: AsyncSession, teacher_id: UUID, center_id: UUID) -> Teacher | None:
     """Get teacher by ID scoped to center."""
     result = await db.execute(
-        select(Teacher).options(selectinload(Teacher.availability)).where(Teacher.id == teacher_id, Teacher.center_id == center_id)
+        select(Teacher)
+        .options(selectinload(Teacher.availability))
+        .where(Teacher.id == teacher_id, Teacher.center_id == center_id)
     )
     return result.scalar_one_or_none()
 
 
 async def list_teachers(db: AsyncSession, center_id: UUID, active_only: bool = False) -> list[Teacher]:
     """List all teachers scoped to a center."""
-    query = select(Teacher).options(selectinload(Teacher.availability)).where(Teacher.center_id == center_id).order_by(Teacher.full_name)
+    query = (
+        select(Teacher)
+        .options(selectinload(Teacher.availability))
+        .where(Teacher.center_id == center_id)
+        .order_by(Teacher.full_name)
+    )
     if active_only:
         query = query.where(Teacher.is_active == True)  # noqa: E712
     result = await db.execute(query)
@@ -51,7 +58,9 @@ async def update_teacher(db: AsyncSession, teacher_id: UUID, data: TeacherUpdate
     return teacher
 
 
-async def replace_availability(db: AsyncSession, teacher_id: UUID, slots: list[AvailabilitySlot], center_id: UUID) -> Teacher | None:
+async def replace_availability(
+    db: AsyncSession, teacher_id: UUID, slots: list[AvailabilitySlot], center_id: UUID
+) -> Teacher | None:
     """Replace all availability slots for a teacher, scoped to center."""
     teacher = await get_teacher_by_id(db, teacher_id, center_id)
     if teacher is None:

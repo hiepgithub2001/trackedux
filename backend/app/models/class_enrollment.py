@@ -14,9 +14,7 @@ class ClassEnrollment(Base, UUIDMixin):
     """Links students to class sessions."""
 
     __tablename__ = "class_enrollments"
-    __table_args__ = (
-        UniqueConstraint("class_session_id", "student_id", name="uq_enrollment_class_student"),
-    )
+    __table_args__ = (UniqueConstraint("class_session_id", "student_id", name="uq_enrollment_class_student"),)
 
     class_session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=False
