@@ -1,10 +1,27 @@
-import { Form, Input, Button, Card, Space, message, Spin } from 'antd';
+import { Form, Input, Button, Card, Space, message, Spin, Select } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createTeacher, getTeacher, updateTeacher } from '../../api/teachers';
 import { useEffect } from 'react';
+
+const COLORS = [
+  "#f5222d", "#fa541c", "#fa8c16", "#faad14", "#fadb14",
+  "#a0d911", "#52c41a", "#13c2c2", "#1677ff", "#2f54eb",
+  "#722ed1", "#eb2f96", "#ff4d4f", "#ff7a45", "#ffa940",
+  "#ffc53d", "#ffec3d", "#bae637", "#73d13d", "#36cfc9"
+];
+
+const colorOptions = COLORS.map(c => ({
+  value: c,
+  label: (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: c }} />
+      <span>{c}</span>
+    </div>
+  )
+}));
 
 export default function TeacherForm() {
   const { id } = useParams();
@@ -53,6 +70,9 @@ export default function TeacherForm() {
           </Form.Item>
           <Form.Item name="phone" label={t('common.phone')}><Input id="teacher-phone" /></Form.Item>
           <Form.Item name="email" label={t('common.email')}><Input id="teacher-email" /></Form.Item>
+          <Form.Item name="color" label={t('teachers.themeColor', 'Theme Color')}>
+            <Select options={colorOptions} placeholder="Select a color" />
+          </Form.Item>
           <Form.Item name="notes" label={t('common.notes')}><Input.TextArea rows={3} /></Form.Item>
           <Button id="teacher-submit" type="primary" htmlType="submit" loading={mutation.isPending}
             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>

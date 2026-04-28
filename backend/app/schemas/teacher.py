@@ -21,6 +21,7 @@ class TeacherCreate(BaseModel):
     phone: str | None = None
     email: str | None = None
     notes: str | None = None
+    color: str | None = Field(None, max_length=7)
 
 
 class TeacherUpdate(BaseModel):
@@ -31,6 +32,7 @@ class TeacherUpdate(BaseModel):
     email: str | None = None
     notes: str | None = None
     is_active: bool | None = None
+    color: str | None = Field(None, max_length=7)
 
 
 class AvailabilityUpdate(BaseModel):
@@ -47,6 +49,7 @@ class TeacherResponse(BaseModel):
     phone: str | None = None
     email: str | None = None
     notes: str | None = None
+    color: str | None = None
     is_active: bool
     availability: list[AvailabilitySlot] = []
     created_at: datetime
@@ -60,5 +63,6 @@ class TeacherBrief(BaseModel):
 
     id: UUID
     full_name: str
+    color: str | None = None
 
     model_config = {"from_attributes": True}

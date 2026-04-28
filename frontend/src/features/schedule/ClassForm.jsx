@@ -1,4 +1,4 @@
-import { Form, Select, Input, TimePicker, InputNumber, Button, Card, Typography, Space, message, Spin, AutoComplete } from 'antd';
+import { Form, Select, Input, InputNumber, Button, Card, Typography, Space, message, Spin, AutoComplete } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { createClass, updateClass, getClass } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { listStudents } from '../../api/students';
 import { fetchLessonKinds } from '../../api/lessonKinds';
-import dayjs from 'dayjs';
 import { useState } from 'react';
 
 const { Title } = Typography;
@@ -15,6 +14,16 @@ const DAYS = [
   { label: 'Monday', value: 0 }, { label: 'Tuesday', value: 1 }, { label: 'Wednesday', value: 2 },
   { label: 'Thursday', value: 3 }, { label: 'Friday', value: 4 }, { label: 'Saturday', value: 5 }, { label: 'Sunday', value: 6 },
 ];
+
+const TIME_OPTIONS = [];
+for (let h = 7; h <= 21; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    if (h === 21 && m > 0) continue;
+    const hour = h.toString().padStart(2, '0');
+    const min = m.toString().padStart(2, '0');
+    TIME_OPTIONS.push({ label: `${hour}:${min}`, value: `${hour}:${min}` });
+  }
+}
 
 export default function ClassForm() {
   const { id } = useParams();
@@ -46,7 +55,7 @@ export default function ClassForm() {
         name: values.name,
         teacher_id: values.teacher_id,
         day_of_week: values.day_of_week,
-        start_time: values.start_time.format('HH:mm'),
+        start_time: values.start_time,
         duration_minutes: values.duration_minutes,
         tuition_fee_per_lesson: values.tuition_fee_per_lesson,
         lesson_kind_name: values.lesson_kind_name,
@@ -83,7 +92,7 @@ export default function ClassForm() {
 
   const initialValues = isEdit && classData ? {
     ...classData,
-    start_time: dayjs(classData.start_time, 'HH:mm'),
+    start_time: classData.start_time?.substring(0, 5),
     student_ids: classData.enrolled_students?.map(s => s.id) || [],
     recurring_pattern: classData.recurring_pattern || (classData.is_recurring ? 'weekly' : 'none'),
   } : {
@@ -126,7 +135,12 @@ export default function ClassForm() {
             <Select id="day-of-week-select" options={DAYS} />
           </Form.Item>
           <Form.Item name="start_time" label={t('schedule.startTime')} rules={[{ required: true }]}>
-            <TimePicker id="class-start-time" format="HH:mm" minuteStep={15} style={{ width: '100%' }} />
+            <Select 
+              id="class-start-time" 
+              showSearch
+              options={TIME_OPTIONS}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
           <Form.Item
             name="duration_minutes"

@@ -1,9 +1,9 @@
-import { Table, Tag, Card, Button, Modal, Form, DatePicker, Input, message, Space } from 'antd';
-import { PlusOutlined, DollarOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Tag, Card, Button, Modal, Form, DatePicker, Input, message, Space, Popconfirm } from 'antd';
+import { PlusOutlined, DollarOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { listPackages, recordPayment } from '../../api/packages';
+import { listPackages, recordPayment, deletePackage } from '../../api/packages';
 import PackageForm from './PackageForm';
 import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthContext';
@@ -38,6 +38,16 @@ export default function TuitionPage() {
     onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deletePackage,
+    onSuccess: () => {
+      messageApi.success(t('common.deleted', 'Deleted successfully'));
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
+  });
+
   const columns = [
     { title: t('students.studentName'), dataIndex: 'student_name', key: 'student_name' },
     { title: t('package.class'), dataIndex: 'class_display_id', key: 'class_display_id' },
@@ -54,15 +64,22 @@ export default function TuitionPage() {
       title: t('common.actions'), key: 'actions',
       render: (_, record) => (
         <Space>
-          {isAdmin && (
-            <Button icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setEditPackage(record); }}>
-              {t('common.edit')}
-            </Button>
-          )}
           {isAdmin && record.payment_status !== 'paid' && (
-            <Button icon={<DollarOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setPaymentModal(record.id); }}>
+            <Button type="primary" icon={<DollarOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setPaymentModal(record.id); }}>
               {t('tuition.recordPayment')}
             </Button>
+          )}
+          {isAdmin && (
+            <Button icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setEditPackage(record); }} title={t('common.edit')} />
+          )}
+          {isAdmin && (
+            <Popconfirm 
+              title={t('common.deleteConfirm', 'Are you sure to delete this?')} 
+              onConfirm={(e) => { e.stopPropagation(); deleteMutation.mutate(record.id); }}
+              onCancel={(e) => e.stopPropagation()}
+            >
+              <Button danger icon={<DeleteOutlined />} size="small" onClick={(e) => e.stopPropagation()} />
+            </Popconfirm>
           )}
         </Space>
       ),

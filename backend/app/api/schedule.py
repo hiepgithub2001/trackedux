@@ -41,6 +41,7 @@ async def get_weekly_schedule(
                 "teacher": {
                     "id": str(cs.teacher.id) if cs.teacher else None,
                     "full_name": cs.teacher.full_name if cs.teacher else "Unknown",
+                    "color": cs.teacher.color if cs.teacher else None,
                 },
                 "students": [
                     {"id": str(e.student_id), "name": e.student.name if e.student else ""}

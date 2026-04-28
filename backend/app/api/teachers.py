@@ -19,6 +19,7 @@ def _teacher_to_response(teacher) -> dict:
         phone=teacher.phone,
         email=teacher.email,
         notes=teacher.notes,
+        color=teacher.color,
         is_active=teacher.is_active,
         availability=[
             {

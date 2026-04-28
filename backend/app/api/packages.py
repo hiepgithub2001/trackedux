@@ -97,3 +97,17 @@ async def add_payment(package_id: UUID, data: PaymentRecordCreate, db: DbSession
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     payment = await record_payment(db, package_id, data, current_user.id)
     return PaymentRecordResponse.model_validate(payment)
+
+@router.delete("/{package_id}")
+async def delete_package_endpoint(package_id: UUID, db: DbSession, current_user: CurrentUser):
+    """Delete a package. Admin only."""
+    from app.crud.package import delete_package
+
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
+
+    success = await delete_package(db, package_id, center_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+    return {"detail": "Package deleted"}

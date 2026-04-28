@@ -1,5 +1,5 @@
 import { Card, Row, Col, Statistic } from 'antd';
-import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlined, WarningOutlined } from '@ant-design/icons';
+import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlined, WarningOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDashboard } from '../../api/packages';
@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext';
 const STAT_CARDS = [
   { key: 'active_students', icon: <UserOutlined />, color: '#667eea', tKey: 'dashboard.activeStudents' },
   { key: 'today_sessions', icon: <CalendarOutlined />, color: '#52c41a', tKey: 'dashboard.todaySessions' },
+  { key: 'running_sessions', icon: <PlayCircleOutlined />, color: '#1890ff', tKey: 'dashboard.runningSessions' },
   { key: 'today_absences', icon: <ExclamationCircleOutlined />, color: '#faad14', tKey: 'dashboard.todayAbsences' },
   { key: 'expiring_packages', icon: <WarningOutlined />, color: '#ff4d4f', tKey: 'dashboard.expiringPackages' },
 ];
@@ -26,8 +27,8 @@ export default function DashboardPage() {
     <div className="fade-in">
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {STAT_CARDS.map((card) => (
-          <Col xs={12} sm={6} key={card.key}>
-            <Card hoverable bodyStyle={{ padding: 20 }}>
+          <Col xs={12} sm={8} lg={4} key={card.key} style={{ display: 'flex' }}>
+            <Card hoverable bodyStyle={{ padding: 20, width: '100%' }}>
               <Statistic
                 title={t(card.tKey)}
                 value={metrics?.[card.key] ?? '-'}

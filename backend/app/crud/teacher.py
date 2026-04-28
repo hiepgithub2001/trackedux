@@ -14,7 +14,18 @@ from app.schemas.teacher import AvailabilitySlot, TeacherCreate, TeacherUpdate
 
 async def create_teacher(db: AsyncSession, data: TeacherCreate, center_id: UUID) -> Teacher:
     """Create a new teacher scoped to a center."""
-    teacher = Teacher(**data.model_dump(), center_id=center_id)
+    teacher_data = data.model_dump()
+    if not teacher_data.get("color"):
+        import random
+        colors = [
+            "#f5222d", "#fa541c", "#fa8c16", "#faad14", "#fadb14",
+            "#a0d911", "#52c41a", "#13c2c2", "#1677ff", "#2f54eb",
+            "#722ed1", "#eb2f96", "#f5222d", "#d4380d", "#d46b08",
+            "#d48806", "#389e0d", "#08979c", "#0958d9", "#531dab"
+        ]
+        teacher_data["color"] = random.choice(colors)
+
+    teacher = Teacher(**teacher_data, center_id=center_id)
     db.add(teacher)
     await db.commit()
     await db.refresh(teacher)

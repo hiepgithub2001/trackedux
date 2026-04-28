@@ -15,7 +15,17 @@ export default function TeacherList() {
   });
 
   const columns = [
-    { title: t('teachers.teacherName'), dataIndex: 'full_name', key: 'full_name' },
+    { 
+      title: t('teachers.teacherName'), 
+      dataIndex: 'full_name', 
+      key: 'full_name',
+      render: (text, record) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: record.color || '#1677ff' }} />
+          <span>{text}</span>
+        </div>
+      )
+    },
     { title: t('common.phone'), dataIndex: 'phone', key: 'phone' },
     { title: t('common.email'), dataIndex: 'email', key: 'email' },
     {

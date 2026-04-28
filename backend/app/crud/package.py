@@ -160,3 +160,11 @@ async def get_active_for_student(db: AsyncSession, student_id: UUID) -> Package 
         .where(Package.student_id == student_id, Package.is_active == True)  # noqa: E712
     )
     return result.scalar_one_or_none()
+
+async def delete_package(db: AsyncSession, package_id: UUID, center_id: UUID) -> bool:
+    package = await get_package_by_id(db, package_id, center_id)
+    if not package:
+        return False
+    await db.delete(package)
+    await db.commit()
+    return True

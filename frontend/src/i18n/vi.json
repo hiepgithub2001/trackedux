@@ -27,7 +27,9 @@
     "address": "Địa chỉ",
     "active": "Hoạt động",
     "inactive": "Ngừng hoạt động",
-    "copied": "Đã sao chép vào bộ nhớ"
+    "copied": "Đã sao chép vào bộ nhớ",
+    "deleted": "Đã xóa thành công",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa?"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -115,6 +117,7 @@
   },
   "schedule": {
     "title": "Lịch học tuần",
+    "subtitle": "Xem và quản lý lịch học hàng tuần",
     "createClass": "Tạo lớp",
     "name": "Tên lớp",
     "namePlaceholder": "VD: Piano cơ bản A",
@@ -143,6 +146,7 @@
     "absent": "Vắng",
     "absentWithNotice": "Vắng (có phép)",
     "todaySessions": "Buổi học hôm nay",
+    "pastSessions": "Buổi học đã kết thúc",
     "scheduleMakeup": "Xếp lịch bù",
     "sessionDate": "Ngày học"
   },
@@ -156,7 +160,7 @@
     "paymentStatus": "Trạng thái thanh toán",
     "paid": "Đã thanh toán",
     "unpaid": "Chưa thanh toán",
-    "recordPayment": "Ghi nhận thanh toán",
+    "recordPayment": "Thanh toán",
     "amount": "Số tiền",
     "paymentDate": "Ngày thanh toán",
     "paymentMethod": "Phương thức",
@@ -184,6 +188,7 @@
     "title": "Tổng quan",
     "activeStudents": "Học sinh đang học",
     "todaySessions": "Buổi học hôm nay",
+    "runningSessions": "Đang diễn ra",
     "todayAbsences": "Vắng hôm nay",
     "expiringPackages": "Gói sắp hết",
     "monthlyRevenue": "Doanh thu tháng",

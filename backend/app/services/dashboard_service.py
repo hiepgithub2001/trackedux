@@ -1,6 +1,6 @@
 """Dashboard service — aggregate metrics."""
 
-from datetime import date
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -16,6 +16,7 @@ from app.models.student import Student
 async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUID) -> dict:
     today = date.today()
     today_dow = today.weekday()
+    now = datetime.now()
 
     # Active students count (scoped to center)
     result = await db.execute(
@@ -23,15 +24,23 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
     )
     active_students = result.scalar() or 0
 
-    # Today's sessions count (scoped to center)
+    # Today's sessions count and running sessions (scoped to center)
     result = await db.execute(
-        select(func.count()).where(
+        select(ClassSession).where(
             ClassSession.day_of_week == today_dow,
             ClassSession.is_active == True,  # noqa: E712
             ClassSession.center_id == center_id,
         )
     )
-    today_sessions = result.scalar() or 0
+    today_sessions_objs = result.scalars().all()
+    today_sessions = len(today_sessions_objs)
+
+    running_sessions = 0
+    for s in today_sessions_objs:
+        s_dt = datetime.combine(today, s.start_time)
+        e_dt = s_dt + timedelta(minutes=s.duration_minutes)
+        if s_dt <= now <= e_dt:
+            running_sessions += 1
 
     # Today's absences count (scoped to center)
     result = await db.execute(
@@ -68,6 +77,7 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
     return {
         "active_students": active_students,
         "today_sessions": today_sessions,
+        "running_sessions": running_sessions,
         "today_absences": today_absences,
         "expiring_packages": expiring_packages,
         "monthly_revenue": monthly_revenue,

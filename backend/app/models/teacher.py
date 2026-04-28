@@ -21,6 +21,7 @@ class Teacher(Base, UUIDMixin, TimestampMixin):
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    color: Mapped[str | None] = mapped_column(String(7), nullable=True, default="#1677ff")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
     center_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
