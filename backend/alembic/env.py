@@ -22,6 +22,32 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+import re
+
+def process_revision_directives(migration_context, revision, directives):
+    """Generate sequential revision IDs (e.g. 015)."""
+    # Extract the script
+    script = directives[0]
+    
+    # Don't generate empty migrations for autogenerate
+    if getattr(config.cmd_opts, "autogenerate", False):
+        if script.upgrade_ops.is_empty():
+            directives[:] = []
+            return
+
+    head_rev = migration_context.get_current_revision()
+    if head_rev is None:
+        new_rev_id = 1
+    else:
+        m = re.match(r'^(\d+)', head_rev)
+        if m:
+            new_rev_id = int(m.group(1)) + 1
+        else:
+            new_rev_id = 1
+
+    script.rev_id = f'{new_rev_id:03d}'
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -30,6 +56,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        process_revision_directives=process_revision_directives,
     )
 
     with context.begin_transaction():
@@ -38,7 +65,11 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection) -> None:
     """Run migrations with the given connection."""
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, 
+        target_metadata=target_metadata,
+        process_revision_directives=process_revision_directives,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
