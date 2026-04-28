@@ -10,7 +10,7 @@ from app.db.base import Base, TimestampMixin, UUIDMixin
 
 
 class LessonKind(Base, UUIDMixin, TimestampMixin):
-    """A passive, append-only vocabulary entry for classifying course packages."""
+    """A passive, append-only vocabulary entry for classifying course lessons."""
 
     __tablename__ = "lesson_kinds"
 

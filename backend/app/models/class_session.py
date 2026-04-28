@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, time
 
-from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Integer, String, Time
+from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Integer, String, Time, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,8 +41,11 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     # Relationships
     teacher = relationship("Teacher", back_populates="classes", lazy="selectin")
     enrollments = relationship("ClassEnrollment", back_populates="class_session", lazy="selectin")
-    packages = relationship("Package", back_populates="class_session", lazy="noload")
     lesson_kind = relationship("LessonKind", lazy="selectin")
+
+    __table_args__ = (
+        UniqueConstraint("center_id", "name", name="uq_class_session_center_name"),
+    )
 
     @property
     def end_time(self) -> time:
@@ -51,3 +54,12 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
 
         anchor = datetime.combine(date.today(), self.start_time)
         return (anchor + timedelta(minutes=self.duration_minutes)).time()
+
+    @property
+    def display_id(self) -> str:
+        """Format: teachername-weekday-time (e.g. NguyenVanA-Monday-18:00)"""
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        day_str = days[self.day_of_week] if 0 <= self.day_of_week <= 6 else str(self.day_of_week)
+        time_str = self.start_time.strftime("%H:%M")
+        teacher_name = self.teacher.full_name.replace(" ", "") if self.teacher else "Unknown"
+        return f"{teacher_name}-{day_str}-{time_str}"

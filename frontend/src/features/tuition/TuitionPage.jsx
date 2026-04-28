@@ -1,129 +1,140 @@
-import { Table, Tag, Card, Button, Modal, Form, DatePicker, Input, message, Space, Popconfirm } from 'antd';
-import { PlusOutlined, DollarOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Table, Tag, Card, Button, Space, Select, message } from 'antd';
+import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { listPackages, recordPayment, deletePackage } from '../../api/packages';
-import PackageForm from './PackageForm';
-import dayjs from 'dayjs';
+import { listBalances } from '../../api/tuition';
+import PaymentForm from './PaymentForm';
+import StudentLedger from './StudentLedger';
 import { useAuth } from '../../auth/AuthContext';
+
+const vndFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
 export default function TuitionPage() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
-  const [createModal, setCreateModal] = useState(false);
-  const [editPackage, setEditPackage] = useState(null);
-  const [paymentModal, setPaymentModal] = useState(null);
-  
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [balanceFilter, setBalanceFilter] = useState('all');
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const { data: packages, isLoading } = useQuery({
-    queryKey: ['packages'],
-    queryFn: () => listPackages({}).then((r) => r.data),
-  });
-
-  const paymentMutation = useMutation({
-    mutationFn: ({ packageId, ...data }) => recordPayment(packageId, { 
-      ...data, 
-      payment_date: data.payment_date ? data.payment_date.format('YYYY-MM-DD') : undefined 
-    }),
-    onSuccess: () => {
-      messageApi.success('Payment recorded');
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      setPaymentModal(null);
-    },
-    onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deletePackage,
-    onSuccess: () => {
-      messageApi.success(t('common.deleted', 'Deleted successfully'));
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    },
-    onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
+  const { data: balances, isLoading, refetch } = useQuery({
+    queryKey: ['tuition-balances', balanceFilter],
+    queryFn: () => listBalances({ balance_filter: balanceFilter }).then((r) => r.data),
   });
 
   const columns = [
-    { title: t('students.studentName'), dataIndex: 'student_name', key: 'student_name' },
-    { title: t('package.class'), dataIndex: 'class_display_id', key: 'class_display_id' },
-    { title: t('package.numberOfLessons'), dataIndex: 'number_of_lessons', key: 'number_of_lessons' },
-    {
-      title: t('tuition.remainingSessions'), dataIndex: 'remaining_sessions', key: 'remaining_sessions',
-      render: (val) => <Tag color={val <= 2 ? 'red' : val <= 5 ? 'orange' : 'green'}>{val}</Tag>,
-    },
-    {
-      title: t('tuition.paymentStatus'), dataIndex: 'payment_status', key: 'payment_status',
-      render: (status) => <Tag color={status === 'paid' ? 'green' : 'red'}>{t(`tuition.${status}`)}</Tag>,
-    },
-    {
-      title: t('common.actions'), key: 'actions',
-      render: (_, record) => (
-        <Space>
-          {isAdmin && record.payment_status !== 'paid' && (
-            <Button type="primary" icon={<DollarOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setPaymentModal(record.id); }}>
-              {t('tuition.recordPayment')}
-            </Button>
-          )}
-          {isAdmin && (
-            <Button icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setEditPackage(record); }} title={t('common.edit')} />
-          )}
-          {isAdmin && (
-            <Popconfirm 
-              title={t('common.deleteConfirm', 'Are you sure to delete this?')} 
-              onConfirm={(e) => { e.stopPropagation(); deleteMutation.mutate(record.id); }}
-              onCancel={(e) => e.stopPropagation()}
-            >
-              <Button danger icon={<DeleteOutlined />} size="small" onClick={(e) => e.stopPropagation()} />
-            </Popconfirm>
-          )}
-        </Space>
-      ),
-    },
+    { title: t('students.studentName'), dataIndex: 'student_name', key: 'student_name', sorter: (a, b) => a.student_name.localeCompare(b.student_name) },
   ];
 
   if (isAdmin) {
-    // Insert price before payment status
-    columns.splice(5, 0, {
-      title: t('tuition.price'), dataIndex: 'price', key: 'price',
-      render: (val) => val ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val) : '-',
-    });
+    columns.push(
+      {
+        title: t('tuition.balance', 'Balance'),
+        dataIndex: 'balance',
+        key: 'balance',
+        render: (val) => {
+          const color = val > 0 ? 'green' : val < 0 ? 'red' : 'default';
+          return <Tag color={color}>{vndFormatter.format(val || 0)}</Tag>;
+        },
+        sorter: (a, b) => (a.balance || 0) - (b.balance || 0),
+        defaultSortOrder: 'ascend',
+      },
+    );
   }
+
+  columns.push({
+    title: t('common.actions'),
+    key: 'actions',
+    render: (_, record) => (
+      <Space>
+        {isAdmin && (
+          <Button
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedStudentId(record.student_id);
+              setLedgerOpen(true);
+            }}
+          >
+            {t('tuition.viewLedger', 'View Ledger')}
+          </Button>
+        )}
+      </Space>
+    ),
+  });
 
   return (
     <div className="fade-in">
       {contextHolder}
       <Card bodyStyle={{ padding: 16 }}>
-        {isAdmin && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-            <Button id="create-package-btn" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModal(true)}
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
-              {t('package.assignPackage')}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          {isAdmin && (
+            <Select
+              id="balance-filter"
+              value={balanceFilter}
+              onChange={setBalanceFilter}
+              style={{ width: 180 }}
+              options={[
+                { value: 'all', label: t('tuition.filterAll', 'All Students') },
+                { value: 'positive', label: t('tuition.filterPositive', 'Positive Balance') },
+                { value: 'zero', label: t('tuition.filterZero', 'Zero Balance') },
+                { value: 'negative', label: t('tuition.filterNegative', 'Owing Money') },
+              ]}
+            />
+          )}
+          {isAdmin && (
+            <Button
+              id="add-payment-btn"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setPaymentModalOpen(true)}
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}
+            >
+              {t('tuition.addPayment', 'Add Payment')}
             </Button>
-          </div>
-        )}
-        <Table id="tuition-table" columns={columns} dataSource={packages || []} rowKey="id" loading={isLoading} />
+          )}
+        </div>
+        <Table
+          id="tuition-table"
+          columns={columns}
+          dataSource={balances || []}
+          rowKey="student_id"
+          loading={isLoading}
+          onRow={(record) => ({
+            onClick: () => {
+              if (isAdmin) {
+                setSelectedStudentId(record.student_id);
+                setLedgerOpen(true);
+              }
+            },
+            style: { cursor: isAdmin ? 'pointer' : 'default' },
+          })}
+        />
       </Card>
 
-      <PackageForm 
-        open={createModal || !!editPackage} 
-        editData={editPackage}
-        onCancel={() => { setCreateModal(false); setEditPackage(null); }} 
+      <PaymentForm
+        open={paymentModalOpen}
+        onCancel={() => setPaymentModalOpen(false)}
+        onSuccess={() => {
+          setPaymentModalOpen(false);
+          refetch();
+          messageApi.success(t('tuition.paymentRecorded', 'Payment recorded successfully'));
+        }}
       />
 
-      <Modal title={t('tuition.recordPayment')} open={!!paymentModal} onCancel={() => setPaymentModal(null)} footer={null}>
-        <Form layout="vertical" onFinish={(v) => paymentMutation.mutate({ packageId: paymentModal, ...v })}>
-          <Form.Item name="payment_date" label={t('tuition.paymentDate')} initialValue={dayjs()}>
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="notes" label={t('common.notes')}><Input.TextArea rows={2} /></Form.Item>
-          <Button type="primary" htmlType="submit" loading={paymentMutation.isPending}>{t('common.save')}</Button>
-        </Form>
-      </Modal>
+      <StudentLedger
+        open={ledgerOpen}
+        studentId={selectedStudentId}
+        onClose={() => {
+          setLedgerOpen(false);
+          setSelectedStudentId(null);
+        }}
+      />
     </div>
   );
 }

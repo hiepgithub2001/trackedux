@@ -1,11 +1,10 @@
-import { Descriptions, Tag, Card, Typography, Button, Space, Tabs, Modal, Input, Select, message, Table } from 'antd';
-import { EditOutlined, ArrowLeftOutlined, SwapOutlined } from '@ant-design/icons';
+import { Descriptions, Tag, Card, Typography, Button, Space, Tabs, Modal, Input, Select, message, Table, Statistic } from 'antd';
+import { EditOutlined, ArrowLeftOutlined, SwapOutlined, WalletOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { getStudent, changeStudentStatus } from '../../api/students';
-import { listPackages } from '../../api/packages';
 import { listClasses } from '../../api/classes';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -34,10 +33,6 @@ export default function StudentDetail() {
     queryFn: () => getStudent(id).then((r) => r.data),
   });
 
-  const { data: packages, isLoading: isLoadingPackages } = useQuery({
-    queryKey: ['packages', { student_id: id }],
-    queryFn: () => listPackages({ student_id: id }).then((r) => r.data),
-  });
 
   const { data: classes, isLoading: isLoadingClasses } = useQuery({
     queryKey: ['classes'],
@@ -134,25 +129,15 @@ export default function StudentDetail() {
       key: 'tuition',
       label: t('tuition.title'),
       children: (
-        <Table 
-          size="small" 
-          dataSource={packages || []} 
-          rowKey="id" 
-          loading={isLoadingPackages}
-          columns={[
-            { title: t('package.class'), dataIndex: 'class_display_id', key: 'class_display_id' },
-            { title: t('package.lessonKind'), dataIndex: 'lesson_kind_name', key: 'lesson_kind_name' },
-            { title: t('package.numberOfLessons'), dataIndex: 'number_of_lessons', key: 'number_of_lessons' },
-            {
-              title: t('tuition.remainingSessions'), dataIndex: 'remaining_sessions', key: 'remaining_sessions',
-              render: (val) => <Tag color={val <= 2 ? 'red' : val <= 5 ? 'orange' : 'green'}>{val}</Tag>,
-            },
-            {
-              title: t('tuition.paymentStatus'), dataIndex: 'payment_status', key: 'payment_status',
-              render: (status) => <Tag color={status === 'paid' ? 'green' : 'red'}>{t(`tuition.${status}`)}</Tag>,
-            },
-          ]}
-        />
+        <div style={{ textAlign: 'center', padding: 24 }}>
+          <Statistic
+            title={t('tuition.balance', 'Balance')}
+            value={student.balance || 0}
+            prefix={<WalletOutlined />}
+            valueStyle={{ color: (student.balance || 0) >= 0 ? '#52c41a' : '#ff4d4f', fontSize: 28 }}
+            formatter={(val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val)}
+          />
+        </div>
       ),
     },
   ];

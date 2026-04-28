@@ -102,7 +102,7 @@ export default function ClassForm() {
 
   const lessonKindOptions = (lessonKindsData || []).map(k => ({ value: k.name }));
   if (lessonKindSearch && !lessonKindsData?.some(k => k.name.toLowerCase() === lessonKindSearch.toLowerCase())) {
-    lessonKindOptions.push({ value: lessonKindSearch, label: t('package.createKindOption', { kind: lessonKindSearch }) });
+    lessonKindOptions.push({ value: lessonKindSearch, label: t('classes.createKindOption', { kind: lessonKindSearch }) });
   }
 
   return (
@@ -149,11 +149,11 @@ export default function ClassForm() {
           >
             <InputNumber id="class-duration-input" min={1} max={600} step={15} style={{ width: '100%' }} addonAfter={t('schedule.minutes')} />
           </Form.Item>
-          <Form.Item name="lesson_kind_name" label={t('package.lessonKind')} rules={[{ required: true }]}>
+          <Form.Item name="lesson_kind_name" label={t('classes.lessonKind', 'Lesson Kind')} rules={[{ required: true }]}>
             <AutoComplete
               options={lessonKindOptions}
               onSearch={setLessonKindSearch}
-              placeholder={t('package.lessonKind')}
+              placeholder={t('classes.lessonKind', 'Lesson Kind')}
             />
           </Form.Item>
           <Form.Item

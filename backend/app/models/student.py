@@ -3,7 +3,7 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Date, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +31,9 @@ class Student(Base, UUIDMixin, TimestampMixin):
     center_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
     )
+    balance: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, default=0, server_default="0"
+    )  # Cached tuition balance in VND. Updated atomically with each ledger entry.
 
     # Relationships
     status_history = relationship("StudentStatusHistory", back_populates="student", lazy="selectin")
