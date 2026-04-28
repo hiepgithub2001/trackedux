@@ -21,7 +21,11 @@ def _teacher_to_response(teacher) -> dict:
         notes=teacher.notes,
         is_active=teacher.is_active,
         availability=[
-            {"day_of_week": a.day_of_week, "start_time": a.start_time.strftime("%H:%M"), "end_time": a.end_time.strftime("%H:%M")}
+            {
+                "day_of_week": a.day_of_week,
+                "start_time": a.start_time.strftime("%H:%M"),
+                "end_time": a.end_time.strftime("%H:%M"),
+            }
             for a in (teacher.availability or [])
         ],
         created_at=teacher.created_at,

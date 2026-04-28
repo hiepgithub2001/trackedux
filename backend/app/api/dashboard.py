@@ -1,4 +1,5 @@
 """Dashboard API route."""
+
 from fastapi import APIRouter
 
 from app.core.deps import CurrentUser, DbSession, get_center_id

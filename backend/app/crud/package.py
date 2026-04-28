@@ -1,4 +1,5 @@
 """Package CRUD database operations — restructured for flexible course packages."""
+
 from datetime import date
 from uuid import UUID
 
@@ -80,7 +81,8 @@ async def create_package(db: AsyncSession, data: PackageCreate, center_id: UUID)
     if enrollment_result.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Student {student.name} is not enrolled in {class_display_id}. Enroll the student in the class first.",
+            detail=f"Student {student.name} is not enrolled in {class_display_id}. "
+            "Enroll the student in the class first.",
         )
 
     # 6. Deactivate existing active package for student
@@ -104,7 +106,6 @@ async def create_package(db: AsyncSession, data: PackageCreate, center_id: UUID)
     await db.commit()
     await db.refresh(package)
     return package
-
 
 
 async def get_package_by_id(db: AsyncSession, package_id: UUID, center_id: UUID | None = None) -> Package | None:

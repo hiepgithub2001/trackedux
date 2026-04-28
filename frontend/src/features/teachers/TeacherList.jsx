@@ -1,11 +1,9 @@
-import { Table, Button, Tag, Card, Typography, Space } from 'antd';
+import { Table, Button, Tag, Card } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listTeachers } from '../../api/teachers';
-
-const { Title } = Typography;
 
 export default function TeacherList() {
   const { t } = useTranslation();

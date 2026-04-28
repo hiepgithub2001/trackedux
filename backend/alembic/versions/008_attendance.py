@@ -4,15 +4,19 @@ Revision ID: 007
 Revises: 006
 Create Date: 2026-04-27
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
+
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
+from alembic import op
+
 revision: str = "008"
-down_revision: Union[str, None] = "007"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "007"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
 
 def upgrade() -> None:
     op.create_table(
@@ -30,10 +34,13 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("class_session_id", "student_id", "session_date", name="uq_attendance_session_student_date"),
+        sa.UniqueConstraint(
+            "class_session_id", "student_id", "session_date", name="uq_attendance_session_student_date"
+        ),
     )
     op.create_index("ix_attendance_student_id", "attendance_records", ["student_id"])
     op.create_index("ix_attendance_session_date", "attendance_records", ["session_date"])
+
 
 def downgrade() -> None:
     op.drop_table("attendance_records")

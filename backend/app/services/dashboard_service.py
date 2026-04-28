@@ -1,4 +1,5 @@
 """Dashboard service — aggregate metrics."""
+
 from datetime import date
 from uuid import UUID
 

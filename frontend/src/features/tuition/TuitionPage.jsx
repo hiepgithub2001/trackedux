@@ -1,4 +1,4 @@
-import { Table, Tag, Card, Typography, Button, Modal, Form, InputNumber, DatePicker, Input, message, Space, Select } from 'antd';
+import { Table, Tag, Card, Button, Modal, Form, DatePicker, Input, message, Space } from 'antd';
 import { PlusOutlined, DollarOutlined, EditOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -7,8 +7,6 @@ import { listPackages, recordPayment } from '../../api/packages';
 import PackageForm from './PackageForm';
 import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthContext';
-
-const { Title } = Typography;
 
 export default function TuitionPage() {
   const { t } = useTranslation();

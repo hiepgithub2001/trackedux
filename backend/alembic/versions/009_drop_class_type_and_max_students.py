@@ -10,16 +10,17 @@ Aligns the ClassSession schema with the 2026-04-27 clarification:
 - Class has a required `name`
 - Duration is stored explicitly as `duration_minutes` (replaces `end_time`)
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
-
 revision: str = "009"
-down_revision: Union[str, None] = "008"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "008"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -74,9 +75,7 @@ def downgrade() -> None:
     op.add_column("class_sessions", sa.Column("title", sa.String(200), nullable=True))
     op.execute("UPDATE class_sessions SET title = name")
     op.add_column("class_sessions", sa.Column("end_time", sa.Time(), nullable=True))
-    op.execute(
-        "UPDATE class_sessions SET end_time = (start_time + (duration_minutes || ' minutes')::interval)::time"
-    )
+    op.execute("UPDATE class_sessions SET end_time = (start_time + (duration_minutes || ' minutes')::interval)::time")
     op.alter_column("class_sessions", "end_time", nullable=False)
 
     op.drop_constraint("ck_class_sessions_duration_positive", "class_sessions", type_="check")

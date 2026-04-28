@@ -3,7 +3,8 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field
+
 
 class ContactInfo(BaseModel):
     """Schema for student contact information."""

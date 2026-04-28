@@ -8,3 +8,6 @@ select = ["E", "F", "W", "I", "N", "UP"]
 known-first-party = ["app"]
 
 [format]
+
+[lint.per-file-ignores]
+"alembic/versions/*" = ["E501"]

@@ -1,12 +1,9 @@
-import { Card, Row, Col, Statistic, Typography, Button, Space } from 'antd';
-import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlined, WarningOutlined, PlusOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic } from 'antd';
+import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlined, WarningOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getDashboard } from '../../api/packages';
 import { useAuth } from '../../auth/AuthContext';
-
-const { Title } = Typography;
 
 const STAT_CARDS = [
   { key: 'active_students', icon: <UserOutlined />, color: '#667eea', tKey: 'dashboard.activeStudents' },
@@ -17,7 +14,6 @@ const STAT_CARDS = [
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const { data: metrics } = useQuery({

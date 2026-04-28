@@ -1,5 +1,5 @@
-import { Table, Button, Space, Typography, Card, Tag, Input } from 'antd';
-import { PlusOutlined, AppstoreOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Typography, Card, Input } from 'antd';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { listClasses } from '../../api/classes';
 import { useAuth } from '../../auth/AuthContext';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function ClassesPage() {

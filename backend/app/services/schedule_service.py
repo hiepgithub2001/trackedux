@@ -56,19 +56,19 @@ async def check_scheduling_conflicts(
     for tc in teacher_result.scalars().all():
         tc_end = _add_minutes(tc.start_time, tc.duration_minutes)
         if tc_end > st:
-            conflicts.append({
-                "type": "teacher",
-                "class_id": str(tc.id),
-                "message": (
-                    f"Teacher has class '{tc.name}' at "
-                    f"{tc.start_time.strftime('%H:%M')}-{tc_end.strftime('%H:%M')}"
-                ),
-            })
+            conflicts.append(
+                {
+                    "type": "teacher",
+                    "class_id": str(tc.id),
+                    "message": (
+                        f"Teacher has class '{tc.name}' at {tc.start_time.strftime('%H:%M')}-{tc_end.strftime('%H:%M')}"
+                    ),
+                }
+            )
 
     for student_id in student_ids:
         student_result = await db.execute(
-            base_query.join(ClassEnrollment, ClassEnrollment.class_session_id == ClassSession.id)
-            .where(
+            base_query.join(ClassEnrollment, ClassEnrollment.class_session_id == ClassSession.id).where(
                 ClassEnrollment.student_id == student_id,
                 ClassEnrollment.is_active == True,  # noqa: E712
             )
@@ -78,14 +78,16 @@ async def check_scheduling_conflicts(
                 continue
             sc_end = _add_minutes(sc.start_time, sc.duration_minutes)
             if sc_end > st:
-                conflicts.append({
-                    "type": "student",
-                    "student_id": str(student_id),
-                    "class_id": str(sc.id),
-                    "message": (
-                        f"Student has class '{sc.name}' at "
-                        f"{sc.start_time.strftime('%H:%M')}-{sc_end.strftime('%H:%M')}"
-                    ),
-                })
+                conflicts.append(
+                    {
+                        "type": "student",
+                        "student_id": str(student_id),
+                        "class_id": str(sc.id),
+                        "message": (
+                            f"Student has class '{sc.name}' at "
+                            f"{sc.start_time.strftime('%H:%M')}-{sc_end.strftime('%H:%M')}"
+                        ),
+                    }
+                )
 
     return conflicts

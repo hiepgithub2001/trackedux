@@ -15,9 +15,7 @@ class LessonKind(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "lesson_kinds"
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    name_normalized: Mapped[str] = mapped_column(
-        String(100), nullable=False, unique=True, index=True
-    )
+    name_normalized: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     center_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
     )

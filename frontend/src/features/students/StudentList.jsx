@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { Table, Input, Select, Button, Tag, Space, Card, Typography } from 'antd';
+import { Table, Input, Select, Button, Tag, Space, Card } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listStudents } from '../../api/students';
-
-const { Title } = Typography;
 
 const STATUS_COLORS = {
   trial: 'blue',

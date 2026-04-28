@@ -31,14 +31,14 @@ class CenterResponse(BaseModel):
 
 class CenterListItem(CenterResponse):
     """Schema for center list item including admin info."""
-    
+
     admin_username: str | None = None
     admin_email: str | None = None
 
 
 class AdminCredentials(BaseModel):
     """Schema for returning temporary admin credentials."""
-    
+
     username: str
     temporary_password: str
     note: str = "Please copy and save this password immediately. It will not be shown again."
@@ -46,6 +46,6 @@ class AdminCredentials(BaseModel):
 
 class CreateCenterResponse(BaseModel):
     """Schema for response after creating a center and its admin."""
-    
+
     center: CenterResponse
     admin_credentials: AdminCredentials

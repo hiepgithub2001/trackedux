@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Typography, Select, Space, Tag } from 'antd';
+import { Card, Select, Space, Tag } from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useQuery } from '@tanstack/react-query';
@@ -7,8 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
-
-const { Title } = Typography;
 
 const REGULAR_COLOR = '#1677ff';
 const MAKEUP_COLOR = '#fa8c16';

@@ -1,4 +1,5 @@
 """Attendance API routes."""
+
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -24,6 +25,7 @@ async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_u
 async def get_session_attendance(class_session_id: UUID, session_date: str, db: DbSession, current_user: CurrentUser):
     """Get attendance records for a specific session on a given date, scoped to center."""
     from datetime import date as date_type
+
     center_id = get_center_id(current_user)
     d = date_type.fromisoformat(session_date)
     result = await db.execute(
@@ -34,8 +36,16 @@ async def get_session_attendance(class_session_id: UUID, session_date: str, db: 
         )
     )
     records = result.scalars().all()
-    return [{"id": str(r.id), "student_id": str(r.student_id), "student_name": r.student.name if r.student else "",
-             "status": r.status, "notes": r.notes} for r in records]
+    return [
+        {
+            "id": str(r.id),
+            "student_id": str(r.student_id),
+            "student_name": r.student.name if r.student else "",
+            "status": r.status,
+            "notes": r.notes,
+        }
+        for r in records
+    ]
 
 
 @router.get("/student/{student_id}")
@@ -43,10 +53,15 @@ async def get_student_attendance(student_id: UUID, db: DbSession, current_user: 
     """Get attendance history for a student, scoped to center."""
     center_id = get_center_id(current_user)
     result = await db.execute(
-        select(AttendanceRecord).where(
+        select(AttendanceRecord)
+        .where(
             AttendanceRecord.student_id == student_id,
             AttendanceRecord.center_id == center_id,
-        ).order_by(AttendanceRecord.session_date.desc())
+        )
+        .order_by(AttendanceRecord.session_date.desc())
     )
     records = result.scalars().all()
-    return [{"id": str(r.id), "session_date": r.session_date.isoformat(), "status": r.status, "notes": r.notes} for r in records]
+    return [
+        {"id": str(r.id), "session_date": r.session_date.isoformat(), "status": r.status, "notes": r.notes}
+        for r in records
+    ]

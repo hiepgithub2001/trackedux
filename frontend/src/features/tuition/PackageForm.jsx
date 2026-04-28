@@ -1,4 +1,4 @@
-import { Modal, Form, Select, AutoComplete, InputNumber, Button, Space, Typography, Alert, message } from 'antd';
+import { Modal, Form, Select, InputNumber, Button, Space, Alert, message } from 'antd';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,8 +6,6 @@ import { Link } from 'react-router-dom';
 import { listStudents } from '../../api/students';
 import { listClasses } from '../../api/classes';
 import { createPackage, updatePackage } from '../../api/packages';
-
-const { Text } = Typography;
 
 export default function PackageForm({ open, onCancel, editData }) {
   const { t } = useTranslation();
@@ -44,7 +42,8 @@ export default function PackageForm({ open, onCancel, editData }) {
         number_of_lessons: editData.number_of_lessons,
         tuition_fee: editData.price,
       });
-      setIsManualFeeEdit(true); // Don't auto-override existing prices
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsManualFeeEdit(true);
     }
   }, [editData, open, form]);
 

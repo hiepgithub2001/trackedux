@@ -1,12 +1,10 @@
-import { Form, Input, Button, Card, Typography, Space, message, Spin } from 'antd';
+import { Form, Input, Button, Card, Space, message, Spin } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { createTeacher, getTeacher, updateTeacher } from '../../api/teachers';
 import { useEffect } from 'react';
-
-const { Title } = Typography;
 
 export default function TeacherForm() {
   const { id } = useParams();

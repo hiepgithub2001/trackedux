@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Card, Table, Tag, Typography, Select, DatePicker, Button, message, Space, Radio } from 'antd';
+import { Card, Table, Tag, Button, message, Space, Radio } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getWeeklySchedule } from '../../api/classes';
 import { markBatchAttendance, getSessionAttendance } from '../../api/attendance';
 import dayjs from 'dayjs';
-
-const { Title } = Typography;
 
 const STATUS_ICONS = {
   present: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
@@ -27,7 +25,7 @@ export default function AttendancePage() {
     queryFn: () => getWeeklySchedule({}).then((r) => r.data),
   });
 
-  const { data: existingRecords } = useQuery({
+  useQuery({
     queryKey: ['attendance', selectedSession?.id, selectedSession?.date],
     queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => r.data),
     enabled: !!selectedSession,
