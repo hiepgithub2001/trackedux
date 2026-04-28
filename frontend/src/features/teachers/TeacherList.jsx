@@ -30,8 +30,7 @@ export default function TeacherList() {
 
   return (
     <div className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>{t('teachers.title')}</Title>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
         <Button id="add-teacher-btn" type="primary" icon={<PlusOutlined />} onClick={() => navigate('/teachers/new')}
           style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
           {t('teachers.addTeacher')}

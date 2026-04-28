@@ -61,7 +61,6 @@ export default function AttendancePage() {
   return (
     <div className="fade-in">
       {contextHolder}
-      <Title level={3}>{t('attendance.title')}</Title>
 
       <Card title={t('attendance.todaySessions')} style={{ marginBottom: 16 }}>
         <Space direction="vertical" style={{ width: '100%' }}>

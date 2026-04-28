@@ -24,6 +24,7 @@ class ClassSessionCreate(BaseModel):
     tuition_fee_per_lesson: int | None = Field(None, ge=1, le=100_000_000)
     lesson_kind_name: str | None = Field(None, min_length=1, max_length=100)
     is_recurring: bool = True
+    recurring_pattern: str = Field("weekly", pattern="^(none|weekly|bi-weekly|monthly)$")
     student_ids: list[UUID] = []
 
 
@@ -37,6 +38,7 @@ class ClassSessionUpdate(BaseModel):
     tuition_fee_per_lesson: int | None = Field(None, ge=1, le=100_000_000)
     lesson_kind_name: str | None = Field(None, min_length=1, max_length=100)
     is_active: bool | None = None
+    recurring_pattern: str | None = Field(None, pattern="^(none|weekly|bi-weekly|monthly)$")
     student_ids: list[UUID] | None = None
 
 
@@ -57,6 +59,7 @@ class ClassSessionResponse(BaseModel):
     duration_minutes: int
     end_time: str  # derived: start_time + duration_minutes
     is_recurring: bool
+    recurring_pattern: str = "weekly"
     is_makeup: bool
     is_active: bool
     teacher_name: str | None = None

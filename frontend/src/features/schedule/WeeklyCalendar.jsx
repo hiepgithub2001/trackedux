@@ -62,21 +62,20 @@ export default function WeeklyCalendar() {
 
   return (
     <div className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>{t('schedule.title')}</Title>
-        <Space>
-          <Select
-            id="teacher-filter"
-            placeholder={t('schedule.teacher')}
-            value={teacherFilter}
-            onChange={setTeacherFilter}
-            style={{ width: 200 }}
-            allowClear
-            options={(teachers || []).map((teacher) => ({ label: teacher.full_name, value: teacher.id }))}
-          />
-        </Space>
-      </div>
       <Card bodyStyle={{ padding: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
+          <Space>
+            <Select
+              id="teacher-filter"
+              placeholder={t('schedule.teacher')}
+              value={teacherFilter}
+              onChange={setTeacherFilter}
+              style={{ width: 200 }}
+              allowClear
+              options={(teachers || []).map((teacher) => ({ label: teacher.full_name, value: teacher.id }))}
+            />
+          </Space>
+        </div>
         <FullCalendar
           plugins={[timeGridPlugin]}
           initialView="timeGridWeek"

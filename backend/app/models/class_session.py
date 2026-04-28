@@ -24,6 +24,7 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     tuition_fee_per_lesson: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    recurring_pattern: Mapped[str] = mapped_column(String(50), default="weekly", server_default="weekly")
     is_makeup: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     makeup_for_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True

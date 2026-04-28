@@ -119,15 +119,10 @@ export default function CenterListPage() {
       </Header>
       
       <Content style={{ padding: '24px 48px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <Title level={2} style={{ margin: 0 }}>{t('system.centers.title', 'Edu-Centers Management')}</Title>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/system/centers/new')}>
-            {t('system.centers.addCenter', 'Register New Center')}
-          </Button>
-        </div>
+        <Title level={2} style={{ marginBottom: 24 }}>{t('system.centers.title', 'Edu-Centers Management')}</Title>
 
-        <Card>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-start' }}>
+        <Card bodyStyle={{ padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
             <Input
               placeholder={t('system.centers.search', 'Search centers by name or code...')}
               prefix={<SearchOutlined />}
@@ -136,6 +131,10 @@ export default function CenterListPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/system/centers/new')}
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
+              {t('system.centers.addCenter', 'Register New Center')}
+            </Button>
           </div>
 
           <Table

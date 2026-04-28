@@ -12,7 +12,44 @@ from app.models.class_enrollment import ClassEnrollment
 from app.models.class_session import ClassSession
 from app.models.package import Package
 from app.models.student import Student
-from app.schemas.package import PackageCreate
+from app.schemas.package import PackageCreate, PackageUpdate
+
+
+async def update_package(db: AsyncSession, package_id: UUID, data: PackageUpdate, center_id: UUID) -> Package:
+    package = await get_package_by_id(db, package_id, center_id)
+    if not package:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+
+    if data.number_of_lessons is not None:
+        diff = data.number_of_lessons - package.number_of_lessons
+        package.number_of_lessons = data.number_of_lessons
+        package.remaining_sessions = max(0, package.remaining_sessions + diff)
+
+    if data.tuition_fee is not None:
+        package.price = data.tuition_fee
+
+    if data.class_session_id is not None and data.class_session_id != package.class_session_id:
+        cs = await get_class_session_by_id(db, data.class_session_id, center_id)
+        if not cs:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
+
+        enrollment_result = await db.execute(
+            select(ClassEnrollment).where(
+                ClassEnrollment.class_session_id == data.class_session_id,
+                ClassEnrollment.student_id == package.student_id,
+                ClassEnrollment.is_active == True,  # noqa: E712
+            )
+        )
+        if enrollment_result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Student is not enrolled in the new class.",
+            )
+        package.class_session_id = data.class_session_id
+
+    await db.commit()
+    await db.refresh(package)
+    return package
 
 
 async def create_package(db: AsyncSession, data: PackageCreate, center_id: UUID) -> Package:

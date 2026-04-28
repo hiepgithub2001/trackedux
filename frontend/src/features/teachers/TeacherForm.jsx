@@ -1,37 +1,55 @@
-import { Form, Input, Button, Card, Typography, Space, message } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, message, Spin } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createTeacher } from '../../api/teachers';
+import { createTeacher, getTeacher, updateTeacher } from '../../api/teachers';
+import { useEffect } from 'react';
 
 const { Title } = Typography;
 
 export default function TeacherForm() {
+  const { id } = useParams();
+  const isEdit = !!id;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
+
+  const { data: teacher, isLoading } = useQuery({
+    queryKey: ['teacher', id],
+    queryFn: () => getTeacher(id).then((r) => r.data),
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    if (isEdit && teacher) {
+      form.setFieldsValue(teacher);
+    }
+  }, [isEdit, teacher, form]);
 
   const mutation = useMutation({
-    mutationFn: (values) => createTeacher(values),
+    mutationFn: (values) => isEdit ? updateTeacher(id, values) : createTeacher(values),
     onSuccess: () => {
-      messageApi.success('Teacher created');
+      messageApi.success(isEdit ? 'Teacher updated' : 'Teacher created');
       queryClient.invalidateQueries({ queryKey: ['teachers'] });
-      navigate('/teachers');
+      if (isEdit) queryClient.invalidateQueries({ queryKey: ['teacher', id] });
+      navigate(isEdit ? `/teachers/${id}` : '/teachers');
     },
     onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
   });
+
+  if (isEdit && isLoading) return <Spin />;
 
   return (
     <div className="fade-in">
       {contextHolder}
       <Space style={{ marginBottom: 24 }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>{t('common.back')}</Button>
-        <Title level={3} style={{ margin: 0 }}>{t('teachers.addTeacher')}</Title>
       </Space>
       <Card style={{ maxWidth: 560 }}>
-        <Form id="teacher-form" layout="vertical" onFinish={(v) => mutation.mutate(v)} size="large">
+        <Form form={form} id="teacher-form" layout="vertical" onFinish={(v) => mutation.mutate(v)} size="large">
           <Form.Item name="full_name" label={t('teachers.teacherName')} rules={[{ required: true }]}>
             <Input id="teacher-name" />
           </Form.Item>

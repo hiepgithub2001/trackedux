@@ -51,6 +51,7 @@ const router = createBrowserRouter([
       { path: 'teachers', element: <TeacherList /> },
       { path: 'teachers/new', element: <TeacherForm /> },
       { path: 'teachers/:id', element: <TeacherDetail /> },
+      { path: 'teachers/:id/edit', element: <TeacherForm /> },
       { path: 'tuition', element: <TuitionPage /> },
       { path: 'reports', element: <PlaceholderPage title="Reports" /> },
       { path: 'notifications', element: <PlaceholderPage title="Notifications" /> },

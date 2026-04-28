@@ -50,7 +50,8 @@ export default function ClassForm() {
         duration_minutes: values.duration_minutes,
         tuition_fee_per_lesson: values.tuition_fee_per_lesson,
         lesson_kind_name: values.lesson_kind_name,
-        is_recurring: values.is_recurring,
+        is_recurring: values.recurring_pattern !== 'none',
+        recurring_pattern: values.recurring_pattern,
         student_ids: values.student_ids || [],
       };
       if (isEdit) {
@@ -84,8 +85,9 @@ export default function ClassForm() {
     ...classData,
     start_time: dayjs(classData.start_time, 'HH:mm'),
     student_ids: classData.enrolled_students?.map(s => s.id) || [],
+    recurring_pattern: classData.recurring_pattern || (classData.is_recurring ? 'weekly' : 'none'),
   } : {
-    is_recurring: true, 
+    recurring_pattern: 'weekly', 
     duration_minutes: 60,
   };
 
@@ -164,8 +166,13 @@ export default function ClassForm() {
               options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))}
             />
           </Form.Item>
-          <Form.Item name="is_recurring" valuePropName="checked" label={t('schedule.recurring')}>
-            <Switch />
+          <Form.Item name="recurring_pattern" label={t('schedule.recurringPattern', 'Recurring Pattern')}>
+            <Select>
+              <Select.Option value="none">{t('schedule.recurringNone', 'One-off (None)')}</Select.Option>
+              <Select.Option value="weekly">{t('schedule.recurringWeekly', 'Weekly')}</Select.Option>
+              <Select.Option value="bi-weekly">{t('schedule.recurringBiWeekly', 'Bi-weekly')}</Select.Option>
+              <Select.Option value="monthly">{t('schedule.recurringMonthly', 'Monthly')}</Select.Option>
+            </Select>
           </Form.Item>
           <Button
             id="class-submit"

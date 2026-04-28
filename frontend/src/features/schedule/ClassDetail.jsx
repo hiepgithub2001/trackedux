@@ -80,7 +80,12 @@ export default function ClassDetail() {
           <Descriptions.Item label={t('common.time')}>{classData.start_time} - {classData.end_time}</Descriptions.Item>
           <Descriptions.Item label={t('schedule.duration')}>{classData.duration_minutes} {t('schedule.minutes')}</Descriptions.Item>
           <Descriptions.Item label={t('package.lessonKind')}>{classData.lesson_kind_name || '-'}</Descriptions.Item>
-          <Descriptions.Item label={t('schedule.recurring')}>{classData.is_recurring ? '✓' : '✗'}</Descriptions.Item>
+          <Descriptions.Item label={t('schedule.recurringPattern', 'Recurring Pattern')}>
+            {classData.recurring_pattern === 'weekly' ? t('schedule.recurringWeekly', 'Weekly') : 
+             classData.recurring_pattern === 'bi-weekly' ? t('schedule.recurringBiWeekly', 'Bi-weekly') : 
+             classData.recurring_pattern === 'monthly' ? t('schedule.recurringMonthly', 'Monthly') : 
+             t('schedule.recurringNone', 'One-off (None)')}
+          </Descriptions.Item>
           {isAdmin && classData.tuition_fee_per_lesson !== null && (
             <Descriptions.Item label={t('classes.feePerLesson')}>
               <Text strong>{classData.tuition_fee_per_lesson?.toLocaleString('vi-VN')} VND</Text>

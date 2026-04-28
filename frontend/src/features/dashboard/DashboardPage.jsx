@@ -28,8 +28,6 @@ export default function DashboardPage() {
 
   return (
     <div className="fade-in">
-      <Title level={3}>{t('dashboard.title')}</Title>
-
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {STAT_CARDS.map((card) => (
           <Col xs={12} sm={6} key={card.key}>
@@ -61,23 +59,6 @@ export default function DashboardPage() {
         </Row>
       )}
 
-      <Card title={t('dashboard.quickActions')}>
-        <Space size="middle" wrap>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/students/new')}
-            style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
-            {t('dashboard.addStudent')}
-          </Button>
-          <Button icon={<CalendarOutlined />} onClick={() => navigate('/classes/new')}>
-            {t('dashboard.createTrialClass')}
-          </Button>
-          <Button icon={<UserOutlined />} onClick={() => navigate('/students')}>
-            {t('nav.students')}
-          </Button>
-          <Button icon={<CalendarOutlined />} onClick={() => navigate('/schedule')}>
-            {t('nav.schedule')}
-          </Button>
-        </Space>
-      </Card>
     </div>
   );
 }

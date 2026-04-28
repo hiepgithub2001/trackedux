@@ -127,6 +127,11 @@
     "recurring": "Recurring",
     "makeup": "Makeup",
     "makeupBadge": "Makeup",
+    "recurringPattern": "Recurring Pattern",
+    "recurringNone": "One-off (None)",
+    "recurringWeekly": "Weekly",
+    "recurringBiWeekly": "Bi-weekly",
+    "recurringMonthly": "Monthly",
     "conflict": "Scheduling Conflict",
     "created": "Class created",
     "createError": "Error creating class"

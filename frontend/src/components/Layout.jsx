@@ -66,15 +66,17 @@ export default function Layout() {
 
   // Determine selected key from current path
   const selectedKey = '/' + location.pathname.split('/')[1] || '/';
+  const currentMenuItem = menuItems.find(item => item.key === selectedKey);
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <Sider
-        trigger={null}
         collapsible
         collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         breakpoint="lg"
         onBreakpoint={(broken) => setCollapsed(broken)}
+        trigger={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         style={{
           background: '#001529',
           boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
@@ -122,13 +124,9 @@ export default function Layout() {
             zIndex: 10,
           }}
         >
-          <Button
-            id="sidebar-toggle"
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: 16 }}
-          />
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {currentMenuItem?.label}
+          </Typography.Title>
           <Space size="middle">
             <LanguageSwitcher />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">

@@ -1,5 +1,5 @@
 import { Table, Tag, Card, Typography, Button, Modal, Form, InputNumber, DatePicker, Input, message, Space, Select } from 'antd';
-import { PlusOutlined, DollarOutlined } from '@ant-design/icons';
+import { PlusOutlined, DollarOutlined, EditOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
@@ -15,6 +15,7 @@ export default function TuitionPage() {
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const [createModal, setCreateModal] = useState(false);
+  const [editPackage, setEditPackage] = useState(null);
   const [paymentModal, setPaymentModal] = useState(null);
   
   const { user } = useAuth();
@@ -55,6 +56,11 @@ export default function TuitionPage() {
       title: t('common.actions'), key: 'actions',
       render: (_, record) => (
         <Space>
+          {isAdmin && (
+            <Button icon={<EditOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setEditPackage(record); }}>
+              {t('common.edit')}
+            </Button>
+          )}
           {isAdmin && record.payment_status !== 'paid' && (
             <Button icon={<DollarOutlined />} size="small" onClick={(e) => { e.stopPropagation(); setPaymentModal(record.id); }}>
               {t('tuition.recordPayment')}
@@ -76,21 +82,23 @@ export default function TuitionPage() {
   return (
     <div className="fade-in">
       {contextHolder}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>{t('tuition.title')}</Title>
+      <Card bodyStyle={{ padding: 16 }}>
         {isAdmin && (
-          <Button id="create-package-btn" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModal(true)}
-            style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
-            {t('package.assignPackage')}
-          </Button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <Button id="create-package-btn" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModal(true)}
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
+              {t('package.assignPackage')}
+            </Button>
+          </div>
         )}
-      </div>
-
-      <Card>
         <Table id="tuition-table" columns={columns} dataSource={packages || []} rowKey="id" loading={isLoading} />
       </Card>
 
-      <PackageForm open={createModal} onCancel={() => setCreateModal(false)} />
+      <PackageForm 
+        open={createModal || !!editPackage} 
+        editData={editPackage}
+        onCancel={() => { setCreateModal(false); setEditPackage(null); }} 
+      />
 
       <Modal title={t('tuition.recordPayment')} open={!!paymentModal} onCancel={() => setPaymentModal(null)} footer={null}>
         <Form layout="vertical" onFinish={(v) => paymentMutation.mutate({ packageId: paymentModal, ...v })}>

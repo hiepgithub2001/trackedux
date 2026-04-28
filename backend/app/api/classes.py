@@ -49,6 +49,7 @@ def _class_to_response(cs, display_id: str, current_user) -> ClassSessionRespons
         duration_minutes=cs.duration_minutes,
         end_time=_derive_end_time(start_str, cs.duration_minutes),
         is_recurring=cs.is_recurring,
+        recurring_pattern=cs.recurring_pattern,
         is_makeup=cs.is_makeup,
         is_active=cs.is_active,
         teacher_name=cs.teacher.full_name if cs.teacher else None,

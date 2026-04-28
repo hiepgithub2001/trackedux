@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { listStudents } from '../../api/students';
 import { listClasses } from '../../api/classes';
-import { createPackage } from '../../api/packages';
+import { createPackage, updatePackage } from '../../api/packages';
 
 const { Text } = Typography;
 
-export default function PackageForm({ open, onCancel }) {
+export default function PackageForm({ open, onCancel, editData }) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
@@ -36,13 +36,25 @@ export default function PackageForm({ open, onCancel }) {
 
   const selectedClass = classesData?.find(c => c.id === selectedClassId);
 
+  useEffect(() => {
+    if (editData && open) {
+      form.setFieldsValue({
+        student_id: editData.student_id,
+        class_session_id: editData.class_session_id,
+        number_of_lessons: editData.number_of_lessons,
+        tuition_fee: editData.price,
+      });
+      setIsManualFeeEdit(true); // Don't auto-override existing prices
+    }
+  }, [editData, open, form]);
+
   // Auto-fill logic
   useEffect(() => {
-    if (!isManualFeeEdit && selectedClass?.tuition_fee_per_lesson && numberOfLessons) {
+    if (!editData && !isManualFeeEdit && selectedClass?.tuition_fee_per_lesson && numberOfLessons) {
       const computedFee = selectedClass.tuition_fee_per_lesson * numberOfLessons;
       form.setFieldsValue({ tuition_fee: computedFee });
     }
-  }, [selectedClassId, numberOfLessons, isManualFeeEdit, selectedClass, form]);
+  }, [selectedClassId, numberOfLessons, isManualFeeEdit, selectedClass, form, editData]);
 
   const handleFeeChange = () => {
     setIsManualFeeEdit(true);
@@ -62,7 +74,7 @@ export default function PackageForm({ open, onCancel }) {
   };
 
   const createMutation = useMutation({
-    mutationFn: (values) => createPackage(values),
+    mutationFn: (values) => editData ? updatePackage(editData.id, values) : createPackage(values),
     onSuccess: () => {
       messageApi.success(t('common.save'));
       queryClient.invalidateQueries({ queryKey: ['packages'] });
@@ -82,7 +94,7 @@ export default function PackageForm({ open, onCancel }) {
 
   return (
     <Modal
-      title={t('package.assignPackage')}
+      title={editData ? t('common.edit') : t('package.assignPackage')}
       open={open}
       onCancel={() => {
         form.resetFields();
@@ -103,6 +115,7 @@ export default function PackageForm({ open, onCancel }) {
             showSearch 
             optionFilterProp="label" 
             options={(studentsData?.items || []).map((s) => ({ label: s.name, value: s.id }))} 
+            disabled={!!editData}
           />
         </Form.Item>
 

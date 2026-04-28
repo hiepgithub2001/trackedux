@@ -12,6 +12,12 @@ class PackageCreate(BaseModel):
     tuition_fee: int = Field(..., ge=1, le=1_000_000_000)
 
 
+class PackageUpdate(BaseModel):
+    class_session_id: UUID | None = None
+    number_of_lessons: int | None = Field(None, ge=1, le=500)
+    tuition_fee: int | None = Field(None, ge=1, le=1_000_000_000)
+
+
 class PackageResponse(BaseModel):
     id: UUID
     student_id: UUID

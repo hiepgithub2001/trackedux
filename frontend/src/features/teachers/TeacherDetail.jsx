@@ -22,8 +22,11 @@ export default function TeacherDetail() {
 
   return (
     <div className="fade-in">
-      <Space style={{ marginBottom: 24 }}>
+      <Space style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/teachers')}>{t('common.back')}</Button>
+        <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/teachers/${id}/edit`)}>
+          {t('common.edit')}
+        </Button>
       </Space>
       <Card>
         <Title level={3}>{teacher.full_name}</Title>

@@ -1,5 +1,6 @@
-import { Table, Button, Space, Typography, Card, Tag } from 'antd';
-import { PlusOutlined, AppstoreOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Typography, Card, Tag, Input } from 'antd';
+import { PlusOutlined, AppstoreOutlined, SearchOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +13,7 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 export default function ClassesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchText, setSearchText] = useState('');
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -81,30 +83,44 @@ export default function ClassesPage() {
     });
   }
 
+  const filteredClasses = classes?.filter(c => 
+    (c.name || '').toLowerCase().includes(searchText.toLowerCase()) || 
+    (c.display_id || '').toLowerCase().includes(searchText.toLowerCase()) ||
+    (c.teacher_name || '').toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <div className="fade-in">
-      <Space style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <Space>
-          <AppstoreOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-          <Title level={3} style={{ margin: 0 }}>{t('classes.title')}</Title>
-        </Space>
-        {isAdmin && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/classes/new')}>
-            {t('classes.createClass')}
-          </Button>
-        )}
-      </Space>
-
-      <Card>
+      <Card bodyStyle={{ padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
+          <Space size="middle" wrap>
+            <Input
+              id="class-search"
+              prefix={<SearchOutlined />}
+              placeholder={t('common.search')}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 240 }}
+              allowClear
+            />
+          </Space>
+          {isAdmin && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/classes/new')}
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
+              {t('classes.createClass')}
+            </Button>
+          )}
+        </div>
         <Table
-          dataSource={classes}
+          dataSource={filteredClasses}
           columns={columns}
           rowKey="id"
           loading={isLoading}
           locale={{ emptyText: t('classes.noClasses') }}
           pagination={{ pageSize: 15 }}
           onRow={(record) => ({
-            onDoubleClick: () => navigate(`/classes/${record.id}`),
+            onClick: () => navigate(`/classes/${record.id}`),
+            style: { cursor: 'pointer' },
           })}
         />
       </Card>

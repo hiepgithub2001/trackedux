@@ -127,6 +127,11 @@
     "recurring": "Định kỳ",
     "makeup": "Học bù",
     "makeupBadge": "Học bù",
+    "recurringPattern": "Chu kỳ lặp lại",
+    "recurringNone": "Một lần (Không lặp)",
+    "recurringWeekly": "Hàng tuần",
+    "recurringBiWeekly": "Mỗi 2 tuần",
+    "recurringMonthly": "Hàng tháng",
     "conflict": "Trùng lịch",
     "created": "Đã tạo lớp",
     "createError": "Lỗi khi tạo lớp"

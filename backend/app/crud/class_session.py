@@ -78,6 +78,7 @@ async def create_class_session(db: AsyncSession, data: ClassSessionCreate, cente
         tuition_fee_per_lesson=data.tuition_fee_per_lesson,
         lesson_kind_id=lesson_kind_id,
         is_recurring=data.is_recurring,
+        recurring_pattern=data.recurring_pattern,
         center_id=center_id,
     )
     db.add(cs)

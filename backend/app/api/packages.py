@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.class_session import compute_display_ids, list_class_sessions
 from app.crud.package import create_package, list_packages
-from app.schemas.package import PackageCreate, PackageResponse, PaymentRecordCreate, PaymentRecordResponse
+from app.schemas.package import PackageCreate, PackageUpdate, PackageResponse, PaymentRecordCreate, PaymentRecordResponse
 from app.services.tuition_service import record_payment
 
 router = APIRouter(prefix="/packages", tags=["Packages"])
@@ -59,6 +59,21 @@ async def create_package_endpoint(data: PackageCreate, db: DbSession, current_us
     center_id = get_center_id(current_user)
         
     pkg = await create_package(db, data, center_id)
+    
+    all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
+    display_ids = compute_display_ids(all_classes)
+    return _pkg_to_response(pkg, display_ids, current_user)
+
+
+@router.patch("/{package_id}", response_model=PackageResponse)
+async def update_package_endpoint(package_id: UUID, data: PackageUpdate, db: DbSession, current_user: CurrentUser):
+    """Update a package. Admin only."""
+    from app.crud.package import update_package
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
+        
+    pkg = await update_package(db, package_id, data, center_id)
     
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)

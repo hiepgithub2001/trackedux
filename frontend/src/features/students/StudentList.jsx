@@ -88,26 +88,9 @@ export default function StudentList() {
 
   return (
     <div className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>
-          {t('students.title')}
-        </Title>
-        <Button
-          id="add-student-btn"
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate('/students/new')}
-          style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-          }}
-        >
-          {t('students.addStudent')}
-        </Button>
-      </div>
-
       <Card bodyStyle={{ padding: 16 }}>
-        <Space style={{ marginBottom: 16, flexWrap: 'wrap' }} size="middle">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
+          <Space size="middle" wrap>
           <Input
             id="student-search"
             prefix={<SearchOutlined />}
@@ -131,8 +114,20 @@ export default function StudentList() {
               { label: t('students.statusWithdrawn'), value: 'withdrawn' },
             ]}
           />
-
-        </Space>
+          </Space>
+          <Button
+            id="add-student-btn"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/students/new')}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+            }}
+          >
+            {t('students.addStudent')}
+          </Button>
+        </div>
 
         <Table
           id="student-table"
