@@ -24,10 +24,11 @@ export default function ClassesPage() {
 
   const columns = [
     {
-      title: t('classes.displayId'),
-      dataIndex: 'display_id',
-      key: 'display_id',
-      render: (text, record) => <Text strong style={{ cursor: 'pointer', color: '#1890ff' }} onClick={() => navigate(`/classes/${record.id}`)}>{text || record.name}</Text>,
+      title: t('common.name', 'Class Name'),
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => <Text strong style={{ color: '#1890ff' }}>{text}</Text>,
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
     },
     {
       title: t('classes.teacher'),
@@ -38,32 +39,19 @@ export default function ClassesPage() {
       onFilter: (value, record) => record.teacher_name === value,
     },
     {
-      title: t('package.lessonKind'),
+      title: t('classes.lessonKind', 'Lesson Kind'),
       dataIndex: 'lesson_kind_name',
       key: 'lesson_kind_name',
       sorter: (a, b) => (a.lesson_kind_name || '').localeCompare(b.lesson_kind_name || ''),
     },
     {
-      title: t('classes.weekday'),
-      dataIndex: 'day_of_week',
-      key: 'day_of_week',
-      render: (val) => DAYS[val],
-      sorter: (a, b) => a.day_of_week - b.day_of_week,
-      filters: DAYS.map((day, idx) => ({ text: day, value: idx })),
-      onFilter: (value, record) => record.day_of_week === value,
-    },
-    {
-      title: t('classes.time'),
-      dataIndex: 'start_time',
-      key: 'start_time',
-      sorter: (a, b) => a.start_time.localeCompare(b.start_time),
-      render: (text, record) => `${text} - ${record.end_time}`,
-    },
-    {
-      title: t('classes.duration'),
-      dataIndex: 'duration_minutes',
-      key: 'duration_minutes',
-      render: (val) => `${val} ${t('schedule.minutes')}`,
+      title: t('classes.schedule', 'Schedule'),
+      key: 'schedule',
+      render: (_, record) => `${DAYS[record.day_of_week]}, ${record.start_time} - ${record.end_time}`,
+      sorter: (a, b) => {
+        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+        return a.start_time.localeCompare(b.start_time);
+      },
     },
     {
       title: t('classes.enrolled'),

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, Table, Tag, Button, message, Space, Radio, Row, Col, Pagination, Modal } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,31 +20,47 @@ export default function AttendancePage() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
 
+  const openSession = useCallback((session) => {
+    setAttendanceData({}); // reset before loading saved records
+    setSelectedSession(session);
+  }, []);
+
+  const closeSession = useCallback(() => {
+    setSelectedSession(null);
+    setAttendanceData({});
+  }, []);
+
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule'],
     queryFn: () => getWeeklySchedule({}).then((r) => r.data),
   });
 
+  // Fetch previously saved attendance and seed the radio buttons
   useQuery({
     queryKey: ['attendance', selectedSession?.id, selectedSession?.date],
-    queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => r.data),
+    queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => {
+      const records = Array.isArray(r.data) ? r.data : (r.data?.records ?? r.data ?? []);
+      // Pre-populate attendanceData with saved statuses
+      const saved = {};
+      records.forEach((rec) => {
+        saved[rec.student_id] = rec.status;
+      });
+      setAttendanceData((prev) => ({ ...saved, ...prev }));
+      return records;
+    }),
     enabled: !!selectedSession,
   });
 
   const mutation = useMutation({
     mutationFn: (data) => markBatchAttendance(data),
-    onSuccess: (res) => {
+    onSuccess: () => {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
       queryClient.invalidateQueries({ queryKey: ['student'] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      const renewals = res.data.records?.filter((r) => r.renewal_reminder_triggered);
-      if (renewals?.length > 0) {
-        messageApi.warning(`${renewals.length} student(s) have ≤2 sessions remaining`);
-      }
-      setSelectedSession(null);
+      closeSession();
     },
     onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
   });
@@ -86,7 +102,7 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {runningSessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {runningSessions.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => setSelectedSession(session)}
+                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
                   style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined, background: '#e6f4ff' }}>
                   <Space wrap>
                     <Tag color="processing">{session.start_time} - {session.end_time}</Tag>
@@ -106,7 +122,7 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {todaySessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {todaySessions.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => setSelectedSession(session)}
+                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
                   style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined }}>
                   <Space wrap>
                     <Tag color="blue">{session.start_time} - {session.end_time}</Tag>
@@ -128,7 +144,7 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {paginatedPast.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {paginatedPast.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => setSelectedSession(session)}
+                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
                   style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined }}>
                   <Space wrap>
                     <Tag color="default">{session.date}</Tag>
@@ -159,11 +175,11 @@ export default function AttendancePage() {
         title={selectedSession ? `${t('attendance.markAttendance')}: ${selectedSession.name}` : ''}
         centered
         width={600}
-        onCancel={() => setSelectedSession(null)}
+        onCancel={closeSession}
         open={!!selectedSession}
         footer={
           <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setSelectedSession(null)}>{t('common.cancel')}</Button>
+            <Button onClick={closeSession}>{t('common.cancel')}</Button>
             <Button type="primary" onClick={handleMark} loading={mutation.isPending} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}>
               {t('common.save')}
             </Button>

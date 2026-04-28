@@ -15,9 +15,19 @@ router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 @router.post("/batch")
 async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_user: CurrentUser):
-    """Mark attendance for a session (batch). Auto-deducts package sessions."""
+    """Mark attendance for a session (batch). Auto-deducts tuition balance for 'present' students."""
     center_id = get_center_id(current_user)
     results = await mark_batch_attendance(db, data, current_user.id, center_id)
+
+    # Hide financial details for non-admin roles (FR-025)
+    is_admin = current_user.role == "admin"
+    for r in results:
+        if not is_admin:
+            r["balance_after"] = None
+            r["fee_deducted"] = None
+        # Remove legacy field
+        r.pop("package_remaining", None)
+
     return {"records": results}
 
 

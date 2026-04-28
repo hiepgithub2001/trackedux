@@ -21,7 +21,6 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
     student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("students.id"), nullable=False, index=True
     )
-    package_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("packages.id"), nullable=True)
     session_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False)  # present, absent, absent_with_notice
     makeup_scheduled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")

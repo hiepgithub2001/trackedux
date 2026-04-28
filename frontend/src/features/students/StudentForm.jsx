@@ -123,7 +123,7 @@ export default function StudentForm() {
               placeholder={t('common.select')}
               loading={isLoadingClasses}
               options={classes?.map(c => ({
-                label: `${c.display_id} - ${c.name}`,
+                label: c.name,
                 value: c.id
               })) || []}
               filterOption={(input, option) =>

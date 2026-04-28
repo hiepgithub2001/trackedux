@@ -60,7 +60,7 @@ export default function ClassDetail() {
       <Space style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/classes')}>{t('common.back')}</Button>
-          <Title level={3} style={{ margin: 0 }}>{classData.display_id || classData.name}</Title>
+          <Title level={3} style={{ margin: 0 }}>{classData.name}</Title>
         </Space>
         {isAdmin && (
           <Space>
@@ -79,7 +79,7 @@ export default function ClassDetail() {
           <Descriptions.Item label={t('schedule.dayOfWeek')}>{DAYS[classData.day_of_week]}</Descriptions.Item>
           <Descriptions.Item label={t('common.time')}>{classData.start_time} - {classData.end_time}</Descriptions.Item>
           <Descriptions.Item label={t('schedule.duration')}>{classData.duration_minutes} {t('schedule.minutes')}</Descriptions.Item>
-          <Descriptions.Item label={t('package.lessonKind')}>{classData.lesson_kind_name || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('classes.lessonKind', 'Lesson Kind')}>{classData.lesson_kind_name || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('schedule.recurringPattern', 'Recurring Pattern')}>
             {classData.recurring_pattern === 'weekly' ? t('schedule.recurringWeekly', 'Weekly') : 
              classData.recurring_pattern === 'bi-weekly' ? t('schedule.recurringBiWeekly', 'Bi-weekly') : 

@@ -8,9 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import AttendanceRecord
 from app.models.class_session import ClassSession
-from app.models.package import Package
-from app.models.payment_record import PaymentRecord
 from app.models.student import Student
+from app.models.tuition_payment import TuitionPayment
 
 
 async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUID) -> dict:
@@ -52,24 +51,24 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
     )
     today_absences = result.scalar() or 0
 
-    # Expiring packages (<=2 remaining sessions, scoped to center)
+    # Students with negative balance (owing money, scoped to center)
     result = await db.execute(
         select(func.count()).where(
-            Package.is_active == True,  # noqa: E712
-            Package.remaining_sessions <= 2,
-            Package.center_id == center_id,
+            Student.balance < 0,
+            Student.enrollment_status == "active",
+            Student.center_id == center_id,
         )
     )
-    expiring_packages = result.scalar() or 0
+    students_owing = result.scalar() or 0
 
     # Monthly revenue (admin only, scoped to center)
     monthly_revenue = None
     if user_role == "admin":
         first_of_month = today.replace(day=1)
         result = await db.execute(
-            select(func.coalesce(func.sum(PaymentRecord.amount), 0)).where(
-                PaymentRecord.payment_date >= first_of_month,
-                PaymentRecord.center_id == center_id,
+            select(func.coalesce(func.sum(TuitionPayment.amount), 0)).where(
+                TuitionPayment.payment_date >= first_of_month,
+                TuitionPayment.center_id == center_id,
             )
         )
         monthly_revenue = result.scalar() or 0
@@ -79,7 +78,7 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
         "today_sessions": today_sessions,
         "running_sessions": running_sessions,
         "today_absences": today_absences,
-        "expiring_packages": expiring_packages,
+        "students_owing": students_owing,
         "monthly_revenue": monthly_revenue,
         "today_date": today.isoformat(),
     }

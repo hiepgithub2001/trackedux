@@ -2,7 +2,7 @@ import { Card, Row, Col, Statistic } from 'antd';
 import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlined, WarningOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getDashboard } from '../../api/packages';
+import { getDashboard } from '../../api/tuition';
 import { useAuth } from '../../auth/AuthContext';
 
 const STAT_CARDS = [
@@ -10,7 +10,7 @@ const STAT_CARDS = [
   { key: 'today_sessions', icon: <CalendarOutlined />, color: '#52c41a', tKey: 'dashboard.todaySessions' },
   { key: 'running_sessions', icon: <PlayCircleOutlined />, color: '#1890ff', tKey: 'dashboard.runningSessions' },
   { key: 'today_absences', icon: <ExclamationCircleOutlined />, color: '#faad14', tKey: 'dashboard.todayAbsences' },
-  { key: 'expiring_packages', icon: <WarningOutlined />, color: '#ff4d4f', tKey: 'dashboard.expiringPackages' },
+  { key: 'students_owing', icon: <WarningOutlined />, color: '#ff4d4f', tKey: 'dashboard.studentsOwing' },
 ];
 
 export default function DashboardPage() {

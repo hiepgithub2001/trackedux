@@ -64,7 +64,9 @@
     "createClass": "Create Class",
     "noClasses": "No classes found",
     "deleteConfirm": "Are you sure you want to delete this class?",
-    "deleteBlocked": "Cannot delete class with associated packages. Deactivate them first."
+    "deleteBlocked": "Cannot delete class with active enrollments.",
+    "lessonKind": "Lesson Kind",
+    "createKindOption": "Create new: {{kind}}"
   },
   "students": {
     "title": "Student Management",
@@ -152,34 +154,30 @@
   },
   "tuition": {
     "title": "Tuition Management",
-    "createPackage": "Create Package",
-    "packageType": "Package Type",
-    "totalSessions": "Total Sessions",
-    "remainingSessions": "Remaining",
-    "price": "Price",
-    "paymentStatus": "Payment Status",
-    "paid": "Paid",
-    "unpaid": "Unpaid",
-    "recordPayment": "Record Payment",
+    "addPayment": "Add Payment",
+    "totalPaid": "Total Paid",
+    "totalFees": "Total Fees",
+    "balance": "Balance",
+    "viewLedger": "View Ledger",
+    "studentLedger": "Student Ledger",
     "amount": "Amount",
     "paymentDate": "Payment Date",
     "paymentMethod": "Payment Method",
+    "methodCash": "Cash",
+    "methodBankTransfer": "Bank Transfer",
+    "methodOther": "Other",
     "owing": "Owing",
-    "expiring": "Expiring Soon",
-    "custom": "Custom",
-    "sessions12": "12 Sessions",
-    "sessions24": "24 Sessions",
-    "sessions36": "36 Sessions"
-  },
-  "package": {
-    "class": "Class",
-    "lessonKind": "Lesson Kind",
-    "numberOfLessons": "Number of Lessons",
-    "tuitionFee": "Tuition Fee",
-    "assignPackage": "Assign Package",
-    "resetAutoFill": "Reset to Auto-fill",
-    "notEnrolled": "Student is not enrolled in this class.",
-    "createKindOption": "Create new: {{kind}}"
+    "credit": "Credit",
+    "filterAll": "All Students",
+    "filterPositive": "Positive Balance",
+    "filterZero": "Zero Balance",
+    "filterNegative": "Owing Money",
+    "paymentRecorded": "Payment recorded successfully",
+    "selectStudent": "Select Student",
+    "payment": "Payment",
+    "classFee": "Class Fee",
+    "balanceAfter": "Balance After",
+    "paymentNeeded": "Additional payment needed"
   },
   "lessonKind": {
     "title": "Lesson Kinds"
@@ -190,7 +188,7 @@
     "todaySessions": "Today's Sessions",
     "runningSessions": "Running Sessions",
     "todayAbsences": "Today's Absences",
-    "expiringPackages": "Expiring Packages",
+    "studentsOwing": "Students Owing",
     "monthlyRevenue": "Monthly Revenue",
     "quickActions": "Quick Actions",
     "addStudent": "Add Student",
@@ -202,7 +200,7 @@
     "childSchedule": "Schedule",
     "childAttendance": "Attendance History",
     "childNotes": "Session Notes",
-    "childPackage": "Package Info"
+    "childTuition": "Tuition Info"
   },
   "notifications": {
     "title": "Notifications",

@@ -64,7 +64,9 @@
     "createClass": "Tạo Lớp",
     "noClasses": "Chưa có lớp học nào",
     "deleteConfirm": "Bạn có chắc chắn muốn xóa lớp này?",
-    "deleteBlocked": "Không thể xóa lớp đang có gói học viên. Vui lòng vô hiệu hóa các gói trước."
+    "deleteBlocked": "Không thể xóa lớp đang có học viên.",
+    "lessonKind": "Loại bài học",
+    "createKindOption": "Tạo mới: {{kind}}"
   },
   "students": {
     "title": "Quản lý Học sinh",
@@ -152,34 +154,30 @@
   },
   "tuition": {
     "title": "Quản lý Học phí",
-    "createPackage": "Tạo gói học",
-    "packageType": "Loại gói",
-    "totalSessions": "Tổng buổi",
-    "remainingSessions": "Còn lại",
-    "price": "Học phí",
-    "paymentStatus": "Trạng thái thanh toán",
-    "paid": "Đã thanh toán",
-    "unpaid": "Chưa thanh toán",
-    "recordPayment": "Thanh toán",
+    "addPayment": "Thêm thanh toán",
+    "totalPaid": "Đã thanh toán",
+    "totalFees": "Tổng phí",
+    "balance": "Số dư",
+    "viewLedger": "Xem sổ cái",
+    "studentLedger": "Sổ cái học phí",
     "amount": "Số tiền",
     "paymentDate": "Ngày thanh toán",
     "paymentMethod": "Phương thức",
-    "owing": "Nợ buổi",
-    "expiring": "Sắp hết buổi",
-    "custom": "Tùy chỉnh",
-    "sessions12": "12 buổi",
-    "sessions24": "24 buổi",
-    "sessions36": "36 buổi"
-  },
-  "package": {
-    "class": "Lớp học",
-    "lessonKind": "Loại bài học",
-    "numberOfLessons": "Số buổi",
-    "tuitionFee": "Học phí",
-    "assignPackage": "Chỉ định Gói học",
-    "resetAutoFill": "Tự động tính",
-    "notEnrolled": "Học sinh chưa được xếp vào lớp này.",
-    "createKindOption": "Tạo mới: {{kind}}"
+    "methodCash": "Tiền mặt",
+    "methodBankTransfer": "Chuyển khoản",
+    "methodOther": "Khác",
+    "owing": "Nợ",
+    "credit": "Dư",
+    "filterAll": "Tất cả học sinh",
+    "filterPositive": "Còn dư",
+    "filterZero": "Hết tiền",
+    "filterNegative": "Đang nợ",
+    "paymentRecorded": "Đã ghi nhận thanh toán",
+    "selectStudent": "Chọn học sinh",
+    "payment": "Thanh toán",
+    "classFee": "Phí buổi học",
+    "balanceAfter": "Số dư sau",
+    "paymentNeeded": "Cần thanh toán thêm"
   },
   "lessonKind": {
     "title": "Loại bài học"
@@ -190,7 +188,7 @@
     "todaySessions": "Buổi học hôm nay",
     "runningSessions": "Đang diễn ra",
     "todayAbsences": "Vắng hôm nay",
-    "expiringPackages": "Gói sắp hết",
+    "studentsOwing": "Học sinh đang nợ",
     "monthlyRevenue": "Doanh thu tháng",
     "quickActions": "Thao tác nhanh",
     "addStudent": "Thêm học sinh",
@@ -202,7 +200,7 @@
     "childSchedule": "Lịch học",
     "childAttendance": "Lịch sử điểm danh",
     "childNotes": "Nhận xét giáo viên",
-    "childPackage": "Thông tin gói học"
+    "childTuition": "Thông tin học phí"
   },
   "notifications": {
     "title": "Thông báo",
