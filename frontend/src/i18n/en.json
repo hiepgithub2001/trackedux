@@ -24,7 +24,10 @@
     "notes": "Notes",
     "date": "Date",
     "time": "Time",
-    "address": "Address"
+    "address": "Address",
+    "active": "Active",
+    "inactive": "Inactive",
+    "copied": "Copied to clipboard"
   },
   "auth": {
     "login": "Log In",
@@ -214,6 +217,36 @@
     "invalidEmail": "Invalid email address",
     "minLength": "Minimum {{min}} characters",
     "maxLength": "Maximum {{max}} characters"
+  },
+  "system": {
+    "centers": {
+      "title": "Edu-Centers Management",
+      "addCenter": "Register New Center",
+      "code": "Center Code",
+      "name": "Center Name",
+      "nameRequired": "Please enter center name",
+      "adminFullName": "Admin Full Name",
+      "adminFullNameRequired": "Please enter admin full name",
+      "adminUsername": "Admin Username",
+      "adminUsernameRequired": "Please enter admin username",
+      "adminEmail": "Admin Email (Optional)",
+      "registeredAt": "Registered Date",
+      "status": "Status",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "deactivateConfirm": "Deactivate this center?",
+      "activateConfirm": "Activate this center?",
+      "statusWarning": "This affects all users logging into this center.",
+      "statusUpdated": "Status updated successfully",
+      "statusUpdateFailed": "Failed to update status",
+      "search": "Search centers by name or code...",
+      "register": "Register Center",
+      "conflict": "Username or email already exists.",
+      "createFailed": "Failed to register center",
+      "createdSuccess": "Center Registered Successfully",
+      "credentialsAlert": "Important Credentials",
+      "credentialsNote": "Please copy and save this password immediately. It will not be shown again."
+    }
   },
   "pwa": {
     "installTitle": "Install App",

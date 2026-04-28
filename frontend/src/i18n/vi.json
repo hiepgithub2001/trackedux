@@ -24,7 +24,10 @@
     "notes": "Ghi chú",
     "date": "Ngày",
     "time": "Giờ",
-    "address": "Địa chỉ"
+    "address": "Địa chỉ",
+    "active": "Hoạt động",
+    "inactive": "Ngừng hoạt động",
+    "copied": "Đã sao chép vào bộ nhớ"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -214,6 +217,36 @@
     "invalidEmail": "Email không hợp lệ",
     "minLength": "Tối thiểu {{min}} ký tự",
     "maxLength": "Tối đa {{max}} ký tự"
+  },
+  "system": {
+    "centers": {
+      "title": "Quản lý Trung tâm",
+      "addCenter": "Đăng ký Trung tâm mới",
+      "code": "Mã Trung tâm",
+      "name": "Tên Trung tâm",
+      "nameRequired": "Vui lòng nhập tên trung tâm",
+      "adminFullName": "Họ tên Quản trị viên",
+      "adminFullNameRequired": "Vui lòng nhập họ tên quản trị viên",
+      "adminUsername": "Tên đăng nhập QTV",
+      "adminUsernameRequired": "Vui lòng nhập tên đăng nhập",
+      "adminEmail": "Email QTV (Tùy chọn)",
+      "registeredAt": "Ngày đăng ký",
+      "status": "Trạng thái",
+      "deactivate": "Vô hiệu hóa",
+      "reactivate": "Kích hoạt lại",
+      "deactivateConfirm": "Vô hiệu hóa trung tâm này?",
+      "activateConfirm": "Kích hoạt trung tâm này?",
+      "statusWarning": "Điều này sẽ ảnh hưởng đến tất cả người dùng đăng nhập vào trung tâm này.",
+      "statusUpdated": "Cập nhật trạng thái thành công",
+      "statusUpdateFailed": "Cập nhật trạng thái thất bại",
+      "search": "Tìm kiếm trung tâm theo tên hoặc mã...",
+      "register": "Đăng ký Trung tâm",
+      "conflict": "Tên đăng nhập hoặc email đã tồn tại.",
+      "createFailed": "Đăng ký trung tâm thất bại",
+      "createdSuccess": "Đăng ký Trung tâm Thành công",
+      "credentialsAlert": "Thông tin Đăng nhập Quan trọng",
+      "credentialsNote": "Vui lòng sao chép và lưu trữ mật khẩu này ngay lập tức. Mật khẩu này sẽ không được hiển thị lại."
+    }
   },
   "pwa": {
     "installTitle": "Cài đặt ứng dụng",

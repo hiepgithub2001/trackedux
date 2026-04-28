@@ -10,6 +10,9 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   if (roles && roles.length > 0 && !roles.includes(user?.role)) {
+    if (user?.role === 'superadmin') {
+      return <Navigate to="/system/centers" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

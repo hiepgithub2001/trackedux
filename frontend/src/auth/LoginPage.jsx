@@ -22,6 +22,8 @@ export default function LoginPage() {
       const user = await login(values.username, values.password);
       if (user.role === 'parent') {
         navigate('/portal');
+      } else if (user.role === 'superadmin') {
+        navigate('/system/centers');
       } else {
         navigate(from);
       }

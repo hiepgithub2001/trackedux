@@ -1,6 +1,7 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../auth/ProtectedRoute';
+import SuperadminRoute from '../auth/SuperadminRoute';
 import LoginPage from '../auth/LoginPage';
 import DashboardPage from '../features/dashboard/DashboardPage';
 import StudentList from '../features/students/StudentList';
@@ -15,6 +16,9 @@ import ClassForm from '../features/schedule/ClassForm';
 import ClassDetail from '../features/schedule/ClassDetail';
 import AttendancePage from '../features/attendance/AttendancePage';
 import TuitionPage from '../features/tuition/TuitionPage';
+
+import CenterListPage from '../features/system/CenterListPage';
+import CenterFormPage from '../features/system/CenterFormPage';
 
 const PlaceholderPage = ({ title }) => (
   <div style={{ padding: 24 }}>
@@ -59,6 +63,15 @@ const router = createBrowserRouter([
   {
     path: '/portal/child/:id',
     element: <ProtectedRoute roles={['parent']}><PlaceholderPage title="Child Detail" /></ProtectedRoute>,
+  },
+  {
+    path: '/system',
+    element: <SuperadminRoute><Outlet /></SuperadminRoute>,
+    children: [
+      { index: true, element: <Navigate to="centers" replace /> },
+      { path: 'centers', element: <CenterListPage /> },
+      { path: 'centers/new', element: <CenterFormPage /> },
+    ]
   },
   { path: '*', element: <Navigate to="/" replace /> },
 ]);
