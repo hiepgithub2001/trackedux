@@ -1,15 +1,20 @@
 """Shared pytest fixtures.
 
-Boots a Postgres container (via testcontainers), runs Alembic migrations against it,
-and exposes an ``AsyncClient`` wired to the FastAPI app for integration tests.
+Connects to a Postgres instance and exposes an ``AsyncClient`` wired to the
+FastAPI app for integration tests. Each test runs inside a savepoint that is
+rolled back at the end, so the DB ends up unchanged.
 
-If Docker is not available, tests requiring the ``client`` fixture will be skipped
-rather than failing the whole suite.
+Resolution order for the test DB URL:
+
+1. ``TEST_DATABASE_URL`` env var (e.g. an already-migrated dev DB)
+2. ``testcontainers[postgres]`` if Docker is available
+3. Skip — tests are skipped rather than failing the whole suite
 """
 
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import AsyncIterator
 from datetime import date
 from uuid import uuid4
@@ -19,57 +24,53 @@ import pytest_asyncio
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    """Session-scoped event loop so async fixtures can share state."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
 def pg_url() -> str:
-    """Boot a Postgres container and return an asyncpg URL."""
+    """Resolve a Postgres URL for tests, preferring TEST_DATABASE_URL."""
+    env_url = os.environ.get("TEST_DATABASE_URL")
+    if env_url:
+        yield env_url
+        return
+
     try:
         from testcontainers.postgres import PostgresContainer
-    except Exception as e:  # pragma: no cover
-        pytest.skip(f"testcontainers not available: {e}")
+    except Exception as e:
+        pytest.skip(f"testcontainers not available and TEST_DATABASE_URL unset: {e}")
 
     try:
         pg = PostgresContainer("postgres:16-alpine")
         pg.start()
-    except Exception as e:  # Docker not running, etc.
-        pytest.skip(f"Could not start postgres container: {e}")
+    except Exception as e:
+        pytest.skip(f"Could not start postgres container and TEST_DATABASE_URL unset: {e}")
 
-    sync_url = pg.get_connection_url()  # postgresql+psycopg2://...
+    sync_url = pg.get_connection_url()
     async_url = sync_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://").replace(
         "postgresql://", "postgresql+asyncpg://"
     )
-
     yield async_url
-
     pg.stop()
 
 
 @pytest_asyncio.fixture(scope="session")
 async def db_engine(pg_url: str):
-    """Apply Alembic migrations on the test DB and yield an async engine."""
-    import os
+    """Async engine pointed at the test DB.
 
+    When ``TEST_DATABASE_URL`` is set we trust the schema is already at head
+    (typical for the dev DB). Otherwise we run Alembic migrations against the
+    container we just started.
+    """
     os.environ["DATABASE_URL"] = pg_url
-    # Reload settings so the rest of the app picks up the test URL.
     from app.core import config as _config
 
     _config.settings = _config.Settings()  # type: ignore[attr-defined]
 
-    from alembic.config import Config as AlembicConfig
+    if not os.environ.get("TEST_DATABASE_URL"):
+        from alembic.config import Config as AlembicConfig
 
-    from alembic import command
+        from alembic import command
 
-    alembic_cfg = AlembicConfig("alembic.ini")
-    alembic_cfg.set_main_option("sqlalchemy.url", pg_url)
-
-    # Run migrations in a thread because alembic uses its own asyncio loop.
-    await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
+        alembic_cfg = AlembicConfig("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", pg_url)
+        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
 
     from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -79,32 +80,49 @@ async def db_engine(pg_url: str):
 
 
 @pytest_asyncio.fixture
-async def db_session(db_engine) -> AsyncIterator:
-    """Per-test DB session, rolled back at the end of the test."""
-    from sqlalchemy.ext.asyncio import async_sessionmaker
-
-    session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
-    async with session_factory() as session:
-        yield session
+async def db_connection(db_engine):
+    """Per-test connection with an outer transaction that gets rolled back."""
+    async with db_engine.connect() as conn:
+        trans = await conn.begin()
+        try:
+            yield conn
+        finally:
+            await trans.rollback()
 
 
 @pytest_asyncio.fixture
-async def client(db_engine) -> AsyncIterator:
-    """HTTP client bound to the FastAPI app with the test DB engine."""
+async def db_session(db_connection) -> AsyncIterator:
+    """Session bound to the per-test connection. Uses SAVEPOINTs so calls to
+    ``commit()`` inside the app don't actually commit — they end the savepoint
+    only, and the outer rollback nukes everything at test end."""
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    session = AsyncSession(bind=db_connection, expire_on_commit=False, join_transaction_mode="create_savepoint")
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+@pytest_asyncio.fixture
+async def client(db_connection) -> AsyncIterator:
+    """HTTP client bound to the FastAPI app, sharing the rolled-back connection."""
     from httpx import ASGITransport, AsyncClient
-    from sqlalchemy.ext.asyncio import async_sessionmaker
+    from sqlalchemy.ext.asyncio import AsyncSession
 
     from app.core.deps import get_db
     from app.main import app
 
-    session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
-
     async def _override_get_db():
-        async with session_factory() as session:
-            try:
-                yield session
-            finally:
-                await session.close()
+        session = AsyncSession(
+            bind=db_connection,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
+        try:
+            yield session
+        finally:
+            await session.close()
 
     app.dependency_overrides[get_db] = _override_get_db
     transport = ASGITransport(app=app)
@@ -118,7 +136,6 @@ async def client(db_engine) -> AsyncIterator:
 
 @pytest_asyncio.fixture
 async def make_center(db_session):
-    """Factory that creates a Center row and returns it."""
     from app.models.center import Center
 
     async def _make(name: str | None = None, code: str | None = None, is_active: bool = True):
@@ -138,7 +155,6 @@ async def make_center(db_session):
 
 @pytest_asyncio.fixture
 async def make_admin(db_session):
-    """Factory that creates an admin User scoped to the given center."""
     from app.core.security import hash_password
     from app.models.user import User
 
@@ -164,8 +180,6 @@ async def make_admin(db_session):
 
 @pytest_asyncio.fixture
 async def login(client):
-    """Login helper returning a Bearer-auth header dict."""
-
     async def _login(user) -> dict[str, str]:
         password = getattr(user, "_plain_password", "secret123")
         resp = await client.post(
@@ -181,7 +195,6 @@ async def login(client):
 
 @pytest_asyncio.fixture
 async def make_student(db_session):
-    """Factory that creates a Student in a given center."""
     from app.models.student import Student
 
     async def _make(center, name: str = "Student"):
@@ -200,7 +213,6 @@ async def make_student(db_session):
 
 @pytest_asyncio.fixture
 async def make_teacher(db_session):
-    """Factory that creates a Teacher in a given center."""
     from app.models.teacher import Teacher
 
     async def _make(center, name: str = "Teacher"):
@@ -218,7 +230,6 @@ async def make_teacher(db_session):
 
 @pytest_asyncio.fixture
 async def make_class(db_session):
-    """Factory that creates a ClassSession in a given center."""
     from datetime import time
 
     from app.models.class_session import ClassSession
