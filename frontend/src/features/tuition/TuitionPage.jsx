@@ -3,20 +3,19 @@ import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { listBalances } from '../../api/tuition';
 import PaymentForm from './PaymentForm';
-import StudentLedger from './StudentLedger';
 import { useAuth } from '../../auth/AuthContext';
 
 const vndFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
 export default function TuitionPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [balanceFilter, setBalanceFilter] = useState('all');
-  const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [ledgerOpen, setLedgerOpen] = useState(false);
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -57,8 +56,7 @@ export default function TuitionPage() {
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedStudentId(record.student_id);
-              setLedgerOpen(true);
+              navigate(`/tuition/${record.student_id}`);
             }}
           >
             {t('tuition.viewLedger', 'View Ledger')}
@@ -108,8 +106,7 @@ export default function TuitionPage() {
           onRow={(record) => ({
             onClick: () => {
               if (isAdmin) {
-                setSelectedStudentId(record.student_id);
-                setLedgerOpen(true);
+                navigate(`/tuition/${record.student_id}`);
               }
             },
             style: { cursor: isAdmin ? 'pointer' : 'default' },
@@ -124,15 +121,6 @@ export default function TuitionPage() {
           setPaymentModalOpen(false);
           refetch();
           messageApi.success(t('tuition.paymentRecorded', 'Payment recorded successfully'));
-        }}
-      />
-
-      <StudentLedger
-        open={ledgerOpen}
-        studentId={selectedStudentId}
-        onClose={() => {
-          setLedgerOpen(false);
-          setSelectedStudentId(null);
         }}
       />
     </div>

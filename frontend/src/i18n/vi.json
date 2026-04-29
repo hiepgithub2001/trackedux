@@ -149,8 +149,14 @@
     "absentWithNotice": "Vắng (có phép)",
     "todaySessions": "Buổi học hôm nay",
     "pastSessions": "Buổi học đã kết thúc",
+    "pendingSessions": "Chưa điểm danh",
     "scheduleMakeup": "Xếp lịch bù",
-    "sessionDate": "Ngày học"
+    "sessionDate": "Ngày học",
+    "chargeFee": "Tính phí",
+    "charge": "Tính phí",
+    "noCharge": "Miễn phí",
+    "marked": "Đã điểm danh",
+    "unmarked": "Chưa điểm danh"
   },
   "tuition": {
     "title": "Quản lý Học phí",

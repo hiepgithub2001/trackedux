@@ -45,6 +45,8 @@ class LedgerEntryResponse(BaseModel):
     description: str
     entry_date: date
     class_display_id: str | None = None
+    attendance_status: str | None = None  # present, absent, absent_with_notice
+    charge_fee: bool | None = None  # whether this session was charged
     created_at: datetime
 
     model_config = {"from_attributes": True}

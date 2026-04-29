@@ -16,6 +16,7 @@ import ClassForm from '../features/schedule/ClassForm';
 import ClassDetail from '../features/schedule/ClassDetail';
 import AttendancePage from '../features/attendance/AttendancePage';
 import TuitionPage from '../features/tuition/TuitionPage';
+import StudentLedgerPage from '../features/tuition/StudentLedger';
 
 import CenterListPage from '../features/system/CenterListPage';
 import CenterFormPage from '../features/system/CenterFormPage';
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
       { path: 'teachers/:id', element: <TeacherDetail /> },
       { path: 'teachers/:id/edit', element: <TeacherForm /> },
       { path: 'tuition', element: <TuitionPage /> },
+      { path: 'tuition/:studentId', element: <StudentLedgerPage /> },
       { path: 'reports', element: <PlaceholderPage title="Reports" /> },
       { path: 'notifications', element: <PlaceholderPage title="Notifications" /> },
     ],

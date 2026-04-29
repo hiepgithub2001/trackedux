@@ -149,8 +149,14 @@
     "absentWithNotice": "Absent (Notified)",
     "todaySessions": "Today's Sessions",
     "pastSessions": "Past Sessions",
+    "pendingSessions": "Pending Attendance",
     "scheduleMakeup": "Schedule Makeup",
-    "sessionDate": "Session Date"
+    "sessionDate": "Session Date",
+    "chargeFee": "Charge Fee",
+    "charge": "Charge",
+    "noCharge": "No Charge",
+    "marked": "Marked",
+    "unmarked": "Not Marked"
   },
   "tuition": {
     "title": "Tuition Management",

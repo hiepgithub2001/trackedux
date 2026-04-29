@@ -23,6 +23,8 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
     )
     session_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False)  # present, absent, absent_with_notice
+    # whether to deduct class fee
+    charge_fee: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     makeup_scheduled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     makeup_session_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True

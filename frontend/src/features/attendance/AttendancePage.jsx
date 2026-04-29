@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Card, Table, Tag, Button, message, Space, Radio, Row, Col, Pagination, Modal } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, DollarOutlined, StopOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getWeeklySchedule } from '../../api/classes';
@@ -19,15 +19,18 @@ export default function AttendancePage() {
   const [messageApi, contextHolder] = message.useMessage();
   const [selectedSession, setSelectedSession] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
+  const [chargeFeeData, setChargeFeeData] = useState({});
 
   const openSession = useCallback((session) => {
-    setAttendanceData({}); // reset before loading saved records
+    setAttendanceData({});
+    setChargeFeeData({});
     setSelectedSession(session);
   }, []);
 
   const closeSession = useCallback(() => {
     setSelectedSession(null);
     setAttendanceData({});
+    setChargeFeeData({});
   }, []);
 
   const { data: scheduleData } = useQuery({
@@ -35,31 +38,41 @@ export default function AttendancePage() {
     queryFn: () => getWeeklySchedule({}).then((r) => r.data),
   });
 
-  // Fetch previously saved attendance and seed the radio buttons
-  useQuery({
+  const { data: savedRecords } = useQuery({
     queryKey: ['attendance', selectedSession?.id, selectedSession?.date],
     queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => {
       const records = Array.isArray(r.data) ? r.data : (r.data?.records ?? r.data ?? []);
-      // Pre-populate attendanceData with saved statuses
-      const saved = {};
-      records.forEach((rec) => {
-        saved[rec.student_id] = rec.status;
-      });
-      setAttendanceData((prev) => ({ ...saved, ...prev }));
       return records;
     }),
     enabled: !!selectedSession,
   });
+
+  const getDerivedStatus = (studentId) => {
+    if (attendanceData[studentId] !== undefined) return attendanceData[studentId];
+    if (savedRecords && savedRecords.length > 0) {
+      const rec = savedRecords.find(r => r.student_id === studentId);
+      if (rec) return rec.status;
+    }
+    return 'present'; // default
+  };
+
+  const getDerivedChargeFee = (studentId) => {
+    if (chargeFeeData[studentId] !== undefined) return chargeFeeData[studentId];
+    if (savedRecords && savedRecords.length > 0) {
+      const rec = savedRecords.find(r => r.student_id === studentId);
+      if (rec && rec.charge_fee !== undefined) return rec.charge_fee;
+    }
+    return true; // default
+  };
 
   const mutation = useMutation({
     mutationFn: (data) => markBatchAttendance(data),
     onSuccess: () => {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
-      queryClient.invalidateQueries({ queryKey: ['student'] });
-      queryClient.invalidateQueries({ queryKey: ['students'] });
       closeSession();
     },
     onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
@@ -67,72 +80,114 @@ export default function AttendancePage() {
 
   const handleMark = () => {
     if (!selectedSession) return;
-    const records = Object.entries(attendanceData).map(([studentId, status]) => ({ student_id: studentId, status }));
+    const records = selectedSession.students.map((student) => ({
+      student_id: student.id,
+      status: getDerivedStatus(student.id),
+      charge_fee: getDerivedChargeFee(student.id),
+    }));
     mutation.mutate({ class_session_id: selectedSession.id, session_date: selectedSession.date, records });
   };
 
   const now = dayjs();
   const todayDateStr = now.format('YYYY-MM-DD');
-  const todaySessions = (scheduleData?.sessions || []).filter((s) => s.date === todayDateStr);
-  
-  const runningSessions = todaySessions.filter((s) => {
+
+  const allSessions = scheduleData?.sessions || [];
+
+  const runningSessions = allSessions.filter((s) => {
     const start = dayjs(`${s.date}T${s.start_time}`);
     const end = dayjs(`${s.date}T${s.end_time}`);
     return (now.isAfter(start) || now.isSame(start)) && now.isBefore(end);
   });
 
-  const pastSessions = (scheduleData?.sessions || [])
-    .filter((s) => {
-      const end = dayjs(`${s.date}T${s.end_time}`);
-      return now.isAfter(end);
-    })
-    .sort((a, b) => dayjs(`${b.date}T${b.start_time}`).valueOf() - dayjs(`${a.date}T${a.start_time}`).valueOf());
+  const pendingSessions = allSessions.filter((s) => !s.attendance_marked)
+    .sort((a, b) => dayjs(`${a.date}T${a.start_time}`).valueOf() - dayjs(`${b.date}T${b.start_time}`).valueOf());
 
+  const todaySessions = allSessions.filter((s) => {
+    if (s.date !== todayDateStr) return false;
+    const start = dayjs(`${s.date}T${s.start_time}`);
+    const end = dayjs(`${s.date}T${s.end_time}`);
+    const isRunning = (now.isAfter(start) || now.isSame(start)) && now.isBefore(end);
+    return !isRunning;
+  });
+
+  const pastSessions = allSessions.filter((s) => {
+    if (s.date === todayDateStr) return false;
+    const end = dayjs(`${s.date}T${s.end_time}`);
+    return now.isAfter(end);
+  }).sort((a, b) => dayjs(`${b.date}T${b.start_time}`).valueOf() - dayjs(`${a.date}T${a.start_time}`).valueOf());
+
+  const [pendingPage, setPendingPage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
-  const pastPageSize = 5;
-  const paginatedPast = pastSessions.slice((pastPage - 1) * pastPageSize, pastPage * pastPageSize);
+  const pageSize = 5;
+  const paginatedPending = pendingSessions.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
+  const paginatedPast = pastSessions.slice((pastPage - 1) * pageSize, pastPage * pageSize);
+
+  const SessionCard = ({ session, isHighlighted }) => (
+    <Card
+      size="small"
+      hoverable
+      onClick={() => openSession(session)}
+      style={{
+        border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined,
+        background: isHighlighted ? '#e6f4ff' : undefined,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space wrap>
+          <Tag color={isHighlighted ? 'processing' : 'blue'}>{session.start_time} - {session.end_time}</Tag>
+          {session.date !== todayDateStr && <Tag color="default">{session.date}</Tag>}
+          {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
+          <span style={{ fontWeight: 600 }}>{session.name}</span>
+          <span>({session.teacher.full_name})</span>
+          <Tag>{session.students.length} students</Tag>
+        </Space>
+        <div>
+          {session.attendance_marked ? (
+            <Tag icon={<CheckCircleOutlined />} color="success" style={{ margin: 0 }}>{t('attendance.marked', 'Marked')}</Tag>
+          ) : (
+            <Tag color="warning" style={{ margin: 0 }}>{t('attendance.unmarked', 'Not Marked')}</Tag>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
 
   return (
     <div className="fade-in">
       {contextHolder}
+
+      {/* Pending Attendance Panel */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24}>
+          <Card title={t('attendance.pendingSessions', 'Pending Attendance')} headStyle={{ background: '#fffbe6' }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {paginatedPending.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
+              {paginatedPending.map(s => <SessionCard key={s.id + s.date} session={s} />)}
+              {pendingSessions.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                  <Pagination current={pendingPage} pageSize={pageSize} total={pendingSessions.length} onChange={setPendingPage} />
+                </div>
+              )}
+            </Space>
+          </Card>
+        </Col>
+      </Row>
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} md={12}>
           <Card title={t('dashboard.runningSessions', 'Running Sessions')} style={{ height: '100%' }}>
             <Space direction="vertical" style={{ width: '100%' }}>
               {runningSessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
-              {runningSessions.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
-                  style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined, background: '#e6f4ff' }}>
-                  <Space wrap>
-                    <Tag color="processing">{session.start_time} - {session.end_time}</Tag>
-                    {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
-                    <span style={{ fontWeight: 600 }}>{session.name}</span>
-                    <span>({session.teacher.full_name})</span>
-                    <Tag>{session.students.length} students</Tag>
-                  </Space>
-                </Card>
-              ))}
+              {runningSessions.map(s => <SessionCard key={s.id + s.date} session={s} isHighlighted />)}
             </Space>
           </Card>
         </Col>
 
         <Col xs={24} md={12}>
-          <Card title={t('attendance.todaySessions')} style={{ height: '100%' }}>
+          <Card title={t('attendance.todaySessions', 'Today\'s Sessions')} style={{ height: '100%' }}>
             <Space direction="vertical" style={{ width: '100%' }}>
               {todaySessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
-              {todaySessions.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
-                  style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined }}>
-                  <Space wrap>
-                    <Tag color="blue">{session.start_time} - {session.end_time}</Tag>
-                    {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
-                    <span style={{ fontWeight: 500 }}>{session.name}</span>
-                    <span>({session.teacher.full_name})</span>
-                    <Tag>{session.students.length} students</Tag>
-                  </Space>
-                </Card>
-              ))}
+              {todaySessions.map(s => <SessionCard key={s.id + s.date} session={s} />)}
             </Space>
           </Card>
         </Col>
@@ -143,27 +198,10 @@ export default function AttendancePage() {
           <Card title={t('attendance.pastSessions', 'Past Sessions')}>
             <Space direction="vertical" style={{ width: '100%' }}>
               {paginatedPast.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
-              {paginatedPast.map((session) => (
-                <Card key={session.id} size="small" hoverable onClick={() => openSession(session)}
-                  style={{ border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined }}>
-                  <Space wrap>
-                    <Tag color="default">{session.date}</Tag>
-                    <Tag color="default">{session.start_time} - {session.end_time}</Tag>
-                    {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
-                    <span style={{ fontWeight: 500 }}>{session.name}</span>
-                    <span>({session.teacher.full_name})</span>
-                    <Tag>{session.students.length} students</Tag>
-                  </Space>
-                </Card>
-              ))}
+              {paginatedPast.map(s => <SessionCard key={s.id + s.date} session={s} />)}
               {pastSessions.length > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                  <Pagination 
-                    current={pastPage} 
-                    pageSize={pastPageSize} 
-                    total={pastSessions.length} 
-                    onChange={setPastPage} 
-                  />
+                  <Pagination current={pastPage} pageSize={pageSize} total={pastSessions.length} onChange={setPastPage} />
                 </div>
               )}
             </Space>
@@ -174,7 +212,7 @@ export default function AttendancePage() {
       <Modal
         title={selectedSession ? `${t('attendance.markAttendance')}: ${selectedSession.name}` : ''}
         centered
-        width={600}
+        width={850}
         onCancel={closeSession}
         open={!!selectedSession}
         footer={
@@ -192,16 +230,36 @@ export default function AttendancePage() {
             rowKey="id"
             pagination={false}
             columns={[
-              { title: t('students.studentName'), dataIndex: 'name', key: 'name' },
+              { title: t('students.studentName'), dataIndex: 'name', key: 'name', width: 150 },
               {
                 title: t('common.status'), key: 'status',
                 render: (_, record) => (
-                  <Radio.Group value={attendanceData[record.id]} onChange={(e) => setAttendanceData((prev) => ({ ...prev, [record.id]: e.target.value }))}>
+                  <Radio.Group value={getDerivedStatus(record.id)} onChange={(e) => setAttendanceData((prev) => ({ ...prev, [record.id]: e.target.value }))}>
                     <Radio.Button value="present">{STATUS_ICONS.present} {t('attendance.present')}</Radio.Button>
                     <Radio.Button value="absent">{STATUS_ICONS.absent} {t('attendance.absent')}</Radio.Button>
                     <Radio.Button value="absent_with_notice">{STATUS_ICONS.absent_with_notice} {t('attendance.absentWithNotice')}</Radio.Button>
                   </Radio.Group>
                 ),
+              },
+              {
+                title: t('attendance.chargeFee'), key: 'charge_fee', width: 220,
+                render: (_, record) => {
+                  const isCharged = getDerivedChargeFee(record.id);
+                  return (
+                    <Radio.Group
+                      value={isCharged}
+                      onChange={(e) => setChargeFeeData((prev) => ({ ...prev, [record.id]: e.target.value }))}
+                      buttonStyle={isCharged ? "solid" : "outline"}
+                    >
+                      <Radio.Button value={true}>
+                        <DollarOutlined /> {t('attendance.charge')}
+                      </Radio.Button>
+                      <Radio.Button value={false} style={!isCharged ? { backgroundColor: '#ff4d4f', color: 'white', borderColor: '#ff4d4f' } : {}}>
+                        <StopOutlined /> {t('attendance.noCharge')}
+                      </Radio.Button>
+                    </Radio.Group>
+                  );
+                },
               },
             ]}
           />

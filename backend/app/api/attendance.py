@@ -52,6 +52,7 @@ async def get_session_attendance(class_session_id: UUID, session_date: str, db: 
             "student_id": str(r.student_id),
             "student_name": r.student.name if r.student else "",
             "status": r.status,
+            "charge_fee": r.charge_fee,
             "notes": r.notes,
         }
         for r in records
