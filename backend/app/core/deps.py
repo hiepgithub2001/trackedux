@@ -28,7 +28,10 @@ async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict:
     """Extract and validate the current user from the JWT token."""
+    from sqlalchemy import select
+
     from app.crud.user import get_user_by_id
+    from app.models.center import Center
 
     payload = verify_token(token, token_type="access")
     if payload is None:
@@ -51,6 +54,14 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
+
+    if user.center_id is not None:
+        center = (await db.execute(select(Center).where(Center.id == user.center_id))).scalar_one_or_none()
+        if center is None or not center.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Center is deactivated",
+            )
 
     return user
 

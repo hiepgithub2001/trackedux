@@ -11,6 +11,8 @@ from sqlalchemy.orm import selectinload
 from app.crud.lesson_kind import find_or_create_lesson_kind
 from app.models.class_enrollment import ClassEnrollment
 from app.models.class_session import ClassSession
+from app.models.student import Student
+from app.models.teacher import Teacher
 from app.schemas.class_session import ClassSessionCreate, ClassSessionUpdate
 
 # ── Display ID utilities ──────────────────────────────────────────────
@@ -61,6 +63,22 @@ def compute_single_display_id(cs: ClassSession, all_classes: list[ClassSession])
 
 async def create_class_session(db: AsyncSession, data: ClassSessionCreate, center_id: UUID) -> ClassSession:
     """Create a new class session scoped to a center."""
+    teacher = (
+        await db.execute(
+            select(Teacher).where(Teacher.id == data.teacher_id, Teacher.center_id == center_id)
+        )
+    ).scalar_one_or_none()
+    if teacher is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
+
+    if data.student_ids:
+        result = await db.execute(
+            select(Student.id).where(Student.id.in_(data.student_ids), Student.center_id == center_id)
+        )
+        valid_ids = {row[0] for row in result.all()}
+        if len(valid_ids) != len(set(data.student_ids)):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
     lesson_kind_id = None
     if data.lesson_kind_name:
         lk = await find_or_create_lesson_kind(db, data.lesson_kind_name, center_id)
@@ -99,6 +117,14 @@ async def update_class_session(
         return None
 
     student_ids = data.student_ids
+    if student_ids:
+        result = await db.execute(
+            select(Student.id).where(Student.id.in_(student_ids), Student.center_id == center_id)
+        )
+        valid_ids = {row[0] for row in result.all()}
+        if len(valid_ids) != len(set(student_ids)):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
     for field, value in data.model_dump(exclude_unset=True, exclude={"student_ids"}).items():
         if field == "start_time" and value is not None:
             setattr(cs, field, time.fromisoformat(value))
@@ -130,9 +156,9 @@ async def update_class_session(
     return cs
 
 
-async def delete_class_session(db: AsyncSession, class_id: UUID) -> None:
-    """Delete a class session."""
-    cs = await get_class_session_by_id(db, class_id)
+async def delete_class_session(db: AsyncSession, class_id: UUID, center_id: UUID) -> None:
+    """Delete a class session, scoped to center."""
+    cs = await get_class_session_by_id(db, class_id, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
@@ -187,7 +213,27 @@ async def list_class_sessions(
 
 
 async def enroll_student(db: AsyncSession, class_id: UUID, student_id: UUID, center_id: UUID) -> ClassEnrollment:
-    """Add a student to a class session, scoped to center."""
+    """Add a student to a class session, scoped to center.
+
+    Validates that both the class and the student belong to ``center_id``. Raises 404
+    if either is missing or in a different center.
+    """
+    cs = (
+        await db.execute(
+            select(ClassSession).where(ClassSession.id == class_id, ClassSession.center_id == center_id)
+        )
+    ).scalar_one_or_none()
+    if cs is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
+
+    student = (
+        await db.execute(
+            select(Student).where(Student.id == student_id, Student.center_id == center_id)
+        )
+    ).scalar_one_or_none()
+    if student is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
     enrollment = ClassEnrollment(class_session_id=class_id, student_id=student_id, center_id=center_id)
     db.add(enrollment)
     await db.commit()
@@ -195,12 +241,13 @@ async def enroll_student(db: AsyncSession, class_id: UUID, student_id: UUID, cen
     return enrollment
 
 
-async def unenroll_student(db: AsyncSession, class_id: UUID, student_id: UUID) -> bool:
-    """Remove a student from a class session."""
+async def unenroll_student(db: AsyncSession, class_id: UUID, student_id: UUID, center_id: UUID) -> bool:
+    """Remove a student from a class session, scoped to center."""
     result = await db.execute(
         select(ClassEnrollment).where(
             ClassEnrollment.class_session_id == class_id,
             ClassEnrollment.student_id == student_id,
+            ClassEnrollment.center_id == center_id,
         )
     )
     enrollment = result.scalar_one_or_none()

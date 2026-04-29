@@ -1,10 +1,12 @@
 """Authentication API routes."""
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DbSession
 from app.core.security import create_access_token, create_refresh_token, verify_password, verify_token
 from app.crud.user import get_user_by_id, get_user_by_username
+from app.models.center import Center
 from app.schemas.user import LoginRequest, RefreshRequest, TokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -25,6 +27,14 @@ async def login(request: LoginRequest, db: DbSession):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Account is inactive",
         )
+
+    if user.center_id is not None:
+        center = (await db.execute(select(Center).where(Center.id == user.center_id))).scalar_one_or_none()
+        if center is None or not center.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Center is deactivated",
+            )
 
     token_data = {"sub": str(user.id), "role": user.role}
     access_token = create_access_token(token_data)
