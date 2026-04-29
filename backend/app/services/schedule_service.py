@@ -30,12 +30,14 @@ async def check_scheduling_conflicts(
     duration_minutes: int,
     student_ids: list[UUID],
     exclude_class_id: UUID | None = None,
+    center_id: UUID | None = None,
 ) -> list[dict]:
     """Check for teacher and student time conflicts.
 
     Args:
         start_time: HH:MM string for the new session's start.
         duration_minutes: positive duration in minutes.
+        center_id: when provided, restrict conflict search to a single center.
     """
     st = time.fromisoformat(start_time)
     et = _add_minutes(st, duration_minutes)
@@ -49,6 +51,8 @@ async def check_scheduling_conflicts(
         ClassSession.is_active == True,  # noqa: E712
         ClassSession.start_time < et,
     )
+    if center_id is not None:
+        base_query = base_query.where(ClassSession.center_id == center_id)
     if exclude_class_id:
         base_query = base_query.where(ClassSession.id != exclude_class_id)
 

@@ -110,6 +110,7 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
         data.start_time,
         data.duration_minutes,
         data.student_ids,
+        center_id=center_id,
     )
     if conflicts:
         raise HTTPException(
@@ -164,8 +165,9 @@ async def delete_class_endpoint(class_id: UUID, db: DbSession, current_user: Cur
     """Delete a class session. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    center_id = get_center_id(current_user)
 
-    await delete_class_session(db, class_id)
+    await delete_class_session(db, class_id, center_id)
     return {"detail": "Class deleted"}
 
 
@@ -188,6 +190,7 @@ async def enroll_student_endpoint(class_id: UUID, data: EnrollRequest, db: DbSes
         cs.duration_minutes,
         [data.student_id],
         exclude_class_id=class_id,
+        center_id=center_id,
     )
     student_conflicts = [c for c in conflicts if c["type"] == "student"]
     if student_conflicts:
@@ -205,7 +208,8 @@ async def unenroll_student_endpoint(class_id: UUID, student_id: UUID, db: DbSess
     """Remove student from class. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    success = await unenroll_student(db, class_id, student_id)
+    center_id = get_center_id(current_user)
+    success = await unenroll_student(db, class_id, student_id, center_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrollment not found")
     return {"detail": "Student unenrolled"}
