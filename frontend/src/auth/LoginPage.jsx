@@ -58,9 +58,9 @@ export default function LoginPage() {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div style={{ textAlign: 'center' }}>
             <Title level={2} style={{ marginBottom: 4, color: '#1a1a2e' }}>
-              🎹 TrackEduX
+              🎓 TrackEduX
             </Title>
-            <Text type="secondary">{t('auth.subtitle', 'Piano Center Management')}</Text>
+            <Text type="secondary">{t('auth.subtitle', 'Education Center Management')}</Text>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

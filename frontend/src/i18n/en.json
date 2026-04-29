@@ -36,7 +36,7 @@
     "logout": "Log Out",
     "username": "Username",
     "password": "Password",
-    "subtitle": "Piano Center Management",
+    "subtitle": "Education Center Management",
     "usernameRequired": "Please enter username",
     "passwordRequired": "Please enter password",
     "loginFailed": "Login failed. Please check your credentials."

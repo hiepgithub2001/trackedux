@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query
 
 from app.core.deps import CurrentUser, DbSession, require_superadmin
 from app.crud.center import list_centers, patch_center
-from app.schemas.center import CenterCreate, CenterListItem, CreateCenterResponse
+from app.schemas.center import CenterCreate, CenterListItem, CenterUpdateStatus, CreateCenterResponse
 from app.services.center_service import create_center_with_admin
 
 router = APIRouter(prefix="/system/centers", tags=["System Admin"])
@@ -38,6 +38,7 @@ async def create_new_center(
         admin_full_name=data.admin_full_name,
         admin_username=data.admin_username,
         admin_email=data.admin_email,
+        admin_password=data.admin_password,
         registered_by_id=current_user.id,
     )
     return {"center": center_dict, "admin_credentials": credentials}
@@ -46,13 +47,13 @@ async def create_new_center(
 @router.patch("/{center_id}")
 async def update_center(
     center_id: UUID,
+    data: CenterUpdateStatus,
     db: DbSession,
     current_user: CurrentUser,
-    is_active: bool,
 ):
     """Activate or deactivate a center. Superadmin only."""
     require_superadmin(current_user)
-    center = await patch_center(db, center_id, is_active=is_active)
+    center = await patch_center(db, center_id, is_active=data.is_active)
     if not center:
         from fastapi import HTTPException, status
 

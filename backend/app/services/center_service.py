@@ -25,6 +25,7 @@ async def create_center_with_admin(
     admin_full_name: str,
     admin_username: str,
     admin_email: str | None,
+    admin_password: str | None,
     registered_by_id: UUID,
 ) -> tuple[dict, dict]:
     """
@@ -46,7 +47,7 @@ async def create_center_with_admin(
     center = await create_center(db, center_name, registered_by_id)
 
     # 3. Create the admin user
-    plain_password = _generate_password()
+    plain_password = admin_password if admin_password else _generate_password()
     admin_user = User(
         username=admin_username,
         email=admin_email,

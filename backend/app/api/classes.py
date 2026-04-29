@@ -118,17 +118,9 @@ async def create_class(data: ClassSessionCreate, db: DbSession, current_user: Cu
             detail={"message": "Scheduling conflict", "conflicts": conflicts},
         )
 
-    from sqlalchemy.exc import IntegrityError
 
-    try:
-        cs = await create_class_session(db, data, center_id)
-        cs = await get_class_session_by_id(db, cs.id, center_id)  # Reload with relationships
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A class with this name already exists in your center."
-        )
+    cs = await create_class_session(db, data, center_id)
+    cs = await get_class_session_by_id(db, cs.id, center_id)  # Reload with relationships
 
     all_classes = await list_class_sessions(db, center_id=center_id, active_only=False)
     display_ids = compute_display_ids(all_classes)
@@ -142,16 +134,8 @@ async def update_class_endpoint(class_id: UUID, data: ClassSessionUpdate, db: Db
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     center_id = get_center_id(current_user)
 
-    from sqlalchemy.exc import IntegrityError
 
-    try:
-        cs = await update_class_session(db, class_id, data, center_id)
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A class with this name already exists in your center."
-        )
+    cs = await update_class_session(db, class_id, data, center_id)
     if cs is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 

@@ -99,7 +99,7 @@ export default function Layout() {
               letterSpacing: -0.5,
             }}
           >
-            {collapsed ? '🎹' : '🎹 TrackEduX'}
+            {collapsed ? '🎓' : '🎓 TrackEduX'}
           </Text>
         </div>
         <Menu
@@ -124,24 +124,37 @@ export default function Layout() {
             zIndex: 10,
           }}
         >
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            {currentMenuItem?.label}
-          </Typography.Title>
-          <Space size="middle">
-            <LanguageSwitcher />
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar
-                  style={{ backgroundColor: '#667eea' }}
-                  icon={<UserOutlined />}
-                  size="small"
-                />
-                <Text strong style={{ fontSize: 13 }}>
-                  {user?.full_name || 'User'}
-                </Text>
-              </Space>
-            </Dropdown>
-          </Space>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              {currentMenuItem?.label}
+            </Typography.Title>
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {user?.center?.name && (
+              <Typography.Text strong style={{ fontSize: '18px', color: '#1a1a2e' }}>
+                {user.center.name}
+              </Typography.Text>
+            )}
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <Space size="middle">
+              <LanguageSwitcher />
+              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+                <Space style={{ cursor: 'pointer' }}>
+                  <Avatar
+                    style={{ backgroundColor: '#667eea' }}
+                    icon={<UserOutlined />}
+                    size="small"
+                  />
+                  <Text strong style={{ fontSize: 13 }}>
+                    {user?.full_name || 'User'}
+                  </Text>
+                </Space>
+              </Dropdown>
+            </Space>
+          </div>
         </Header>
         <Content
           style={{

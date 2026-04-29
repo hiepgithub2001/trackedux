@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import ForeignKey, String, func  # noqa: F401
+from sqlalchemy import ForeignKey, String, UniqueConstraint, func  # noqa: F401
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,9 +13,12 @@ class LessonKind(Base, UUIDMixin, TimestampMixin):
     """A passive, append-only vocabulary entry for classifying course lessons."""
 
     __tablename__ = "lesson_kinds"
+    __table_args__ = (
+        UniqueConstraint("center_id", "name_normalized", name="uq_lesson_kind_center_name"),
+    )
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    name_normalized: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
+    name_normalized: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     center_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True
     )

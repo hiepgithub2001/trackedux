@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
@@ -10,6 +10,17 @@ export function AuthProvider({ children }) {
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
+
+  // Sync user profile on load to get fresh data (like center details)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      client.get('/auth/me').then(res => {
+        setUser(res.data);
+        localStorage.setItem('user', JSON.stringify(res.data));
+      }).catch(() => {});
+    }
+  }, []);
 
   const isAuthenticated = !!user;
 

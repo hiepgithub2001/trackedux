@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
 
@@ -25,3 +25,5 @@ class User(Base, UUIDMixin, TimestampMixin):
     center_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=True, index=True
     )
+
+    center = relationship("Center", foreign_keys=[center_id], lazy="selectin")

@@ -12,8 +12,17 @@ class CenterCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=200)
     admin_full_name: str = Field(..., min_length=1, max_length=200)
     admin_username: str = Field(..., min_length=3, max_length=100)
+    admin_password: str | None = Field(
+        None,
+        min_length=6,
+        description="Optional custom password. Auto-generated if not provided.",
+    )
     admin_email: str | None = None
 
+
+class CenterUpdateStatus(BaseModel):
+    """Schema for updating a center's status."""
+    is_active: bool
 
 class CenterResponse(BaseModel):
     """Schema for a center."""

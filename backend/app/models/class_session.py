@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, time
 
-from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Integer, String, Time, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, Date, ForeignKey, Integer, String, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -42,10 +42,6 @@ class ClassSession(Base, UUIDMixin, TimestampMixin):
     teacher = relationship("Teacher", back_populates="classes", lazy="selectin")
     enrollments = relationship("ClassEnrollment", back_populates="class_session", lazy="selectin")
     lesson_kind = relationship("LessonKind", lazy="selectin")
-
-    __table_args__ = (
-        UniqueConstraint("center_id", "name", name="uq_class_session_center_name"),
-    )
 
     @property
     def end_time(self) -> time:

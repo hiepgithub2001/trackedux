@@ -26,6 +26,14 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class CenterBasicInfo(BaseModel):
+    """Basic center info for user context."""
+    id: UUID
+    name: str
+    code: str
+
+    model_config = {"from_attributes": True}
+
 class UserResponse(BaseModel):
     """Schema for user response data."""
 
@@ -37,6 +45,7 @@ class UserResponse(BaseModel):
     language: str
     is_active: bool
     center_id: UUID | None = None
+    center: CenterBasicInfo | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -3,7 +3,7 @@ import { Form, Input, Button, Card, Typography, Modal, Space, Layout, Alert, mes
 import { ArrowLeftOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { centersApi } from '../../api/centers';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 
@@ -13,6 +13,7 @@ const { Header, Content } = Layout;
 export default function CenterFormPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [credentialsModalVisible, setCredentialsModalVisible] = useState(false);
   const [newCenterData, setNewCenterData] = useState(null);
@@ -23,6 +24,7 @@ export default function CenterFormPage() {
       setNewCenterData(data);
       setCredentialsModalVisible(true);
       form.resetFields();
+      queryClient.invalidateQueries({ queryKey: ['centers'] });
     },
     onError: (error) => {
       if (error.response?.status === 409) {
@@ -92,6 +94,17 @@ export default function CenterFormPage() {
               ]}
             >
               <Input placeholder="E.g., admin_abc" />
+            </Form.Item>
+
+            <Form.Item
+              name="admin_password"
+              label={t('system.centers.adminPassword', 'Admin Password (Optional)')}
+              rules={[
+                { min: 6, message: 'Password must be at least 6 characters' }
+              ]}
+              extra={t('system.centers.adminPasswordHint', 'If left blank, a secure password will be auto-generated.')}
+            >
+              <Input.Password placeholder="Leave blank to auto-generate" />
             </Form.Item>
 
             <Form.Item
