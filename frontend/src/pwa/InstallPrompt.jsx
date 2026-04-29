@@ -7,23 +7,15 @@ const { Text } = Typography;
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [isIOS] = useState(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
+  const [showPrompt, setShowPrompt] = useState(() => {
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    return !dismissed && ios && !window.navigator.standalone;
+  });
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Detect iOS
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsIOS(ios);
-
-    // Check if already dismissed
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) return;
-
-    if (ios && !window.navigator.standalone) {
-      setShowPrompt(true);
-    }
 
     const handler = (e) => {
       e.preventDefault();

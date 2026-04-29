@@ -28,7 +28,20 @@ async def get_weekly_schedule(
 
     week_end = week_start + timedelta(days=6)
 
+    from sqlalchemy import select
+
+    from app.models.attendance import AttendanceRecord
+
     classes = await list_class_sessions(db, center_id=center_id, teacher_id=teacher_id)
+
+    # Query attendance records for this week to know which sessions are marked
+    att_query = select(AttendanceRecord.class_session_id, AttendanceRecord.session_date).where(
+        AttendanceRecord.center_id == center_id,
+        AttendanceRecord.session_date >= week_start,
+        AttendanceRecord.session_date <= week_end,
+    )
+    att_res = await db.execute(att_query)
+    marked_sessions = {(row.class_session_id, row.session_date) for row in att_res.all()}
 
     sessions = []
     for cs in classes:
@@ -54,7 +67,7 @@ async def get_weekly_schedule(
                 "end_time": _derive_end_time(start_str, cs.duration_minutes),
                 "date": session_date.isoformat(),
                 "is_makeup": cs.is_makeup,
-                "attendance_marked": False,
+                "attendance_marked": (cs.id, session_date) in marked_sessions,
             }
         )
 

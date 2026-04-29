@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class AttendanceBatchItem(BaseModel):
     student_id: UUID
     status: str  # present, absent, absent_with_notice
+    charge_fee: bool = True  # whether to deduct class fee for this student
     notes: str | None = None
 
 

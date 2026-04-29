@@ -222,11 +222,17 @@ async def get_student_ledger(
     for entry in entries:
         # Derive class_display_id from class_session relationship
         class_display_id = None
+        attendance_status = None
+        charge_fee = None
         if entry.entry_type == "class_fee":
             if entry.class_session:
                 class_display_id = entry.class_session.name
             else:
                 class_display_id = entry.description
+            # Extract attendance info from linked attendance record
+            if entry.attendance:
+                attendance_status = entry.attendance.status
+                charge_fee = entry.attendance.charge_fee
 
         entry_responses.append(
             LedgerEntryResponse(
@@ -237,6 +243,8 @@ async def get_student_ledger(
                 description=entry.description,
                 entry_date=entry.entry_date,
                 class_display_id=class_display_id,
+                attendance_status=attendance_status,
+                charge_fee=charge_fee,
                 created_at=entry.created_at,
             )
         )
