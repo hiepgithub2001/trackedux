@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import AttendanceRecord
-from app.models.class_session import ClassSession
+from app.models.lesson import Lesson
 from app.models.student import Student
 from app.models.tuition_payment import TuitionPayment
 
@@ -23,12 +23,13 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
     )
     active_students = result.scalar() or 0
 
-    # Today's sessions count and running sessions (scoped to center)
+    # Today's recurring lessons (scoped to center)
     result = await db.execute(
-        select(ClassSession).where(
-            ClassSession.day_of_week == today_dow,
-            ClassSession.is_active == True,  # noqa: E712
-            ClassSession.center_id == center_id,
+        select(Lesson).where(
+            Lesson.day_of_week == today_dow,
+            Lesson.is_active == True,  # noqa: E712
+            Lesson.center_id == center_id,
+            Lesson.rrule.isnot(None),
         )
     )
     today_sessions_objs = result.scalars().all()
@@ -40,6 +41,7 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
         e_dt = s_dt + timedelta(minutes=s.duration_minutes)
         if s_dt <= now <= e_dt:
             running_sessions += 1
+
 
     # Today's absences count (scoped to center)
     result = await db.execute(

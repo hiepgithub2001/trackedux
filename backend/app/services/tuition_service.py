@@ -196,14 +196,9 @@ async def get_student_ledger(
     if not student:
         raise ValueError(f"Student {student_id} not found in this center")
 
-    from sqlalchemy.orm import selectinload
-
-    from app.models.class_session import ClassSession
-
     # Build ledger query
     query = (
         select(TuitionLedgerEntry)
-        .options(selectinload(TuitionLedgerEntry.class_session).selectinload(ClassSession.teacher))
         .where(
             TuitionLedgerEntry.student_id == student_id,
             TuitionLedgerEntry.center_id == center_id,
@@ -214,7 +209,6 @@ async def get_student_ledger(
         query = query.where(TuitionLedgerEntry.entry_date >= from_date)
     if to_date:
         query = query.where(TuitionLedgerEntry.entry_date <= to_date)
-
     result = await db.execute(query)
     entries = result.scalars().all()
 
@@ -225,11 +219,8 @@ async def get_student_ledger(
         attendance_status = None
         charge_fee = None
         if entry.entry_type == "class_fee":
-            if entry.class_session:
-                class_display_id = entry.class_session.name
-            else:
-                class_display_id = entry.description
-            # Extract attendance info from linked attendance record
+            # description holds the class name or display string set at write time
+            class_display_id = entry.description
             if entry.attendance:
                 attendance_status = entry.attendance.status
                 charge_fee = entry.attendance.charge_fee
