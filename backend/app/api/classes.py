@@ -19,7 +19,6 @@ from app.schemas.class_ import (
     ClassCreate,
     ClassEnrollRequest,
     ClassResponse,
-    ClassUnenrollRequest,
     ClassUpdate,
     EnrolledStudent,
 )

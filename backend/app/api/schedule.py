@@ -47,14 +47,14 @@ async def get_weekly_schedule(
     )
 
     # Load persisted occurrence overrides for the week (+ buffer for rescheduled)
-    lesson_ids = [l.id for l in lessons]
+    lesson_ids = [lesson.id for lesson in lessons]
     overrides = await load_overrides_for_week(db, lesson_ids, week_start, week_end, center_id)
 
     # Compute virtual occurrences via rrule expansion + override overlay
     occurrences = compute_week_occurrences(lessons, overrides, week_start, week_end)
 
     # Build lesson lookup for roster data
-    lesson_map = {str(l.id): l for l in lessons}
+    lesson_map = {str(lesson.id): lesson for lesson in lessons}
 
     sessions = []
     for occ in occurrences:

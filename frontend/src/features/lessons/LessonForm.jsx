@@ -1,8 +1,7 @@
 import { Modal, Form, Select, InputNumber, TimePicker, DatePicker, Radio, Input, Button, Alert, message } from 'antd';
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import dayjs from 'dayjs';
 import { listClasses } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { createLesson } from '../../api/lessons';

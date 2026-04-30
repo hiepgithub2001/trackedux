@@ -3,15 +3,11 @@
 from datetime import date, time
 from unittest.mock import MagicMock
 
-import pytest
-
 from app.services.recurrence_service import (
-    VirtualOccurrence,
     build_rrule_string,
     compute_week_occurrences,
     parse_rrule_day,
 )
-
 
 # ──────────────────────────────────────────────────────────
 # Helpers

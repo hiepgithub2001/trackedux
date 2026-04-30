@@ -28,7 +28,11 @@ async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_u
     if hasattr(data, "lesson_id") and data.lesson_id:
         lesson = await get_lesson_by_id(db, data.lesson_id, center_id)
         if lesson is not None:
-            session_d = date_type.fromisoformat(str(data.session_date)) if isinstance(data.session_date, str) else data.session_date
+            session_d = (
+                date_type.fromisoformat(str(data.session_date))
+                if isinstance(data.session_date, str)
+                else data.session_date
+            )
             existing = await get_occurrence(db, data.lesson_id, session_d, center_id)
             if existing is None:
                 # Materialize the occurrence record lazily

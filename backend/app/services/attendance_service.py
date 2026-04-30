@@ -4,7 +4,6 @@ Updated for migration 022: uses lesson_occurrence_id instead of class_session_id
 Fee is derived from the Lesson's class's tuition_fee_per_lesson.
 """
 
-from datetime import date as date_type
 from uuid import UUID
 
 from sqlalchemy import select

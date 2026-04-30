@@ -5,7 +5,6 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
 import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { overrideOccurrence } from '../../api/lessons';

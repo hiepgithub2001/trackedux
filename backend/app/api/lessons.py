@@ -58,7 +58,7 @@ async def get_lessons(
     """List lessons for the current center."""
     center_id = get_center_id(current_user)
     lessons = await list_lessons(db, center_id=center_id, class_id=class_id, teacher_id=teacher_id, is_active=is_active)
-    return [_lesson_to_response(l) for l in lessons]
+    return [_lesson_to_response(lesson) for lesson in lessons]
 
 
 @router.get("/{lesson_id}", response_model=LessonResponse)
@@ -86,9 +86,8 @@ async def create_lesson_endpoint(data: LessonCreate, db: DbSession, current_user
     # Get enrolled students if class is attached
     student_ids: list[UUID] = []
     if data.class_id:
+
         from app.crud.class_ import get_class_by_id
-        from app.models.class_enrollment import ClassEnrollment
-        from sqlalchemy import select
         cls = await get_class_by_id(db, data.class_id, center_id)
         if cls is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")

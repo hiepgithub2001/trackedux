@@ -8,7 +8,6 @@ import { listClasses } from '../../api/classes';
 import { useAuth } from '../../auth/AuthContext';
 
 const { Text } = Typography;
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function ClassesPage() {
   const { t } = useTranslation();

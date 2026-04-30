@@ -82,7 +82,7 @@ def parse_rrule_day(rrule_str: str) -> int:
     return 0
 
 
-def _find_dtstart(lesson: "Lesson") -> datetime:
+def _find_dtstart(lesson: Lesson) -> datetime:
     """Determine the RRULE expansion anchor (dtstart)."""
     # Use created_at date as anchor — gives us the first potential occurrence
     # from when the lesson was defined. Expansion is bounded per week anyway.
@@ -96,8 +96,8 @@ def _add_minutes(t: time, minutes: int) -> time:
 
 
 def compute_week_occurrences(
-    lessons: list["Lesson"],
-    overrides: dict[tuple[str, date], "LessonOccurrence"],
+    lessons: list[Lesson],
+    overrides: dict[tuple[str, date], LessonOccurrence],
     week_start: date,
     week_end: date,
 ) -> list[VirtualOccurrence]:
@@ -117,9 +117,6 @@ def compute_week_occurrences(
         original_date week (callers filter by effective_date).
     """
     results: list[VirtualOccurrence] = []
-
-    week_start_dt = datetime.combine(week_start, time.min)
-    week_end_dt = datetime.combine(week_end, time(23, 59, 59))
 
     for lesson in lessons:
         if not lesson.is_active:
@@ -174,13 +171,13 @@ def compute_week_occurrences(
 
 
 def _build_occurrence(
-    lesson: "Lesson",
+    lesson: Lesson,
     lesson_id_str: str,
     class_name: str | None,
     display_name: str,
     teacher_id: str,
     orig_date: date,
-    override: "LessonOccurrence | None",
+    override: LessonOccurrence | None,
 ) -> VirtualOccurrence:
     """Build a VirtualOccurrence, applying override if present."""
     if override is not None:
