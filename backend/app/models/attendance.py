@@ -15,10 +15,7 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
 
     __tablename__ = "attendance_records"
 
-    class_session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=False
-    )
-    # New FK — populated when attendance is marked via new lesson-based flow
+    # FK → lesson_occurrences (new model); lesson_occurrence_id is the canonical ref
     lesson_occurrence_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lesson_occurrences.id"), nullable=True, index=True
     )
@@ -29,10 +26,6 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(30), nullable=False)  # present, absent, absent_with_notice
     # whether to deduct class fee
     charge_fee: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    makeup_scheduled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
-    makeup_session_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True
-    )
     marked_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     center_id: Mapped[uuid.UUID] = mapped_column(
@@ -41,5 +34,4 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
 
     # Relationships
     student = relationship("Student", lazy="selectin")
-    class_session = relationship("ClassSession", foreign_keys=[class_session_id], lazy="selectin")
     lesson_occurrence = relationship("LessonOccurrence", lazy="selectin")

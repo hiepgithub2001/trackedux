@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,20 +11,15 @@ from app.db.base import Base, UUIDMixin
 
 
 class ClassEnrollment(Base, UUIDMixin):
-    """Links students to classes (new Class entity).
+    """Links students to the new Class entity.
 
-    class_session_id is kept temporarily for backward compatibility during migration.
-    class_id is the new FK pointing to the classes table.
+    class_id is the canonical FK. class_session_id has been dropped in migration 022.
+    enrolled_since / unenrolled_at support mid-series roster changes.
     """
 
     __tablename__ = "class_enrollments"
-    __table_args__ = (UniqueConstraint("class_session_id", "student_id", name="uq_enrollment_class_student"),)
 
-    # Legacy FK — kept during migration, will be dropped in migration 022
-    class_session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=False
-    )
-    # New FK → classes table (populated by migration 021)
+    # FK → classes table
     class_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("classes.id"), nullable=True, index=True
     )
@@ -47,6 +42,5 @@ class ClassEnrollment(Base, UUIDMixin):
     )
 
     # Relationships
-    class_session = relationship("ClassSession", back_populates="enrollments")
     class_ = relationship("Class", back_populates="enrollments")
     student = relationship("Student", lazy="selectin")

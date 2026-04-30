@@ -33,8 +33,9 @@ class TuitionLedgerEntry(Base, UUIDMixin):
     attendance_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("attendance_records.id"), nullable=True
     )
-    class_session_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=True
+    # lesson_id: populated for lesson-based fee deductions (migration 021+)
+    lesson_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lessons.id"), nullable=True
     )
 
     entry_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -50,7 +51,7 @@ class TuitionLedgerEntry(Base, UUIDMixin):
     student = relationship("Student", lazy="selectin")
     payment = relationship("TuitionPayment", lazy="selectin")
     attendance = relationship("AttendanceRecord", lazy="selectin")
-    class_session = relationship("ClassSession", lazy="selectin")
+    lesson = relationship("Lesson", lazy="selectin")
 
     __table_args__ = (
         # Composite index for chronological ledger queries
