@@ -27,7 +27,6 @@ async def create_class(db: AsyncSession, data: ClassCreate, center_id: uuid.UUID
 
     for student_id in data.student_ids:
         enrollment = ClassEnrollment(
-            class_session_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),  # placeholder legacy FK
             class_id=class_.id,
             student_id=student_id,
             center_id=center_id,
@@ -111,7 +110,6 @@ async def enroll_student(
         return existing
 
     enrollment = ClassEnrollment(
-        class_session_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),  # placeholder legacy FK
         class_id=class_id,
         student_id=student_id,
         center_id=center_id,

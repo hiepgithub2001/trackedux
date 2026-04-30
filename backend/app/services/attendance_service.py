@@ -96,9 +96,9 @@ async def mark_batch_attendance(
             fee = lesson.class_.tuition_fee_per_lesson or 0
             description = lesson.class_.name[:50]
 
-    elif hasattr(data, "class_session_id") and data.class_session_id:
-        # Legacy path — no fee lookup possible (table dropped), treat as 0
-        description = str(data.class_session_id)[:8]
+    elif hasattr(data, "lesson_id") and not data.lesson_id:
+        # No lesson_id provided — no fee lookup possible
+        description = "manual"
 
     for item in data.records:
         student_result = await db.execute(
@@ -118,15 +118,6 @@ async def mark_batch_attendance(
                 select(AttendanceRecord).where(
                     AttendanceRecord.lesson_occurrence_id == lesson_occurrence_id,
                     AttendanceRecord.student_id == item.student_id,
-                )
-            )
-            existing_record = existing_res.scalar_one_or_none()
-        elif hasattr(data, "class_session_id") and data.class_session_id:
-            existing_res = await db.execute(
-                select(AttendanceRecord).where(
-                    AttendanceRecord.student_id == item.student_id,
-                    AttendanceRecord.session_date == data.session_date,
-                    AttendanceRecord.lesson_occurrence_id.is_(None),
                 )
             )
             existing_record = existing_res.scalar_one_or_none()

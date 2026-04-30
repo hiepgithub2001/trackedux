@@ -60,61 +60,18 @@ async def get_session_attendance(
     db: DbSession,
     current_user: CurrentUser,
 ):
-    """Get attendance for a lesson occurrence on a given date, scoped to center.
-
-    Also supports legacy class_session_id for backward compatibility.
-    """
+    """Get attendance for a lesson occurrence on a given date, scoped to center."""
     center_id = get_center_id(current_user)
     d = date_type.fromisoformat(session_date)
 
-    # Query via lesson_occurrence_id (new path)
+    # Query via lesson_occurrence_id
     occ = await get_occurrence(db, lesson_id, d, center_id)
-    if occ is not None:
-        result = await db.execute(
-            select(AttendanceRecord).where(
-                AttendanceRecord.lesson_occurrence_id == occ.id,
-                AttendanceRecord.center_id == center_id,
-            )
-        )
-    else:
-        # Fall back to legacy class_session_id query for old data
-        result = await db.execute(
-            select(AttendanceRecord).where(
-                AttendanceRecord.class_session_id == lesson_id,
-                AttendanceRecord.session_date == d,
-                AttendanceRecord.center_id == center_id,
-            )
-        )
+    if occ is None:
+        return []
 
-    records = result.scalars().all()
-    return [
-        {
-            "id": str(r.id),
-            "student_id": str(r.student_id),
-            "student_name": r.student.name if r.student else "",
-            "status": r.status,
-            "charge_fee": r.charge_fee,
-            "notes": r.notes,
-        }
-        for r in records
-    ]
-
-
-# Keep legacy route for backward compatibility
-@router.get("/session/legacy/{class_session_id}/{session_date}")
-async def get_session_attendance_legacy(
-    class_session_id: UUID,
-    session_date: str,
-    db: DbSession,
-    current_user: CurrentUser,
-):
-    """Legacy attendance query by class_session_id (pre-migration data)."""
-    center_id = get_center_id(current_user)
-    d = date_type.fromisoformat(session_date)
     result = await db.execute(
         select(AttendanceRecord).where(
-            AttendanceRecord.class_session_id == class_session_id,
-            AttendanceRecord.session_date == d,
+            AttendanceRecord.lesson_occurrence_id == occ.id,
             AttendanceRecord.center_id == center_id,
         )
     )
@@ -130,6 +87,8 @@ async def get_session_attendance_legacy(
         }
         for r in records
     ]
+
+
 
 
 @router.get("/student/{student_id}")

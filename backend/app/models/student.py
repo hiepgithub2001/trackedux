@@ -42,4 +42,4 @@ class Student(Base, UUIDMixin, TimestampMixin):
     @property
     def class_ids(self) -> list[uuid.UUID]:
         """Return the list of active class IDs for this student."""
-        return [e.class_session_id for e in self.enrollments if getattr(e, "is_active", False)]
+        return [e.class_id for e in self.enrollments if getattr(e, "is_active", False) and e.class_id]
