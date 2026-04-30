@@ -107,7 +107,7 @@ async def test_unenroll_other_center_returns_404(
     student_b = await make_student(b)
 
     db_session.add(
-        ClassEnrollment(class_session_id=class_b.id, student_id=student_b.id, center_id=b.id)
+        ClassEnrollment(class_id=class_b.id, student_id=student_b.id, center_id=b.id)
     )
     await db_session.commit()
 

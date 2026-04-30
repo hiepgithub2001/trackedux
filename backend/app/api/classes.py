@@ -15,6 +15,7 @@ from app.crud.class_ import (
     unenroll_student,
     update_class,
 )
+from app.crud.teacher import get_teacher_by_id
 from app.schemas.class_ import (
     ClassCreate,
     ClassEnrollRequest,
@@ -82,6 +83,9 @@ async def create_class_endpoint(data: ClassCreate, db: DbSession, current_user: 
     if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     center_id = get_center_id(current_user)
+    # Cross-center teacher reference must look like "not found" (Rule 2).
+    if await get_teacher_by_id(db, data.teacher_id, center_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
     cls = await create_class(db, data, center_id)
     cls = await get_class_by_id(db, cls.id, center_id)
     return _class_to_response(cls, current_user)
@@ -123,6 +127,11 @@ async def enroll_student_endpoint(
     cls = await get_class_by_id(db, class_id, center_id)
     if cls is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
+
+    # Cross-center student reference must look like "not found" (Rule 2).
+    from app.crud.student import get_student_by_id
+    if await get_student_by_id(db, data.student_id, center_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
     # Check conflicts for each lesson attached to this class
     from app.crud.lesson import list_lessons
