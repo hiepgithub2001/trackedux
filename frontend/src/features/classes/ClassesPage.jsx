@@ -45,19 +45,19 @@ export default function ClassesPage() {
       sorter: (a, b) => (a.lesson_kind_name || '').localeCompare(b.lesson_kind_name || ''),
     },
     {
-      title: t('classes.schedule', 'Schedule'),
-      key: 'schedule',
-      render: (_, record) => `${DAYS[record.day_of_week]}, ${record.start_time} - ${record.end_time}`,
-      sorter: (a, b) => {
-        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-        return a.start_time.localeCompare(b.start_time);
-      },
-    },
-    {
-      title: t('classes.enrolled'),
+      title: t('classes.enrolled', 'Students'),
       dataIndex: 'enrolled_count',
       key: 'enrolled_count',
       sorter: (a, b) => a.enrolled_count - b.enrolled_count,
+      render: (val) => `${val ?? 0} students`,
+    },
+    {
+      title: t('classes.status', 'Status'),
+      dataIndex: 'is_active',
+      key: 'is_active',
+      render: (val) => val ? <Text type="success">Active</Text> : <Text type="secondary">Inactive</Text>,
+      filters: [{ text: 'Active', value: true }, { text: 'Inactive', value: false }],
+      onFilter: (value, record) => record.is_active === value,
     },
   ];
 

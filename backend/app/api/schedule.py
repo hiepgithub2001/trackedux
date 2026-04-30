@@ -1,4 +1,4 @@
-"""Schedule API route — weekly calendar data."""
+"""Schedule API route — weekly calendar data using Lesson + recurrence expansion."""
 
 from datetime import date, timedelta
 from uuid import UUID
@@ -6,10 +6,23 @@ from uuid import UUID
 from fastapi import APIRouter
 
 from app.core.deps import CurrentUser, DbSession, get_center_id
-from app.crud.class_session import list_class_sessions
-from app.schemas.class_session import _derive_end_time
+from app.crud.lesson import list_lessons, load_overrides_for_week
+from app.services.recurrence_service import compute_week_occurrences
 
 router = APIRouter(prefix="/schedule", tags=["Schedule"])
+
+
+def _format_time(t) -> str:
+    if t is None:
+        return ""
+    return t.strftime("%H:%M")
+
+
+def _derive_end_time(start: str, duration: int) -> str:
+    from datetime import datetime
+    dt = datetime.strptime(start, "%H:%M")
+    from datetime import timedelta as td
+    return (dt + td(minutes=duration)).strftime("%H:%M")
 
 
 @router.get("/weekly")
@@ -19,7 +32,7 @@ async def get_weekly_schedule(
     week_start: date | None = None,
     teacher_id: UUID | None = None,
 ):
-    """Get weekly calendar view data, scoped to current user's center."""
+    """Get weekly calendar view data using the new Lesson + recurrence model."""
     center_id = get_center_id(current_user)
 
     if week_start is None:
@@ -28,48 +41,72 @@ async def get_weekly_schedule(
 
     week_end = week_start + timedelta(days=6)
 
-    from sqlalchemy import select
-
-    from app.models.attendance import AttendanceRecord
-
-    classes = await list_class_sessions(db, center_id=center_id, teacher_id=teacher_id)
-
-    # Query attendance records for this week to know which sessions are marked
-    att_query = select(AttendanceRecord.class_session_id, AttendanceRecord.session_date).where(
-        AttendanceRecord.center_id == center_id,
-        AttendanceRecord.session_date >= week_start,
-        AttendanceRecord.session_date <= week_end,
+    # Load all active lessons for this center (optionally filtered by teacher)
+    lessons = await list_lessons(
+        db, center_id=center_id, teacher_id=teacher_id, is_active=True
     )
-    att_res = await db.execute(att_query)
-    marked_sessions = {(row.class_session_id, row.session_date) for row in att_res.all()}
+
+    # Load persisted occurrence overrides for the week (+ buffer for rescheduled)
+    lesson_ids = [l.id for l in lessons]
+    overrides = await load_overrides_for_week(db, lesson_ids, week_start, week_end, center_id)
+
+    # Compute virtual occurrences via rrule expansion + override overlay
+    occurrences = compute_week_occurrences(lessons, overrides, week_start, week_end)
+
+    # Build lesson lookup for roster data
+    lesson_map = {str(l.id): l for l in lessons}
 
     sessions = []
-    for cs in classes:
-        session_date = week_start + timedelta(days=cs.day_of_week)
-        start_str = cs.start_time.strftime("%H:%M")
-        sessions.append(
-            {
-                "id": str(cs.id),
-                "name": cs.name,
-                "teacher": {
-                    "id": str(cs.teacher.id) if cs.teacher else None,
-                    "full_name": cs.teacher.full_name if cs.teacher else "Unknown",
-                    "color": cs.teacher.color if cs.teacher else None,
-                },
-                "students": [
-                    {"id": str(e.student_id), "name": e.student.name if e.student else ""}
-                    for e in (cs.enrollments or [])
-                    if e.is_active
-                ],
-                "day_of_week": cs.day_of_week,
-                "start_time": start_str,
-                "duration_minutes": cs.duration_minutes,
-                "end_time": _derive_end_time(start_str, cs.duration_minutes),
-                "date": session_date.isoformat(),
-                "is_makeup": cs.is_makeup,
-                "attendance_marked": (cs.id, session_date) in marked_sessions,
-            }
-        )
+    for occ in occurrences:
+        lesson = lesson_map.get(str(occ.lesson_id))
+        if lesson is None:
+            continue
+
+        start_str = _format_time(occ.start_time)
+        effective_date_iso = occ.effective_date.isoformat()
+
+        # Build enrolled students roster (respects enrolled_since / unenrolled_at)
+        students = []
+        if lesson.class_ and lesson.class_.enrollments:
+            for e in lesson.class_.enrollments:
+                if not e.is_active:
+                    continue
+                if e.enrolled_since and occ.effective_date < e.enrolled_since:
+                    continue
+                if e.unenrolled_at and occ.effective_date >= e.unenrolled_at:
+                    continue
+                students.append({
+                    "id": str(e.student_id),
+                    "name": e.student.name if e.student else "",
+                })
+
+        sessions.append({
+            # --- Identity ---
+            "id": str(occ.lesson_id),
+            "occurrence_id": occ.occurrence_id,
+            "lesson_id": str(occ.lesson_id),
+            "class_id": str(occ.class_id) if occ.class_id else None,
+            # --- Display ---
+            "name": occ.lesson_name,
+            "teacher": {
+                "id": str(lesson.teacher_id),
+                "full_name": lesson.teacher.full_name if lesson.teacher else "Unknown",
+                "color": lesson.teacher.color if lesson.teacher else None,
+            },
+            "students": students,
+            # --- Scheduling ---
+            "day_of_week": occ.effective_date.weekday(),
+            "start_time": start_str,
+            "duration_minutes": occ.duration_minutes,
+            "end_time": _derive_end_time(start_str, occ.duration_minutes),
+            "date": effective_date_iso,
+            "original_date": occ.original_date.isoformat(),
+            # --- Status ---
+            "is_canceled": occ.is_canceled,
+            "is_rescheduled": occ.is_rescheduled,
+            "is_recurring": lesson.rrule is not None,
+            "is_makeup": lesson.specific_date is not None,
+        })
 
     return {
         "week_start": week_start.isoformat(),

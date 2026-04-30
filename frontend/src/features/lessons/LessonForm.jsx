@@ -1,0 +1,171 @@
+import { Modal, Form, Select, InputNumber, TimePicker, DatePicker, Radio, Input, Button, Alert, message } from 'antd';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+import { listClasses } from '../../api/classes';
+import { listTeachers } from '../../api/teachers';
+import { createLesson } from '../../api/lessons';
+
+const DAYS = [
+  { label: 'Monday', value: 0 },
+  { label: 'Tuesday', value: 1 },
+  { label: 'Wednesday', value: 2 },
+  { label: 'Thursday', value: 3 },
+  { label: 'Friday', value: 4 },
+  { label: 'Saturday', value: 5 },
+  { label: 'Sunday', value: 6 },
+];
+const BYDAY_MAP = { 0: 'MO', 1: 'TU', 2: 'WE', 3: 'TH', 4: 'FR', 5: 'SA', 6: 'SU' };
+
+function buildRrule({ day_of_week, count, until }) {
+  const byday = BYDAY_MAP[day_of_week] ?? 'MO';
+  let rule = `FREQ=WEEKLY;BYDAY=${byday}`;
+  if (count) rule += `;COUNT=${count}`;
+  else if (until) rule += `;UNTIL=${until.format('YYYYMMDD')}`;
+  return rule;
+}
+
+export default function LessonForm({ open, onClose, onSuccess, defaultClassId }) {
+  const { t } = useTranslation();
+  const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
+  const [lessonType, setLessonType] = useState('recurring');
+  const [conflictError, setConflictError] = useState(null);
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => listClasses().then((r) => r.data),
+  });
+
+  const { data: teachers = [] } = useQuery({
+    queryKey: ['teachers'],
+    queryFn: () => listTeachers().then((r) => r.data),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (payload) => createLesson(payload),
+    onSuccess: () => {
+      messageApi.success(t('lessons.created', 'Lesson created'));
+      form.resetFields();
+      setConflictError(null);
+      onSuccess?.();
+    },
+    onError: (err) => {
+      if (err.response?.status === 409) {
+        const detail = err.response.data?.detail;
+        if (detail?.conflicts) {
+          setConflictError(detail.conflicts.map((c) => c.message).join('; '));
+        } else {
+          setConflictError(t('lessons.conflictGeneric', 'Scheduling conflict detected'));
+        }
+      } else {
+        messageApi.error(err.response?.data?.detail || t('common.error'));
+      }
+    },
+  });
+
+  const handleFinish = (values) => {
+    setConflictError(null);
+    const payload = {
+      class_id: values.class_id || defaultClassId || null,
+      teacher_id: values.teacher_id,
+      title: values.title || null,
+      start_time: values.start_time?.format('HH:mm'),
+      duration_minutes: values.duration_minutes,
+    };
+
+    if (lessonType === 'recurring') {
+      payload.rrule = buildRrule({
+        day_of_week: values.day_of_week,
+        count: values.count || null,
+        until: values.until || null,
+      });
+    } else {
+      payload.specific_date = values.specific_date?.format('YYYY-MM-DD');
+    }
+
+    createMutation.mutate(payload);
+  };
+
+  return (
+    <Modal
+      title={t('lessons.addLesson', 'Add Lesson')}
+      open={open}
+      onCancel={() => { setConflictError(null); form.resetFields(); onClose(); }}
+      footer={null}
+      width={520}
+    >
+      {contextHolder}
+      {conflictError && (
+        <Alert
+          type="error"
+          message={t('lessons.conflictError', 'Scheduling Conflict')}
+          description={conflictError}
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ class_id: defaultClassId, duration_minutes: 60 }}>
+        <Form.Item name="class_id" label={t('classes.class', 'Class')}>
+          <Select
+            placeholder={t('lessons.selectClass', 'Select a class (optional)')}
+            allowClear
+            options={classes.map((c) => ({ label: c.name, value: c.id }))}
+            disabled={!!defaultClassId}
+          />
+        </Form.Item>
+
+        <Form.Item name="teacher_id" label={t('schedule.teacher')} rules={[{ required: true }]}>
+          <Select
+            placeholder={t('lessons.selectTeacher', 'Select teacher')}
+            options={teachers.map((t) => ({ label: t.full_name, value: t.id }))}
+          />
+        </Form.Item>
+
+        <Form.Item name="title" label={t('lessons.title', 'Title (optional)')}>
+          <Input placeholder={t('lessons.titlePlaceholder', 'e.g. Theory lesson, Group makeup')} />
+        </Form.Item>
+
+        <Form.Item label={t('lessons.lessonType', 'Lesson Type')}>
+          <Radio.Group value={lessonType} onChange={(e) => setLessonType(e.target.value)}>
+            <Radio.Button value="recurring">{t('lessons.recurring', 'Recurring')}</Radio.Button>
+            <Radio.Button value="oneoff">{t('lessons.oneOff', 'One-off')}</Radio.Button>
+          </Radio.Group>
+        </Form.Item>
+
+        {lessonType === 'recurring' ? (
+          <>
+            <Form.Item name="day_of_week" label={t('lessons.dayOfWeek', 'Day of Week')} rules={[{ required: true }]}>
+              <Select options={DAYS} />
+            </Form.Item>
+            <Form.Item name="count" label={t('lessons.count', 'Number of occurrences (leave blank for open-ended)')}>
+              <InputNumber min={1} max={520} style={{ width: '100%' }} placeholder="e.g. 10" />
+            </Form.Item>
+            <Form.Item name="until" label={t('lessons.until', 'End date (alternative to count)')}>
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
+          </>
+        ) : (
+          <Form.Item name="specific_date" label={t('lessons.specificDate', 'Date')} rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+        )}
+
+        <Form.Item name="start_time" label={t('common.time', 'Start Time')} rules={[{ required: true }]}>
+          <TimePicker format="HH:mm" minuteStep={5} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="duration_minutes" label={t('lessons.duration', 'Duration (minutes)')} rules={[{ required: true }]}>
+          <InputNumber min={15} max={480} step={15} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={createMutation.isPending}>
+            {t('lessons.createLesson', 'Create Lesson')}
+          </Button>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+}

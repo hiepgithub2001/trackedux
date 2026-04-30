@@ -18,6 +18,10 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
     class_session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("class_sessions.id"), nullable=False
     )
+    # New FK — populated when attendance is marked via new lesson-based flow
+    lesson_occurrence_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lesson_occurrences.id"), nullable=True, index=True
+    )
     student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("students.id"), nullable=False, index=True
     )
@@ -38,3 +42,4 @@ class AttendanceRecord(Base, UUIDMixin, TimestampMixin):
     # Relationships
     student = relationship("Student", lazy="selectin")
     class_session = relationship("ClassSession", foreign_keys=[class_session_id], lazy="selectin")
+    lesson_occurrence = relationship("LessonOccurrence", lazy="selectin")
