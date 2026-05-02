@@ -9,6 +9,7 @@ import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { overrideOccurrence } from '../../api/lessons';
 import { UserOutlined } from '@ant-design/icons';
+import LessonForm from '../lessons/LessonForm';
 import './WeeklyCalendar.css';
 
 const CANCELED_COLOR = '#d9d9d9';
@@ -23,6 +24,7 @@ export default function WeeklyCalendar() {
   const [messageApi, contextHolder] = message.useMessage();
   const [teacherFilter, setTeacherFilter] = useState(undefined);
   const [weekStart, setWeekStart] = useState(null);
+  const [editLessonModal, setEditLessonModal] = useState(null);
   const [overrideModal, setOverrideModal] = useState(null); // { lessonId, originalDate, currentStatus }
   const [rescheduleDate, setRescheduleDate] = useState(null);
   const [rescheduleTime, setRescheduleTime] = useState(null);
@@ -279,12 +281,29 @@ export default function WeeklyCalendar() {
               </>
             )}
 
+            <Button block onClick={() => setEditLessonModal(overrideModal.lessonId)}>
+              {t('lessons.editSeries', 'Edit Lesson Series')}
+            </Button>
             <Button block onClick={() => navigate(`/classes/${overrideModal.classId}`)}>
               {t('common.viewClass', 'View Class')}
             </Button>
           </Space>
         )}
       </Modal>
+
+      {/* Edit Lesson Form Modal */}
+      {!!editLessonModal && (
+        <LessonForm
+          open={!!editLessonModal}
+          lessonId={editLessonModal}
+          onClose={() => setEditLessonModal(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['schedule'] });
+            setEditLessonModal(null);
+            setOverrideModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }

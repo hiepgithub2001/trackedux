@@ -88,6 +88,10 @@ async def update_lesson_series(
     if data.rrule is not None:
         lesson.rrule = data.rrule
         lesson.day_of_week = parse_rrule_day(data.rrule)
+    if data.teacher_id is not None:
+        lesson.teacher_id = data.teacher_id
+    if data.specific_date is not None:
+        lesson.specific_date = data.specific_date
 
     await db.commit()
     await db.refresh(lesson)

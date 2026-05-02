@@ -31,6 +31,8 @@ class LessonSeriesUpdate(BaseModel):
     duration_minutes: int | None = Field(None, gt=0)
     rrule: str | None = Field(None, max_length=500)
     title: str | None = Field(None, max_length=200)
+    teacher_id: uuid.UUID | None = None
+    specific_date: date | None = None
 
 
 class LessonResponse(BaseModel):

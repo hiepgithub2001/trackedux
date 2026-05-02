@@ -21,6 +21,7 @@ export default function ClassDetail() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const [showLessonForm, setShowLessonForm] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState(null);
 
   const { data: classData, isLoading } = useQuery({
     queryKey: ['class', id],
@@ -96,6 +97,15 @@ export default function ClassDetail() {
       key: 'is_active',
       render: (v) => <Badge status={v ? 'success' : 'default'} text={v ? 'Active' : 'Inactive'} />,
     },
+    ...(isAdmin ? [{
+      title: t('common.actions', 'Actions'),
+      key: 'actions',
+      render: (_, l) => (
+        <Button size="small" icon={<EditOutlined />} onClick={() => setEditingLessonId(l.id)}>
+          {t('common.edit', 'Edit')}
+        </Button>
+      ),
+    }] : []),
   ];
 
   return (
@@ -162,15 +172,17 @@ export default function ClassDetail() {
       </Card>
 
       {/* Inline LessonForm modal */}
-      {showLessonForm && (
+      {(showLessonForm || editingLessonId) && (
         <LessonForm
-          open={showLessonForm}
+          open={!!(showLessonForm || editingLessonId)}
+          lessonId={editingLessonId}
           defaultClassId={id}
-          onClose={() => setShowLessonForm(false)}
+          onClose={() => { setShowLessonForm(false); setEditingLessonId(null); }}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['lessons', { class_id: id }] });
             queryClient.invalidateQueries({ queryKey: ['schedule'] });
             setShowLessonForm(false);
+            setEditingLessonId(null);
           }}
         />
       )}
