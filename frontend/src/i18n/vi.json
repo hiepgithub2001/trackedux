@@ -29,7 +29,10 @@
     "inactive": "Ngừng hoạt động",
     "copied": "Đã sao chép vào bộ nhớ",
     "deleted": "Đã xóa thành công",
-    "deleteConfirm": "Bạn có chắc chắn muốn xóa?"
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa?",
+    "viewClass": "Xem lớp",
+    "createError": "Tạo thất bại",
+    "done": "Xong"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -66,7 +69,13 @@
     "deleteConfirm": "Bạn có chắc chắn muốn xóa lớp này?",
     "deleteBlocked": "Không thể xóa lớp đang có học viên.",
     "lessonKind": "Loại bài học",
-    "createKindOption": "Tạo mới: {{kind}}"
+    "createKindOption": "Tạo mới: {{kind}}",
+    "class": "Lớp",
+    "status": "Trạng thái",
+    "created": "Đã tạo lớp",
+    "editClass": "Sửa lớp",
+    "className": "Tên lớp",
+    "classNamePlaceholder": "VD: Piano Cơ bản A"
   },
   "students": {
     "title": "Quản lý Học sinh",
@@ -115,7 +124,8 @@
     "teacherName": "Họ và tên",
     "availability": "Lịch rảnh",
     "active": "Đang dạy",
-    "inactive": "Ngừng dạy"
+    "inactive": "Ngừng dạy",
+    "themeColor": "Màu thẻ"
   },
   "schedule": {
     "title": "Lịch học tuần",
@@ -183,7 +193,9 @@
     "payment": "Thanh toán",
     "classFee": "Phí buổi học",
     "balanceAfter": "Số dư sau",
-    "paymentNeeded": "Cần thanh toán thêm"
+    "paymentNeeded": "Cần thanh toán thêm",
+    "type": "Loại",
+    "class": "Lớp"
   },
   "lessonKind": {
     "title": "Loại bài học"
@@ -259,7 +271,9 @@
       "createFailed": "Đăng ký trung tâm thất bại",
       "createdSuccess": "Đăng ký Trung tâm Thành công",
       "credentialsAlert": "Thông tin Đăng nhập Quan trọng",
-      "credentialsNote": "Vui lòng sao chép và lưu trữ mật khẩu này ngay lập tức. Mật khẩu này sẽ không được hiển thị lại."
+      "credentialsNote": "Vui lòng sao chép và lưu trữ mật khẩu này ngay lập tức. Mật khẩu này sẽ không được hiển thị lại.",
+      "adminPassword": "Mật khẩu QTV (Tùy chọn)",
+      "adminPasswordHint": "Nếu để trống, mật khẩu an toàn sẽ tự động được tạo."
     }
   },
   "pwa": {
@@ -272,5 +286,43 @@
     "updateAvailable": "Có bản cập nhật",
     "updateMessage": "Phiên bản mới đã sẵn sàng.",
     "update": "Cập nhật ngay"
+  },
+  "lessons": {
+    "updated": "Đã cập nhật bài học",
+    "created": "Đã tạo bài học",
+    "conflictGeneric": "Phát hiện trùng lịch",
+    "editLesson": "Chỉnh sửa bài học",
+    "addLesson": "Thêm bài học",
+    "conflictError": "Trùng lịch học",
+    "selectClass": "Chọn lớp (tùy chọn)",
+    "selectTeacher": "Chọn giáo viên",
+    "title": "Tiêu đề (tùy chọn)",
+    "titlePlaceholder": "VD: Lý thuyết, Học bù nhóm",
+    "lessonType": "Loại bài học",
+    "recurring": "Định kỳ",
+    "oneOff": "Một lần",
+    "dayOfWeek": "Thứ",
+    "count": "Số buổi (để trống nếu học liên tục)",
+    "until": "Ngày kết thúc (thay cho số buổi)",
+    "specificDate": "Ngày",
+    "selectTime": "Chọn giờ",
+    "duration": "Thời lượng (phút)",
+    "createLesson": "Tạo bài học",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài học này?",
+    "type": "Loại",
+    "lessons": "Các bài học",
+    "noLessons": "Chưa có bài học nào. Thêm bài học để bắt đầu xếp lịch.",
+    "occurrenceUpdated": "Đã cập nhật buổi học",
+    "deleteSeriesConfirm": "Bạn có chắc chắn muốn xóa toàn bộ chuỗi bài học này?",
+    "canceled": "ĐÃ HỦY",
+    "rescheduled": "ĐÃ DỜI LỊCH",
+    "occurrenceActions": "Thao tác buổi học",
+    "originalDate": "Ngày ban đầu",
+    "revertToSeries": "Khôi phục chuỗi gốc (Hoàn tác hủy)",
+    "cancelOccurrence": "Hủy buổi học này",
+    "rescheduleOccurrence": "Dời lịch sang:",
+    "confirmReschedule": "Xác nhận dời lịch",
+    "editSeries": "Sửa chuỗi bài học",
+    "deleteSeries": "Xóa chuỗi bài học"
   }
 }
