@@ -28,6 +28,8 @@ const DAYS = [
 ];
 const BYDAY_MAP = { 0: 'MO', 1: 'TU', 2: 'WE', 3: 'TH', 4: 'FR', 5: 'SA', 6: 'SU' };
 
+const LESSON_TYPE = { RECURRING: 'recurring', ONEOFF: 'oneoff' };
+
 function buildRrule({ day_of_week, count, until }) {
   const byday = BYDAY_MAP[day_of_week] ?? 'MO';
   let rule = `FREQ=WEEKLY;BYDAY=${byday}`;
@@ -52,7 +54,7 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
-  const [lessonType, setLessonType] = useState('recurring');
+  const [lessonType, setLessonType] = useState(LESSON_TYPE.RECURRING);
   const [conflictError, setConflictError] = useState(null);
   const [lastSyncKey, setLastSyncKey] = useState(null);
 
@@ -79,17 +81,17 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
     setLastSyncKey(syncKey);
     if (open) {
       if (isEdit && lessonData) {
-        setLessonType(lessonData.rrule ? 'recurring' : 'oneoff');
+        setLessonType(lessonData.rrule ? LESSON_TYPE.RECURRING : LESSON_TYPE.ONEOFF);
       } else if (!isEdit) {
-        setLessonType('recurring');
+        setLessonType(LESSON_TYPE.RECURRING);
       }
     }
   }
 
   useEffect(() => {
     if (isEdit && lessonData && open) {
-      const type = lessonData.rrule ? 'recurring' : 'oneoff';
-      const parsedRrule = type === 'recurring' ? parseRrule(lessonData.rrule) : {};
+      const type = lessonData.rrule ? LESSON_TYPE.RECURRING : LESSON_TYPE.ONEOFF;
+      const parsedRrule = type === LESSON_TYPE.RECURRING ? parseRrule(lessonData.rrule) : {};
       form.setFieldsValue({
         class_id: lessonData.class_id,
         teacher_id: lessonData.teacher_id,
@@ -142,7 +144,7 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
       duration_minutes: values.duration_minutes,
     };
 
-    if (lessonType === 'recurring') {
+    if (lessonType === LESSON_TYPE.RECURRING) {
       payload.rrule = buildRrule({
         day_of_week: values.day_of_week,
         count: values.count || null,
@@ -204,12 +206,12 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
 
             <Form.Item label={t('lessons.lessonType', 'Lesson Type')}>
               <Radio.Group value={lessonType} onChange={(e) => setLessonType(e.target.value)}>
-                <Radio.Button value="recurring">{t('lessons.recurring', 'Recurring')}</Radio.Button>
-                <Radio.Button value="oneoff">{t('lessons.oneOff', 'One-off')}</Radio.Button>
+                <Radio.Button value={LESSON_TYPE.RECURRING}>{t('lessons.recurring', 'Recurring')}</Radio.Button>
+                <Radio.Button value={LESSON_TYPE.ONEOFF}>{t('lessons.oneOff', 'One-off')}</Radio.Button>
               </Radio.Group>
             </Form.Item>
 
-            {lessonType === 'recurring' ? (
+            {lessonType === LESSON_TYPE.RECURRING ? (
               <>
                 <Form.Item name="day_of_week" label={t('lessons.dayOfWeek', 'Day of Week')} rules={[{ required: true }]}>
                   <Select options={DAYS} />
