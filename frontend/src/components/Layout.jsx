@@ -3,16 +3,12 @@ import { Layout as AntLayout, Menu, Typography, Avatar, Dropdown, Space } from '
 import {
   DashboardOutlined,
   UserOutlined,
-  CalendarOutlined,
-  CheckSquareOutlined,
   TeamOutlined,
   DollarOutlined,
-  BarChartOutlined,
   BellOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
-  AppstoreOutlined,
   BookOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
