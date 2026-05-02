@@ -149,6 +149,7 @@ async def get_student_balances(
         select(
             Student.id,
             Student.name,
+            Student.enrollment_status,
             Student.balance,
             func.coalesce(paid_sub.c.total_paid, 0).label("total_paid"),
             func.coalesce(paid_sub.c.total_fees, 0).label("total_fees"),
@@ -172,6 +173,7 @@ async def get_student_balances(
         StudentBalanceResponse(
             student_id=row.id,
             student_name=row.name,
+            enrollment_status=row.enrollment_status,
             total_paid=row.total_paid,
             total_fees=row.total_fees,
             balance=row.balance,

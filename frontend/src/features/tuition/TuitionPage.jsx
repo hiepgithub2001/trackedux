@@ -10,12 +10,20 @@ import { useAuth } from '../../auth/AuthContext';
 
 const vndFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
+const STATUS_COLORS = {
+  trial: 'blue',
+  active: 'green',
+  paused: 'orange',
+  withdrawn: 'red',
+};
+
 export default function TuitionPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [balanceFilter, setBalanceFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(undefined);
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -27,6 +35,23 @@ export default function TuitionPage() {
 
   const columns = [
     { title: t('students.studentName'), dataIndex: 'student_name', key: 'student_name', sorter: (a, b) => a.student_name.localeCompare(b.student_name) },
+    {
+      title: t('students.enrollmentStatus', 'Status'),
+      dataIndex: 'enrollment_status',
+      key: 'enrollment_status',
+      width: 130,
+      render: (status) => {
+        if (!status) return null;
+        return <Tag color={STATUS_COLORS[status]}>{t(`students.status${status.charAt(0).toUpperCase() + status.slice(1)}`)}</Tag>;
+      },
+      filters: [
+        { text: t('students.statusTrial'), value: 'trial' },
+        { text: t('students.statusActive'), value: 'active' },
+        { text: t('students.statusPaused'), value: 'paused' },
+        { text: t('students.statusWithdrawn'), value: 'withdrawn' },
+      ],
+      onFilter: (value, record) => record.enrollment_status === value,
+    },
   ];
 
   if (isAdmin) {
@@ -72,18 +97,34 @@ export default function TuitionPage() {
       <Card bodyStyle={{ padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           {isAdmin && (
-            <Select
-              id="balance-filter"
-              value={balanceFilter}
-              onChange={setBalanceFilter}
-              style={{ width: 180 }}
-              options={[
-                { value: 'all', label: t('tuition.filterAll', 'All Students') },
-                { value: 'positive', label: t('tuition.filterPositive', 'Positive Balance') },
-                { value: 'zero', label: t('tuition.filterZero', 'Zero Balance') },
-                { value: 'negative', label: t('tuition.filterNegative', 'Owing Money') },
-              ]}
-            />
+            <Space>
+              <Select
+                id="balance-filter"
+                value={balanceFilter}
+                onChange={setBalanceFilter}
+                style={{ width: 180 }}
+                options={[
+                  { value: 'all', label: t('tuition.filterAll', 'All Students') },
+                  { value: 'positive', label: t('tuition.filterPositive', 'Positive Balance') },
+                  { value: 'zero', label: t('tuition.filterZero', 'Zero Balance') },
+                  { value: 'negative', label: t('tuition.filterNegative', 'Owing Money') },
+                ]}
+              />
+              <Select
+                id="status-filter"
+                placeholder={t('students.enrollmentStatus')}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                style={{ width: 160 }}
+                allowClear
+                options={[
+                  { label: t('students.statusTrial'), value: 'trial' },
+                  { label: t('students.statusActive'), value: 'active' },
+                  { label: t('students.statusPaused'), value: 'paused' },
+                  { label: t('students.statusWithdrawn'), value: 'withdrawn' },
+                ]}
+              />
+            </Space>
           )}
           {isAdmin && (
             <Button
@@ -100,7 +141,7 @@ export default function TuitionPage() {
         <Table
           id="tuition-table"
           columns={columns}
-          dataSource={balances || []}
+          dataSource={balances ? balances.filter(b => !statusFilter || b.enrollment_status === statusFilter) : []}
           rowKey="student_id"
           loading={isLoading}
           onRow={(record) => ({
