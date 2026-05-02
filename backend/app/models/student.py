@@ -21,9 +21,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    personality_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    learning_speed: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    current_issues: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrollment_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="trial", server_default="trial", index=True
     )
