@@ -31,15 +31,7 @@ export default function Layout() {
   const { user, logout } = useAuth();
 
   const allMenuItems = [
-    {
-      key: 'overview',
-      icon: <DashboardOutlined />,
-      label: t('nav.overview', 'Overview'),
-      children: [
-        { key: '/', label: t('nav.dashboard') },
-        { key: '/reports', label: t('nav.reports'), adminOnly: true },
-      ],
-    },
+    { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
     {
       key: 'academics',
       icon: <BookOutlined />,
