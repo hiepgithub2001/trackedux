@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { getClass, deleteClass } from '../../api/classes';
-import { listLessons } from '../../api/lessons';
+import { listLessons, deleteLesson } from '../../api/lessons';
 import { useAuth } from '../../auth/AuthContext';
 import LessonForm from '../lessons/LessonForm';
 
@@ -58,6 +58,29 @@ export default function ClassDetail() {
     });
   };
 
+  const deleteLessonMutation = useMutation({
+    mutationFn: (lessonId) => deleteLesson(lessonId),
+    onSuccess: () => {
+      messageApi.success(t('common.deleted'));
+      queryClient.invalidateQueries({ queryKey: ['lessons', { class_id: id }] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.detail || t('common.deleteError');
+      messageApi.error(msg);
+    },
+  });
+
+  const handleDeleteLesson = (lessonId) => {
+    Modal.confirm({
+      title: t('lessons.deleteConfirm', 'Are you sure you want to delete this lesson?'),
+      okText: t('common.yes'),
+      cancelText: t('common.no'),
+      okType: 'danger',
+      onOk: () => deleteLessonMutation.mutate(lessonId),
+    });
+  };
+
   if (isLoading || !classData) return <div>{t('common.loading')}</div>;
 
   const lessonColumns = [
@@ -101,9 +124,14 @@ export default function ClassDetail() {
       title: t('common.actions', 'Actions'),
       key: 'actions',
       render: (_, l) => (
-        <Button size="small" icon={<EditOutlined />} onClick={() => setEditingLessonId(l.id)}>
-          {t('common.edit', 'Edit')}
-        </Button>
+        <Space>
+          <Button size="small" icon={<EditOutlined />} onClick={() => setEditingLessonId(l.id)}>
+            {t('common.edit', 'Edit')}
+          </Button>
+          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteLesson(l.id)}>
+            {t('common.delete', 'Delete')}
+          </Button>
+        </Space>
       ),
     }] : []),
   ];

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
-import { overrideOccurrence } from '../../api/lessons';
+import { overrideOccurrence, deleteLesson } from '../../api/lessons';
 import { UserOutlined } from '@ant-design/icons';
 import LessonForm from '../lessons/LessonForm';
 import './WeeklyCalendar.css';
@@ -62,6 +62,28 @@ export default function WeeklyCalendar() {
       }
     },
   });
+
+  const deleteLessonMutation = useMutation({
+    mutationFn: (lessonId) => deleteLesson(lessonId),
+    onSuccess: () => {
+      messageApi.success(t('common.deleted'));
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      setOverrideModal(null);
+    },
+    onError: (err) => {
+      messageApi.error(err.response?.data?.detail || t('common.error'));
+    },
+  });
+
+  const handleDeleteSeries = (lessonId) => {
+    Modal.confirm({
+      title: t('lessons.deleteSeriesConfirm', 'Are you sure you want to delete this lesson series entirely?'),
+      okText: t('common.yes'),
+      cancelText: t('common.no'),
+      okType: 'danger',
+      onOk: () => deleteLessonMutation.mutate(lessonId),
+    });
+  };
 
   const events = (scheduleData?.sessions || []).map((s) => {
     const isMakeup = s.is_makeup;
@@ -283,6 +305,9 @@ export default function WeeklyCalendar() {
 
             <Button block onClick={() => setEditLessonModal(overrideModal.lessonId)}>
               {t('lessons.editSeries', 'Edit Lesson Series')}
+            </Button>
+            <Button block danger onClick={() => handleDeleteSeries(overrideModal.lessonId)}>
+              {t('lessons.deleteSeries', 'Delete Lesson Series')}
             </Button>
             <Button block onClick={() => navigate(`/classes/${overrideModal.classId}`)}>
               {t('common.viewClass', 'View Class')}
