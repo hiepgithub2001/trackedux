@@ -143,9 +143,13 @@ async def mark_batch_attendance(
                 .limit(1)
             )
             existing_record = fallback_res.scalars().first()
-            # Backfill lesson_occurrence_id if we now have it
-            if existing_record is not None and lesson_occurrence_id and existing_record.lesson_occurrence_id is None:
-                existing_record.lesson_occurrence_id = lesson_occurrence_id
+            if existing_record is not None:
+                if existing_record.lesson_occurrence_id is None and lesson_occurrence_id:
+                    # Backfill lesson_occurrence_id on legacy rows
+                    existing_record.lesson_occurrence_id = lesson_occurrence_id
+                elif existing_record.lesson_occurrence_id != lesson_occurrence_id:
+                    # Record belongs to a different lesson on the same day — ignore it
+                    existing_record = None
 
         fee_deducted = 0
         balance_after = student.balance

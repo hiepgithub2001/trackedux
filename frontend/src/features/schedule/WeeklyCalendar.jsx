@@ -154,50 +154,48 @@ export default function WeeklyCalendar() {
     <div className="fade-in">
       {contextHolder}
       <Card className="calendar-card" bordered={false}>
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 10 }}>
-            <Select
-              id="teacher-filter"
-              placeholder={t('schedule.teacher')}
-              value={teacherFilter}
-              onChange={setTeacherFilter}
-              style={{ width: 220 }}
-              allowClear
-              size="large"
-              options={(teachers || []).map((teacher) => ({
-                label: (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: teacher.color || '#1677ff' }} />
-                    <span>{teacher.full_name}</span>
-                  </div>
-                ),
-                value: teacher.id,
-              }))}
-            />
-          </div>
-          <FullCalendar
-            plugins={[timeGridPlugin]}
-            initialView="timeGridWeek"
-            events={events}
-            eventContent={renderEventContent}
-            datesSet={handleDatesSet}
-            slotMinTime="07:00:00"
-            slotMaxTime="21:00:00"
-            allDaySlot={false}
-            height="auto"
-            headerToolbar={{
-              left: 'prev,next today',
-              center: '',
-              right: '',
-            }}
-            eventClick={handleEventClick}
-            locale={localStorage.getItem('language') || 'vi'}
-            firstDay={1}
-            nowIndicator={true}
-            slotLabelFormat={{ hour: '2-digit', minute: '2-digit', omitZeroMinute: false, meridiem: 'short' }}
-            dayHeaderFormat={{ weekday: 'short' }}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <Select
+            id="teacher-filter"
+            placeholder={t('schedule.teacher')}
+            value={teacherFilter}
+            onChange={setTeacherFilter}
+            style={{ width: 220 }}
+            allowClear
+            size="large"
+            options={(teachers || []).map((teacher) => ({
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: teacher.color || '#1677ff' }} />
+                  <span>{teacher.full_name}</span>
+                </div>
+              ),
+              value: teacher.id,
+            }))}
           />
         </div>
+        <FullCalendar
+          plugins={[timeGridPlugin]}
+          initialView="timeGridWeek"
+          events={events}
+          eventContent={renderEventContent}
+          datesSet={handleDatesSet}
+          slotMinTime="07:00:00"
+          slotMaxTime="21:00:00"
+          allDaySlot={false}
+          height="auto"
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: '',
+          }}
+          eventClick={handleEventClick}
+          locale={localStorage.getItem('language') || 'vi'}
+          firstDay={1}
+          nowIndicator={true}
+          slotLabelFormat={{ hour: '2-digit', minute: '2-digit', omitZeroMinute: false, meridiem: 'short' }}
+          dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric' }}
+        />
       </Card>
 
       {/* Occurrence Override Modal */}
