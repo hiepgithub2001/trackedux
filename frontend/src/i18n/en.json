@@ -53,7 +53,10 @@
     "teachers": "Teachers",
     "tuition": "Tuition",
     "reports": "Reports",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "academics": "Academics",
+    "people": "People",
+    "overview": "Overview"
   },
   "classes": {
     "title": "Classes",

@@ -31,7 +31,15 @@ export default function Layout() {
   const { user, logout } = useAuth();
 
   const allMenuItems = [
-    { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
+    {
+      key: 'overview',
+      icon: <DashboardOutlined />,
+      label: t('nav.overview', 'Overview'),
+      children: [
+        { key: '/', label: t('nav.dashboard') },
+        { key: '/reports', label: t('nav.reports'), adminOnly: true },
+      ],
+    },
     {
       key: 'academics',
       icon: <BookOutlined />,
@@ -52,7 +60,7 @@ export default function Layout() {
       ],
     },
     { key: '/tuition', icon: <DollarOutlined />, label: t('nav.tuition'), adminOnly: true },
-    { key: '/reports', icon: <BarChartOutlined />, label: t('nav.reports'), adminOnly: true },
+
     { key: '/notifications', icon: <BellOutlined />, label: t('nav.notifications'), adminOnly: true },
   ];
 

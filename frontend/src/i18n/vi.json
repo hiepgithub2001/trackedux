@@ -53,7 +53,10 @@
     "teachers": "Giáo viên",
     "tuition": "Học phí",
     "reports": "Báo cáo",
-    "notifications": "Thông báo"
+    "notifications": "Thông báo",
+    "academics": "Học vụ",
+    "people": "Nhân sự",
+    "overview": "Tổng quan"
   },
   "classes": {
     "title": "Danh sách Lớp học",
