@@ -6,7 +6,7 @@ Fee is derived from the Lesson's class's tuition_fee_per_lesson.
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import AttendanceRecord
@@ -24,10 +24,12 @@ async def _upsert_ledger_entry(
     description: str,
     attendance_record: AttendanceRecord,
     center_id: UUID,
+    charge_fee: bool = True,
+    lesson_id: UUID | None = None,
 ) -> tuple[int, int]:
     """Upsert the ledger entry for this attendance, adjusting the student balance as needed."""
 
-    expected_amount = fee if attendance_record.charge_fee else 0
+    expected_amount = fee if charge_fee else 0
 
     result = await db.execute(
         select(TuitionLedgerEntry).where(TuitionLedgerEntry.attendance_id == attendance_record.id)
@@ -41,6 +43,9 @@ async def _upsert_ledger_entry(
             student.balance -= difference
             existing_entry.amount = expected_amount
             existing_entry.balance_after = student.balance
+        # Backfill lesson_id if missing (legacy rows)
+        if lesson_id and existing_entry.lesson_id is None:
+            existing_entry.lesson_id = lesson_id
     else:
         difference = expected_amount
         student.balance -= difference
@@ -51,6 +56,7 @@ async def _upsert_ledger_entry(
             amount=expected_amount,
             balance_after=student.balance,
             attendance_id=attendance_record.id,
+            lesson_id=lesson_id,
             entry_date=attendance_record.session_date,
             description=description,
             center_id=center_id,
@@ -67,10 +73,10 @@ async def mark_batch_attendance(
 
     # Resolve fee and description from lesson_occurrence / lesson / class (if provided)
     fee = 0
-    description = str(getattr(data, "lesson_id", "") or "")[:20]
+    description = str(data.lesson_id or "")[:20]
     lesson_occurrence_id = None
 
-    if hasattr(data, "lesson_id") and data.lesson_id:
+    if data.lesson_id:
         # Try to get the occurrence record (may have been lazily created by the API layer)
         occ_result = await db.execute(
             select(LessonOccurrence).where(
@@ -95,7 +101,7 @@ async def mark_batch_attendance(
             fee = lesson.class_.tuition_fee_per_lesson or 0
             description = lesson.class_.name[:50]
 
-    elif hasattr(data, "lesson_id") and not data.lesson_id:
+    else:
         # No lesson_id provided — no fee lookup possible
         description = "manual"
 
@@ -110,16 +116,36 @@ async def mark_batch_attendance(
         if not student:
             continue
 
-        # Look up existing record via lesson_occurrence_id (new) or legacy session_date
+        # Look up existing record — use .first() (newest-first) on BOTH paths to survive
+        # any duplicate rows left by the old bug (no unique constraint on this table).
         existing_record = None
         if lesson_occurrence_id:
             existing_res = await db.execute(
-                select(AttendanceRecord).where(
+                select(AttendanceRecord)
+                .where(
                     AttendanceRecord.lesson_occurrence_id == lesson_occurrence_id,
                     AttendanceRecord.student_id == item.student_id,
                 )
+                .order_by(desc(AttendanceRecord.created_at))
+                .limit(1)
             )
-            existing_record = existing_res.scalar_one_or_none()
+            existing_record = existing_res.scalars().first()
+        if existing_record is None:
+            # Fallback: find by (student_id, session_date, center_id)
+            fallback_res = await db.execute(
+                select(AttendanceRecord)
+                .where(
+                    AttendanceRecord.student_id == item.student_id,
+                    AttendanceRecord.session_date == data.session_date,
+                    AttendanceRecord.center_id == center_id,
+                )
+                .order_by(desc(AttendanceRecord.created_at))
+                .limit(1)
+            )
+            existing_record = fallback_res.scalars().first()
+            # Backfill lesson_occurrence_id if we now have it
+            if existing_record is not None and lesson_occurrence_id and existing_record.lesson_occurrence_id is None:
+                existing_record.lesson_occurrence_id = lesson_occurrence_id
 
         fee_deducted = 0
         balance_after = student.balance
@@ -131,7 +157,8 @@ async def mark_batch_attendance(
             existing_record.marked_by = marked_by
 
             fee_deducted, balance_after = await _upsert_ledger_entry(
-                db, student, fee, description, existing_record, center_id
+                db, student, fee, description, existing_record, center_id,
+                charge_fee=item.charge_fee, lesson_id=data.lesson_id
             )
         else:
             record = AttendanceRecord(
@@ -148,7 +175,8 @@ async def mark_batch_attendance(
             await db.flush()
 
             fee_deducted, balance_after = await _upsert_ledger_entry(
-                db, student, fee, description, record, center_id
+                db, student, fee, description, record, center_id,
+                charge_fee=item.charge_fee, lesson_id=data.lesson_id
             )
 
         results.append(

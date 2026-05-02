@@ -214,13 +214,18 @@ async def get_student_ledger(
 
     entry_responses = []
     for entry in entries:
-        # Derive class_display_id from class_session relationship
         class_display_id = None
         attendance_status = None
         charge_fee = None
         if entry.entry_type == "class_fee":
-            # description holds the class name or display string set at write time
-            class_display_id = entry.description
+            # Prefer the actual class name via the lesson → class_ relationship
+            # (both are eager-loaded via selectin, so no extra DB queries)
+            if entry.lesson and entry.lesson.class_:
+                class_display_id = entry.lesson.class_.name
+            else:
+                # Fallback: description was written as class name at attendance-mark time
+                class_display_id = entry.description or None
+
             if entry.attendance:
                 attendance_status = entry.attendance.status
                 charge_fee = entry.attendance.charge_fee

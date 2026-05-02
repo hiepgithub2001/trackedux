@@ -39,12 +39,13 @@ export default function AttendancePage() {
   });
 
   const { data: savedRecords } = useQuery({
-    queryKey: ['attendance', selectedSession?.id, selectedSession?.date],
-    queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => {
+    queryKey: ['attendance', selectedSession?.lesson_id, selectedSession?.original_date || selectedSession?.date],
+    queryFn: () => getSessionAttendance(selectedSession.lesson_id, selectedSession.original_date || selectedSession.date).then((r) => {
       const records = Array.isArray(r.data) ? r.data : (r.data?.records ?? r.data ?? []);
       return records;
     }),
     enabled: !!selectedSession,
+    staleTime: 0, // always re-fetch when session opens — never show stale charge_fee values
   });
 
   const getDerivedStatus = (studentId) => {
@@ -57,6 +58,7 @@ export default function AttendancePage() {
   };
 
   const getDerivedChargeFee = (studentId) => {
+    // Returns boolean for use in handleMark
     if (chargeFeeData[studentId] !== undefined) return chargeFeeData[studentId];
     if (savedRecords && savedRecords.length > 0) {
       const rec = savedRecords.find(r => r.student_id === studentId);
@@ -64,6 +66,9 @@ export default function AttendancePage() {
     }
     return true; // default
   };
+
+  // Returns string value for Radio.Group (avoids Ant Design boolean coercion bug)
+  const getChargeRadioValue = (studentId) => getDerivedChargeFee(studentId) ? 'charge' : 'nocharge';
 
   const mutation = useMutation({
     mutationFn: (data) => markBatchAttendance(data),
@@ -75,7 +80,11 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
       closeSession();
     },
-    onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
+    onError: (err) => {
+      const detail = err.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail : (Array.isArray(detail) ? JSON.stringify(detail) : 'Error saving attendance');
+      messageApi.error(msg);
+    },
   });
 
   const handleMark = () => {
@@ -85,7 +94,7 @@ export default function AttendancePage() {
       status: getDerivedStatus(student.id),
       charge_fee: getDerivedChargeFee(student.id),
     }));
-    mutation.mutate({ class_session_id: selectedSession.id, session_date: selectedSession.date, records });
+    mutation.mutate({ lesson_id: selectedSession.lesson_id, session_date: selectedSession.original_date || selectedSession.date, records });
   };
 
   const now = dayjs();
@@ -244,17 +253,18 @@ export default function AttendancePage() {
               {
                 title: t('attendance.chargeFee'), key: 'charge_fee', width: 220,
                 render: (_, record) => {
-                  const isCharged = getDerivedChargeFee(record.id);
+                  const chargeVal = getChargeRadioValue(record.id);
+                  const isCharged = chargeVal === 'charge';
                   return (
                     <Radio.Group
-                      value={isCharged}
-                      onChange={(e) => setChargeFeeData((prev) => ({ ...prev, [record.id]: e.target.value }))}
+                      value={chargeVal}
+                      onChange={(e) => setChargeFeeData((prev) => ({ ...prev, [record.id]: e.target.value === 'charge' }))}
                       buttonStyle={isCharged ? "solid" : "outline"}
                     >
-                      <Radio.Button value={true}>
+                      <Radio.Button value="charge">
                         <DollarOutlined /> {t('attendance.charge')}
                       </Radio.Button>
-                      <Radio.Button value={false} style={!isCharged ? { backgroundColor: '#ff4d4f', color: 'white', borderColor: '#ff4d4f' } : {}}>
+                      <Radio.Button value="nocharge" style={!isCharged ? { backgroundColor: '#8c8c8c', color: 'white', borderColor: '#8c8c8c' } : {}}>
                         <StopOutlined /> {t('attendance.noCharge')}
                       </Radio.Button>
                     </Radio.Group>

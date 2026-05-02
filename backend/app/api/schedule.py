@@ -4,9 +4,11 @@ from datetime import date, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter
+from sqlalchemy import func, select
 
 from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.lesson import list_lessons, load_overrides_for_week
+from app.models.attendance import AttendanceRecord
 from app.services.recurrence_service import compute_week_occurrences
 
 router = APIRouter(prefix="/schedule", tags=["Schedule"])
@@ -56,6 +58,26 @@ async def get_weekly_schedule(
     # Build lesson lookup for roster data
     lesson_map = {str(lesson.id): lesson for lesson in lessons}
 
+    # --- attendance_marked: bulk-query persisted LessonOccurrence ids for this week,
+    #     then count AttendanceRecord rows per occurrence to determine marked status.
+    occ_id_to_lesson_date: dict[UUID, tuple[str, str]] = {}
+    for (lesson_id_str, orig_date), lo in overrides.items():
+        occ_id_to_lesson_date[lo.id] = (lesson_id_str, orig_date.isoformat())
+
+    marked_set: set[tuple[str, str]] = set()  # (lesson_id_str, original_date_iso)
+    if occ_id_to_lesson_date:
+        count_result = await db.execute(
+            select(AttendanceRecord.lesson_occurrence_id, func.count())
+            .where(
+                AttendanceRecord.lesson_occurrence_id.in_(list(occ_id_to_lesson_date.keys())),
+                AttendanceRecord.center_id == center_id,
+            )
+            .group_by(AttendanceRecord.lesson_occurrence_id)
+        )
+        for occ_id, cnt in count_result.all():
+            if cnt > 0 and occ_id in occ_id_to_lesson_date:
+                marked_set.add(occ_id_to_lesson_date[occ_id])
+
     sessions = []
     for occ in occurrences:
         lesson = lesson_map.get(str(occ.lesson_id))
@@ -64,6 +86,8 @@ async def get_weekly_schedule(
 
         start_str = _format_time(occ.start_time)
         effective_date_iso = occ.effective_date.isoformat()
+        original_date_iso = occ.original_date.isoformat()
+        is_marked = (str(occ.lesson_id), original_date_iso) in marked_set
 
         # Build enrolled students roster (respects enrolled_since / unenrolled_at)
         students = []
@@ -100,12 +124,13 @@ async def get_weekly_schedule(
             "duration_minutes": occ.duration_minutes,
             "end_time": _derive_end_time(start_str, occ.duration_minutes),
             "date": effective_date_iso,
-            "original_date": occ.original_date.isoformat(),
+            "original_date": original_date_iso,
             # --- Status ---
             "is_canceled": occ.is_canceled,
             "is_rescheduled": occ.is_rescheduled,
             "is_recurring": lesson.rrule is not None,
             "is_makeup": lesson.specific_date is not None,
+            "attendance_marked": is_marked,
         })
 
     return {

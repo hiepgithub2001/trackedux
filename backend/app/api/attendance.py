@@ -25,7 +25,7 @@ async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_u
     center_id = get_center_id(current_user)
 
     # Lazily create / ensure LessonOccurrence exists when lesson_id is provided
-    if hasattr(data, "lesson_id") and data.lesson_id:
+    if data.lesson_id:
         lesson = await get_lesson_by_id(db, data.lesson_id, center_id)
         if lesson is not None:
             session_d = (
@@ -77,9 +77,18 @@ async def get_session_attendance(
         select(AttendanceRecord).where(
             AttendanceRecord.lesson_occurrence_id == occ.id,
             AttendanceRecord.center_id == center_id,
-        )
+        ).order_by(AttendanceRecord.created_at.desc())
     )
     records = result.scalars().all()
+
+    # Deduplicate: keep the newest record per student (handles legacy duplicate rows)
+    seen: set = set()
+    deduped = []
+    for r in records:
+        if r.student_id not in seen:
+            seen.add(r.student_id)
+            deduped.append(r)
+
     return [
         {
             "id": str(r.id),
@@ -89,7 +98,7 @@ async def get_session_attendance(
             "charge_fee": r.charge_fee,
             "notes": r.notes,
         }
-        for r in records
+        for r in deduped
     ]
 
 
