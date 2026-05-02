@@ -78,6 +78,7 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['student-ledger'] });
       closeSession();
     },
     onError: (err) => {
