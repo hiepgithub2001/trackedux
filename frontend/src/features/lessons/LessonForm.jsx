@@ -54,7 +54,8 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
   const [messageApi, contextHolder] = message.useMessage();
   const [lessonType, setLessonType] = useState('recurring');
   const [conflictError, setConflictError] = useState(null);
-  
+  const [lastSyncKey, setLastSyncKey] = useState(null);
+
   const isEdit = !!lessonId;
 
   const { data: classes = [] } = useQuery({
@@ -73,10 +74,21 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
     enabled: isEdit && open,
   });
 
+  const syncKey = open ? `${lessonId ?? 'new'}:${lessonData?.rrule ?? ''}` : 'closed';
+  if (syncKey !== lastSyncKey) {
+    setLastSyncKey(syncKey);
+    if (open) {
+      if (isEdit && lessonData) {
+        setLessonType(lessonData.rrule ? 'recurring' : 'oneoff');
+      } else if (!isEdit) {
+        setLessonType('recurring');
+      }
+    }
+  }
+
   useEffect(() => {
     if (isEdit && lessonData && open) {
       const type = lessonData.rrule ? 'recurring' : 'oneoff';
-      setLessonType(type);
       const parsedRrule = type === 'recurring' ? parseRrule(lessonData.rrule) : {};
       form.setFieldsValue({
         class_id: lessonData.class_id,
@@ -89,7 +101,6 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId, l
       });
     } else if (!isEdit && open) {
       form.resetFields();
-      setLessonType('recurring');
       form.setFieldsValue({ class_id: defaultClassId, duration_minutes: 60 });
     }
   }, [isEdit, lessonData, open, form, defaultClassId]);
