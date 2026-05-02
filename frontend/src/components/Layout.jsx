@@ -13,6 +13,7 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   AppstoreOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -29,24 +30,49 @@ export default function Layout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
 
-  const menuItems = [
+  const allMenuItems = [
     { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
-    { key: '/students', icon: <UserOutlined />, label: t('nav.students') },
-    { key: '/schedule', icon: <CalendarOutlined />, label: t('nav.schedule') },
-    { key: '/classes', icon: <AppstoreOutlined />, label: t('nav.classes') },
-    { key: '/attendance', icon: <CheckSquareOutlined />, label: t('nav.attendance') },
-    { key: '/teachers', icon: <TeamOutlined />, label: t('nav.teachers') },
-    { key: '/tuition', icon: <DollarOutlined />, label: t('nav.tuition') },
-    { key: '/reports', icon: <BarChartOutlined />, label: t('nav.reports') },
-    { key: '/notifications', icon: <BellOutlined />, label: t('nav.notifications') },
-  ].filter((item) => {
-    // Admin sees everything; staff sees all but teachers and tuition management
-    if (user?.role === 'admin') return true;
-    if (user?.role === 'staff') {
-      return !['/teachers', '/tuition', '/reports', '/notifications'].includes(item.key);
-    }
-    return false;
-  });
+    {
+      key: 'academics',
+      icon: <BookOutlined />,
+      label: t('nav.academics', 'Academics'),
+      children: [
+        { key: '/classes', label: t('nav.classes') },
+        { key: '/schedule', label: t('nav.schedule') },
+        { key: '/attendance', label: t('nav.attendance') },
+      ],
+    },
+    {
+      key: 'people',
+      icon: <TeamOutlined />,
+      label: t('nav.people', 'People'),
+      children: [
+        { key: '/students', label: t('nav.students') },
+        { key: '/teachers', label: t('nav.teachers'), adminOnly: true },
+      ],
+    },
+    { key: '/tuition', icon: <DollarOutlined />, label: t('nav.tuition'), adminOnly: true },
+    { key: '/reports', icon: <BarChartOutlined />, label: t('nav.reports'), adminOnly: true },
+    { key: '/notifications', icon: <BellOutlined />, label: t('nav.notifications'), adminOnly: true },
+  ];
+
+  const filterMenu = (items) => {
+    return items
+      .filter((item) => {
+        if (user?.role === 'admin' || user?.role === 'superadmin') return true;
+        if (user?.role === 'staff') return !item.adminOnly;
+        return false;
+      })
+      .map((item) => {
+        if (item.children) {
+          const filteredChildren = filterMenu(item.children);
+          return { ...item, children: filteredChildren };
+        }
+        return item;
+      });
+  };
+
+  const menuItems = filterMenu(allMenuItems);
 
   const userMenuItems = [
     {
@@ -66,7 +92,25 @@ export default function Layout() {
 
   // Determine selected key from current path
   const selectedKey = '/' + location.pathname.split('/')[1] || '/';
-  const currentMenuItem = menuItems.find(item => item.key === selectedKey);
+  
+  const flattenMenu = (items) => items.reduce((acc, item) => {
+    if (item.children) return [...acc, ...flattenMenu(item.children)];
+    return [...acc, item];
+  }, []);
+  const currentMenuItem = flattenMenu(menuItems).find(item => item.key === selectedKey);
+
+  const findParentKey = (items, targetKey, parentKey = null) => {
+    for (const item of items) {
+      if (item.key === targetKey) return parentKey;
+      if (item.children) {
+        const found = findParentKey(item.children, targetKey, item.key);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  const parentKey = findParentKey(menuItems, selectedKey);
+  const defaultOpenKeys = parentKey ? [parentKey] : [];
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
@@ -106,6 +150,7 @@ export default function Layout() {
           id="main-nav"
           theme="dark"
           mode="inline"
+          defaultOpenKeys={defaultOpenKeys}
           selectedKeys={[selectedKey]}
           items={menuItems}
           onClick={handleMenuClick}
