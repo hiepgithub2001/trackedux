@@ -1,10 +1,20 @@
-import { Modal, Form, Select, InputNumber, TimePicker, DatePicker, Radio, Input, Button, Alert, message } from 'antd';
+import { Modal, Form, Select, InputNumber, DatePicker, Radio, Input, Button, Alert, message } from 'antd';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { listClasses } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { createLesson } from '../../api/lessons';
+
+const TIME_OPTIONS = [];
+for (let h = 7; h <= 21; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    if (h === 21 && m > 0) continue;
+    const hour = h.toString().padStart(2, '0');
+    const min = m.toString().padStart(2, '0');
+    TIME_OPTIONS.push({ label: `${hour}:${min}`, value: `${hour}:${min}` });
+  }
+}
 
 const DAYS = [
   { label: 'Monday', value: 0 },
@@ -70,7 +80,7 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId })
       class_id: values.class_id || defaultClassId || null,
       teacher_id: values.teacher_id,
       title: values.title || null,
-      start_time: values.start_time?.format('HH:mm'),
+      start_time: values.start_time,
       duration_minutes: values.duration_minutes,
     };
 
@@ -152,7 +162,12 @@ export default function LessonForm({ open, onClose, onSuccess, defaultClassId })
         )}
 
         <Form.Item name="start_time" label={t('common.time', 'Start Time')} rules={[{ required: true }]}>
-          <TimePicker format="HH:mm" minuteStep={5} style={{ width: '100%' }} />
+          <Select
+            showSearch
+            options={TIME_OPTIONS}
+            placeholder={t('lessons.selectTime', 'Select time')}
+            style={{ width: '100%' }}
+          />
         </Form.Item>
 
         <Form.Item name="duration_minutes" label={t('lessons.duration', 'Duration (minutes)')} rules={[{ required: true }]}>

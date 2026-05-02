@@ -70,7 +70,7 @@ export default function WeeklyCalendar() {
     else if (isRescheduled) color = RESCHEDULED_COLOR;
 
     return {
-      id: s.lesson_id,
+      id: `${s.lesson_id}_${s.original_date || s.date}`,
       title: `${s.name}\n${s.teacher?.full_name}`,
       start: `${s.date}T${s.start_time}`,
       end: `${s.date}T${s.end_time}`,
@@ -143,8 +143,11 @@ export default function WeeklyCalendar() {
   };
 
   const handleDatesSet = (info) => {
-    const monday = new Date(info.start);
-    setWeekStart(monday.toISOString().split('T')[0]);
+    const d = info.start;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setWeekStart(`${year}-${month}-${day}`);
   };
 
   return (
