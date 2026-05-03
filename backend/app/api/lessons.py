@@ -111,6 +111,17 @@ async def create_lesson_endpoint(data: LessonCreate, db: DbSession, current_user
 
     lesson = await create_lesson(db, data, center_id)
     lesson = await get_lesson_by_id(db, lesson.id, center_id)
+
+    # Eagerly materialize the current week
+    from datetime import date as dt_date
+    from datetime import timedelta
+
+    from app.crud.lesson import bulk_upsert_occurrences
+    today = dt_date.today()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    await bulk_upsert_occurrences(db, [lesson], week_start, week_end, center_id)
+
     return _lesson_to_response(lesson)
 
 
@@ -128,6 +139,21 @@ async def update_lesson_series_endpoint(
     lesson = await update_lesson_series(db, lesson_id, data, center_id)
     if lesson is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+
+    # If recurring rules/times changed, clean up future ghosts and re-materialize this week
+    if data.rrule is not None or data.start_time is not None or data.duration_minutes is not None:
+        from datetime import date as dt_date
+        from datetime import timedelta
+
+        from app.crud.lesson import bulk_upsert_occurrences, cleanup_future_ghosts
+
+        await cleanup_future_ghosts(db, lesson_id, center_id)
+
+        today = dt_date.today()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        await bulk_upsert_occurrences(db, [lesson], week_start, week_end, center_id)
+
     return _lesson_to_response(lesson)
 
 

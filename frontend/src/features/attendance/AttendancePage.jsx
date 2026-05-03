@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react';
 import { Card, Table, Tag, Button, message, Space, Radio, Row, Col, Pagination, Modal } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, DollarOutlined, StopOutlined } from '@ant-design/icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getWeeklySchedule } from '../../api/classes';
-import { markBatchAttendance, getSessionAttendance } from '../../api/attendance';
+import { getPastSessions } from '../../api/classes';
+import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly } from '../../api/attendance';
 import dayjs from 'dayjs';
+
+const PAST_PAGE_SIZE = 5;
 
 const STATUS_ICONS = {
   present: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
@@ -34,8 +36,19 @@ export default function AttendancePage() {
   }, []);
 
   const { data: scheduleData } = useQuery({
-    queryKey: ['schedule'],
-    queryFn: () => getWeeklySchedule({}).then((r) => r.data),
+    queryKey: ['attendance-weekly'],
+    queryFn: () => getAttendanceWeekly({}).then((r) => r.data),
+  });
+
+  const [pastPage, setPastPage] = useState(1);
+  const { data: pastData } = useQuery({
+    queryKey: ['past-sessions', pastPage],
+    queryFn: () =>
+      getPastSessions({
+        limit: PAST_PAGE_SIZE,
+        offset: (pastPage - 1) * PAST_PAGE_SIZE,
+      }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 
   const { data: savedRecords } = useQuery({
@@ -75,7 +88,8 @@ export default function AttendancePage() {
     onSuccess: () => {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
       queryClient.invalidateQueries({ queryKey: ['student-ledger'] });
@@ -120,17 +134,12 @@ export default function AttendancePage() {
     return !isRunning;
   });
 
-  const pastSessions = allSessions.filter((s) => {
-    if (s.date === todayDateStr) return false;
-    const end = dayjs(`${s.date}T${s.end_time}`);
-    return now.isAfter(end);
-  }).sort((a, b) => dayjs(`${b.date}T${b.start_time}`).valueOf() - dayjs(`${a.date}T${a.start_time}`).valueOf());
+  const paginatedPast = pastData?.sessions ?? [];
+  const pastTotal = pastData?.total ?? 0;
 
   const [pendingPage, setPendingPage] = useState(1);
-  const [pastPage, setPastPage] = useState(1);
   const pageSize = 5;
   const paginatedPending = pendingSessions.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
-  const paginatedPast = pastSessions.slice((pastPage - 1) * pageSize, pastPage * pageSize);
 
   const SessionCard = ({ session, isHighlighted }) => (
     <Card
@@ -209,9 +218,9 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {paginatedPast.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {paginatedPast.map(s => <SessionCard key={s.id + s.date} session={s} />)}
-              {pastSessions.length > 0 && (
+              {pastTotal > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                  <Pagination current={pastPage} pageSize={pageSize} total={pastSessions.length} onChange={setPastPage} />
+                  <Pagination current={pastPage} pageSize={PAST_PAGE_SIZE} total={pastTotal} onChange={setPastPage} />
                 </div>
               )}
             </Space>

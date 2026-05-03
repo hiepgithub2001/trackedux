@@ -109,6 +109,12 @@ export default function ClassDetail() {
       render: (_, l) => `${l.duration_minutes} min`,
     },
     {
+      title: t('schedule.teacher', 'Teacher'),
+      dataIndex: 'teacher_name',
+      key: 'teacher_name',
+      render: (v) => v || <Text type="secondary">—</Text>,
+    },
+    {
       title: t('lessons.title', 'Title'),
       dataIndex: 'title',
       key: 'title',
@@ -208,7 +214,10 @@ export default function ClassDetail() {
           onClose={() => { setShowLessonForm(false); setEditingLessonId(null); }}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['lessons', { class_id: id }] });
+            queryClient.invalidateQueries({ queryKey: ['lesson'] });
             queryClient.invalidateQueries({ queryKey: ['schedule'] });
+            queryClient.invalidateQueries({ queryKey: ['class', id] });
+            queryClient.invalidateQueries({ queryKey: ['classes'] });
             setShowLessonForm(false);
             setEditingLessonId(null);
           }}

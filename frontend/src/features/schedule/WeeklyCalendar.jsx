@@ -8,8 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { overrideOccurrence, deleteLesson } from '../../api/lessons';
-import { UserOutlined } from '@ant-design/icons';
+import { UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import LessonForm from '../lessons/LessonForm';
+import dayjs from 'dayjs';
 import './WeeklyCalendar.css';
 
 const CANCELED_COLOR = '#d9d9d9';
@@ -28,6 +29,7 @@ export default function WeeklyCalendar() {
   const [overrideModal, setOverrideModal] = useState(null); // { lessonId, originalDate, currentStatus }
   const [rescheduleDate, setRescheduleDate] = useState(null);
   const [rescheduleTime, setRescheduleTime] = useState(null);
+  const [timeRange, setTimeRange] = useState([dayjs('07:00', 'HH:mm'), dayjs('23:00', 'HH:mm')]);
 
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule', weekStart, teacherFilter],
@@ -178,7 +180,21 @@ export default function WeeklyCalendar() {
     <div className="fade-in">
       {contextHolder}
       <Card className="calendar-card" bordered={false}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12, gap: 12 }}>
+          <TimePicker.RangePicker
+            format="HH:mm"
+            value={timeRange}
+            onChange={(dates) => {
+              if (dates && dates[0] && dates[1]) {
+                setTimeRange(dates);
+              }
+            }}
+            allowClear={false}
+            minuteStep={30}
+            style={{ width: 180 }}
+            suffixIcon={<ClockCircleOutlined />}
+            placeholder={[t('schedule.startTime', 'Start'), t('schedule.endTime', 'End')]}
+          />
           <Select
             id="teacher-filter"
             placeholder={t('schedule.teacher')}
@@ -204,8 +220,8 @@ export default function WeeklyCalendar() {
           events={events}
           eventContent={renderEventContent}
           datesSet={handleDatesSet}
-          slotMinTime="07:00:00"
-          slotMaxTime="21:00:00"
+          slotMinTime={timeRange[0].format('HH:mm:ss')}
+          slotMaxTime={timeRange[1].format('HH:mm:ss')}
           allDaySlot={false}
           height="auto"
           headerToolbar={{
@@ -324,6 +340,10 @@ export default function WeeklyCalendar() {
           onClose={() => setEditLessonModal(null)}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['schedule'] });
+            queryClient.invalidateQueries({ queryKey: ['lesson'] });
+            queryClient.invalidateQueries({ queryKey: ['lessons'] });
+            queryClient.invalidateQueries({ queryKey: ['classes'] });
+            queryClient.invalidateQueries({ queryKey: ['class'] });
             setEditLessonModal(null);
             setOverrideModal(null);
           }}

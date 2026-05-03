@@ -10,4 +10,5 @@ export const enrollStudent = (classId, studentId, enrolled_since) =>
 export const unenrollStudent = (classId, studentId, unenrolled_at) =>
   client.delete(`/classes/${classId}/enroll/${studentId}`, { params: { unenrolled_at } });
 export const getWeeklySchedule = (params) => client.get('/schedule/weekly', { params });
+export const getPastSessions = (params) => client.get('/schedule/past', { params });
 

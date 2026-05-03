@@ -83,11 +83,13 @@ def parse_rrule_day(rrule_str: str) -> int:
 
 
 def _find_dtstart(lesson: Lesson) -> datetime:
-    """Determine the RRULE expansion anchor (dtstart)."""
-    # Use created_at date as anchor — gives us the first potential occurrence
-    # from when the lesson was defined. Expansion is bounded per week anyway.
+    """Determine the RRULE expansion anchor (dtstart).
+
+    Uses the lesson's created_at date directly. This is correct for all RRULE
+    types including COUNT-limited rules (COUNT starts counting from dtstart).
+    """
     anchor_date = lesson.created_at.date() if hasattr(lesson, "created_at") and lesson.created_at else date.today()
-    return datetime.combine(anchor_date - timedelta(days=365 * 5), lesson.start_time)
+    return datetime.combine(anchor_date, lesson.start_time)
 
 
 def _add_minutes(t: time, minutes: int) -> time:

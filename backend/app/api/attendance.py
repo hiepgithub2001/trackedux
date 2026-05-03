@@ -16,6 +16,89 @@ from app.services.attendance_service import mark_batch_attendance
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 
+@router.get("/weekly")
+async def get_weekly_attendance(
+    db: DbSession,
+    current_user: CurrentUser,
+    week_start: date_type | None = None,
+    teacher_id: UUID | None = None,
+):
+    """Get weekly attendance view data using the unified read model.
+
+    Materializes occurrences on the fly for the requested week.
+    """
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    from app.api.schedule import _build_session_dicts
+    from app.crud.lesson import bulk_upsert_occurrences, list_lessons
+    from app.models.lesson_occurrence import LessonOccurrence
+    from app.services.recurrence_service import _build_occurrence
+
+    center_id = get_center_id(current_user)
+    today = date_type.today()
+
+    if week_start is None:
+        week_start = today - timedelta(days=today.weekday())  # Monday
+    week_end = week_start + timedelta(days=6)
+
+    # 1. Load all lessons (active & inactive) so lesson_map is complete
+    lessons = await list_lessons(db, center_id=center_id, teacher_id=teacher_id, is_active=None)
+    if not lessons:
+        return {"week_start": week_start.isoformat(), "week_end": week_end.isoformat(), "sessions": []}
+
+    lesson_map = {str(lesson.id): lesson for lesson in lessons}
+
+    # 2. Materialize rows for active lessons for the requested week
+    active_lessons = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
+    await bulk_upsert_occurrences(db, active_lessons, week_start, week_end, center_id)
+
+    # 3. Apply unified read model: fetch from DB
+    result = await db.execute(
+        select(LessonOccurrence).where(
+            LessonOccurrence.lesson_id.in_([lesson_obj.id for lesson_obj in lessons]),
+            LessonOccurrence.center_id == center_id,
+            func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date) >= week_start,
+            func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date) <= week_end,
+        )
+    )
+    occ_rows = result.scalars().all()
+
+    virtual_occs = []
+    for occ_row in occ_rows:
+        lesson = lesson_map.get(str(occ_row.lesson_id))
+        if not lesson:
+            continue
+
+        effective_date = occ_row.override_date if occ_row.override_date else occ_row.original_date
+
+        # Unified read model filter:
+        # Past portion: keep all (even inactive)
+        # Future portion: keep only active
+        if effective_date >= today and not lesson.is_active:
+            continue
+
+        class_name = lesson.class_.name if lesson.class_ else None
+        display_name = lesson.title or class_name or ""
+        teacher_id_str = str(lesson.teacher_id)
+
+        v_occ = _build_occurrence(
+            lesson, str(lesson.id), class_name, display_name, teacher_id_str,
+            occ_row.original_date, occ_row
+        )
+        virtual_occs.append(v_occ)
+
+    sessions = await _build_session_dicts(db, virtual_occs, lesson_map, center_id)
+
+    return {
+        "week_start": week_start.isoformat(),
+        "week_end": week_end.isoformat(),
+        "sessions": sessions,
+    }
+
+
+
 @router.post("/batch")
 async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_user: CurrentUser):
     """Mark attendance for a session (batch). Auto-deducts tuition balance for 'present' students.
