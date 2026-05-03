@@ -12,7 +12,7 @@ import TeacherForm from '../features/teachers/TeacherForm';
 import TeacherDetail from '../features/teachers/TeacherDetail';
 import WeeklyCalendar from '../features/schedule/WeeklyCalendar';
 import ClassesPage from '../features/classes/ClassesPage';
-import ClassForm from '../features/schedule/ClassForm';
+import ClassForm from '../features/classes/ClassForm';
 import ClassDetail from '../features/schedule/ClassDetail';
 import AttendancePage from '../features/attendance/AttendancePage';
 import TuitionPage from '../features/tuition/TuitionPage';

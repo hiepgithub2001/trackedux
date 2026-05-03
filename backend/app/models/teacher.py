@@ -31,4 +31,4 @@ class Teacher(Base, UUIDMixin, TimestampMixin):
     availability = relationship(
         "TeacherAvailability", back_populates="teacher", lazy="selectin", cascade="all, delete-orphan"
     )
-    classes = relationship("ClassSession", back_populates="teacher", lazy="selectin")
+    classes = relationship("Lesson", viewonly=True, lazy="selectin", foreign_keys="Lesson.teacher_id")

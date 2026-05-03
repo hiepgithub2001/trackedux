@@ -67,12 +67,8 @@ export default function StudentDetail() {
           <Descriptions.Item label={t('students.nickname')}>{student.nickname || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('students.dateOfBirth')}>{student.date_of_birth || '-'}</Descriptions.Item>
           <Descriptions.Item label={t('students.age')}>{student.age || '-'}</Descriptions.Item>
-          <Descriptions.Item label={t('students.learningSpeed')}>{student.learning_speed || '-'}</Descriptions.Item>
-          <Descriptions.Item label={t('students.personalityNotes')} span={2}>
-            {student.personality_notes || '-'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('students.currentIssues')} span={2}>
-            {student.current_issues || '-'}
+          <Descriptions.Item label={t('common.notes')} span={2}>
+            {student.notes || '-'}
           </Descriptions.Item>
           <Descriptions.Item label={t('students.enrolledAt')}>{student.enrolled_at}</Descriptions.Item>
           <Descriptions.Item label={t('students.enrollmentStatus')}>

@@ -149,6 +149,7 @@ async def get_student_balances(
         select(
             Student.id,
             Student.name,
+            Student.enrollment_status,
             Student.balance,
             func.coalesce(paid_sub.c.total_paid, 0).label("total_paid"),
             func.coalesce(paid_sub.c.total_fees, 0).label("total_fees"),
@@ -172,6 +173,7 @@ async def get_student_balances(
         StudentBalanceResponse(
             student_id=row.id,
             student_name=row.name,
+            enrollment_status=row.enrollment_status,
             total_paid=row.total_paid,
             total_fees=row.total_fees,
             balance=row.balance,
@@ -196,14 +198,9 @@ async def get_student_ledger(
     if not student:
         raise ValueError(f"Student {student_id} not found in this center")
 
-    from sqlalchemy.orm import selectinload
-
-    from app.models.class_session import ClassSession
-
     # Build ledger query
     query = (
         select(TuitionLedgerEntry)
-        .options(selectinload(TuitionLedgerEntry.class_session).selectinload(ClassSession.teacher))
         .where(
             TuitionLedgerEntry.student_id == student_id,
             TuitionLedgerEntry.center_id == center_id,
@@ -214,22 +211,23 @@ async def get_student_ledger(
         query = query.where(TuitionLedgerEntry.entry_date >= from_date)
     if to_date:
         query = query.where(TuitionLedgerEntry.entry_date <= to_date)
-
     result = await db.execute(query)
     entries = result.scalars().all()
 
     entry_responses = []
     for entry in entries:
-        # Derive class_display_id from class_session relationship
         class_display_id = None
         attendance_status = None
         charge_fee = None
         if entry.entry_type == "class_fee":
-            if entry.class_session:
-                class_display_id = entry.class_session.name
+            # Prefer the actual class name via the lesson → class_ relationship
+            # (both are eager-loaded via selectin, so no extra DB queries)
+            if entry.lesson and entry.lesson.class_:
+                class_display_id = entry.lesson.class_.name
             else:
-                class_display_id = entry.description
-            # Extract attendance info from linked attendance record
+                # Fallback: description was written as class name at attendance-mark time
+                class_display_id = entry.description or None
+
             if entry.attendance:
                 attendance_status = entry.attendance.status
                 charge_fee = entry.attendance.charge_fee

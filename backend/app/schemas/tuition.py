@@ -32,6 +32,7 @@ class TuitionPaymentResponse(BaseModel):
 class StudentBalanceResponse(BaseModel):
     student_id: UUID
     student_name: str
+    enrollment_status: str
     total_paid: int
     total_fees: int
     balance: int

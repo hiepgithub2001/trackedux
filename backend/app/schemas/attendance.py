@@ -14,7 +14,7 @@ class AttendanceBatchItem(BaseModel):
 
 
 class AttendanceBatchRequest(BaseModel):
-    class_session_id: UUID
+    lesson_id: UUID
     session_date: date
     records: list[AttendanceBatchItem]
 

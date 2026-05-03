@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react';
 import { Card, Table, Tag, Button, message, Space, Radio, Row, Col, Pagination, Modal } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, DollarOutlined, StopOutlined } from '@ant-design/icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getWeeklySchedule } from '../../api/classes';
-import { markBatchAttendance, getSessionAttendance } from '../../api/attendance';
+import { getPastSessions } from '../../api/classes';
+import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly } from '../../api/attendance';
 import dayjs from 'dayjs';
+
+const PAST_PAGE_SIZE = 5;
 
 const STATUS_ICONS = {
   present: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
@@ -34,17 +36,29 @@ export default function AttendancePage() {
   }, []);
 
   const { data: scheduleData } = useQuery({
-    queryKey: ['schedule'],
-    queryFn: () => getWeeklySchedule({}).then((r) => r.data),
+    queryKey: ['attendance-weekly'],
+    queryFn: () => getAttendanceWeekly({}).then((r) => r.data),
+  });
+
+  const [pastPage, setPastPage] = useState(1);
+  const { data: pastData } = useQuery({
+    queryKey: ['past-sessions', pastPage],
+    queryFn: () =>
+      getPastSessions({
+        limit: PAST_PAGE_SIZE,
+        offset: (pastPage - 1) * PAST_PAGE_SIZE,
+      }).then((r) => r.data),
+    placeholderData: keepPreviousData,
   });
 
   const { data: savedRecords } = useQuery({
-    queryKey: ['attendance', selectedSession?.id, selectedSession?.date],
-    queryFn: () => getSessionAttendance(selectedSession.id, selectedSession.date).then((r) => {
+    queryKey: ['attendance', selectedSession?.lesson_id, selectedSession?.original_date || selectedSession?.date],
+    queryFn: () => getSessionAttendance(selectedSession.lesson_id, selectedSession.original_date || selectedSession.date).then((r) => {
       const records = Array.isArray(r.data) ? r.data : (r.data?.records ?? r.data ?? []);
       return records;
     }),
     enabled: !!selectedSession,
+    staleTime: 0, // always re-fetch when session opens — never show stale charge_fee values
   });
 
   const getDerivedStatus = (studentId) => {
@@ -57,6 +71,7 @@ export default function AttendancePage() {
   };
 
   const getDerivedChargeFee = (studentId) => {
+    // Returns boolean for use in handleMark
     if (chargeFeeData[studentId] !== undefined) return chargeFeeData[studentId];
     if (savedRecords && savedRecords.length > 0) {
       const rec = savedRecords.find(r => r.student_id === studentId);
@@ -65,17 +80,26 @@ export default function AttendancePage() {
     return true; // default
   };
 
+  // Returns string value for Radio.Group (avoids Ant Design boolean coercion bug)
+  const getChargeRadioValue = (studentId) => getDerivedChargeFee(studentId) ? 'charge' : 'nocharge';
+
   const mutation = useMutation({
     mutationFn: (data) => markBatchAttendance(data),
     onSuccess: () => {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['student-ledger'] });
       closeSession();
     },
-    onError: (err) => messageApi.error(err.response?.data?.detail || 'Error'),
+    onError: (err) => {
+      const detail = err.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail : (Array.isArray(detail) ? JSON.stringify(detail) : 'Error saving attendance');
+      messageApi.error(msg);
+    },
   });
 
   const handleMark = () => {
@@ -85,7 +109,7 @@ export default function AttendancePage() {
       status: getDerivedStatus(student.id),
       charge_fee: getDerivedChargeFee(student.id),
     }));
-    mutation.mutate({ class_session_id: selectedSession.id, session_date: selectedSession.date, records });
+    mutation.mutate({ lesson_id: selectedSession.lesson_id, session_date: selectedSession.original_date || selectedSession.date, records });
   };
 
   const now = dayjs();
@@ -110,17 +134,12 @@ export default function AttendancePage() {
     return !isRunning;
   });
 
-  const pastSessions = allSessions.filter((s) => {
-    if (s.date === todayDateStr) return false;
-    const end = dayjs(`${s.date}T${s.end_time}`);
-    return now.isAfter(end);
-  }).sort((a, b) => dayjs(`${b.date}T${b.start_time}`).valueOf() - dayjs(`${a.date}T${a.start_time}`).valueOf());
+  const paginatedPast = pastData?.sessions ?? [];
+  const pastTotal = pastData?.total ?? 0;
 
   const [pendingPage, setPendingPage] = useState(1);
-  const [pastPage, setPastPage] = useState(1);
   const pageSize = 5;
   const paginatedPending = pendingSessions.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
-  const paginatedPast = pastSessions.slice((pastPage - 1) * pageSize, pastPage * pageSize);
 
   const SessionCard = ({ session, isHighlighted }) => (
     <Card
@@ -199,9 +218,9 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {paginatedPast.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {paginatedPast.map(s => <SessionCard key={s.id + s.date} session={s} />)}
-              {pastSessions.length > 0 && (
+              {pastTotal > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                  <Pagination current={pastPage} pageSize={pageSize} total={pastSessions.length} onChange={setPastPage} />
+                  <Pagination current={pastPage} pageSize={PAST_PAGE_SIZE} total={pastTotal} onChange={setPastPage} />
                 </div>
               )}
             </Space>
@@ -244,17 +263,18 @@ export default function AttendancePage() {
               {
                 title: t('attendance.chargeFee'), key: 'charge_fee', width: 220,
                 render: (_, record) => {
-                  const isCharged = getDerivedChargeFee(record.id);
+                  const chargeVal = getChargeRadioValue(record.id);
+                  const isCharged = chargeVal === 'charge';
                   return (
                     <Radio.Group
-                      value={isCharged}
-                      onChange={(e) => setChargeFeeData((prev) => ({ ...prev, [record.id]: e.target.value }))}
+                      value={chargeVal}
+                      onChange={(e) => setChargeFeeData((prev) => ({ ...prev, [record.id]: e.target.value === 'charge' }))}
                       buttonStyle={isCharged ? "solid" : "outline"}
                     >
-                      <Radio.Button value={true}>
+                      <Radio.Button value="charge">
                         <DollarOutlined /> {t('attendance.charge')}
                       </Radio.Button>
-                      <Radio.Button value={false} style={!isCharged ? { backgroundColor: '#ff4d4f', color: 'white', borderColor: '#ff4d4f' } : {}}>
+                      <Radio.Button value="nocharge" style={!isCharged ? { backgroundColor: '#8c8c8c', color: 'white', borderColor: '#8c8c8c' } : {}}>
                         <StopOutlined /> {t('attendance.noCharge')}
                       </Radio.Button>
                     </Radio.Group>

@@ -21,9 +21,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    personality_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    learning_speed: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    current_issues: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrollment_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="trial", server_default="trial", index=True
     )
@@ -42,4 +40,4 @@ class Student(Base, UUIDMixin, TimestampMixin):
     @property
     def class_ids(self) -> list[uuid.UUID]:
         """Return the list of active class IDs for this student."""
-        return [e.class_session_id for e in self.enrollments if getattr(e, "is_active", False)]
+        return [e.class_id for e in self.enrollments if getattr(e, "is_active", False) and e.class_id]

@@ -29,7 +29,10 @@
     "inactive": "Inactive",
     "copied": "Copied to clipboard",
     "deleted": "Deleted successfully",
-    "deleteConfirm": "Are you sure you want to delete this?"
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "viewClass": "View Class",
+    "createError": "Failed to create",
+    "done": "Done"
   },
   "auth": {
     "login": "Log In",
@@ -50,7 +53,10 @@
     "teachers": "Teachers",
     "tuition": "Tuition",
     "reports": "Reports",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "academics": "Academics",
+    "people": "People",
+    "overview": "Overview"
   },
   "classes": {
     "title": "Classes",
@@ -66,7 +72,13 @@
     "deleteConfirm": "Are you sure you want to delete this class?",
     "deleteBlocked": "Cannot delete class with active enrollments.",
     "lessonKind": "Lesson Kind",
-    "createKindOption": "Create new: {{kind}}"
+    "createKindOption": "Create new: {{kind}}",
+    "class": "Class",
+    "status": "Status",
+    "created": "Class created",
+    "editClass": "Edit Class",
+    "className": "Class Name",
+    "classNamePlaceholder": "e.g. Piano Beginner Group A"
   },
   "students": {
     "title": "Student Management",
@@ -115,7 +127,8 @@
     "teacherName": "Full Name",
     "availability": "Availability",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "themeColor": "Theme Color"
   },
   "schedule": {
     "title": "Weekly Schedule",
@@ -164,8 +177,8 @@
     "totalPaid": "Total Paid",
     "totalFees": "Total Fees",
     "balance": "Balance",
-    "viewLedger": "View Ledger",
-    "studentLedger": "Student Ledger",
+    "viewLedger": "View Details",
+    "studentLedger": "Tuition Details",
     "amount": "Amount",
     "paymentDate": "Payment Date",
     "paymentMethod": "Payment Method",
@@ -183,7 +196,9 @@
     "payment": "Payment",
     "classFee": "Class Fee",
     "balanceAfter": "Balance After",
-    "paymentNeeded": "Additional payment needed"
+    "paymentNeeded": "Additional payment needed",
+    "type": "Type",
+    "class": "Class"
   },
   "lessonKind": {
     "title": "Lesson Kinds"
@@ -259,7 +274,9 @@
       "createFailed": "Failed to register center",
       "createdSuccess": "Center Registered Successfully",
       "credentialsAlert": "Important Credentials",
-      "credentialsNote": "Please copy and save this password immediately. It will not be shown again."
+      "credentialsNote": "Please copy and save this password immediately. It will not be shown again.",
+      "adminPassword": "Admin Password (Optional)",
+      "adminPasswordHint": "If left blank, a secure password will be auto-generated."
     }
   },
   "pwa": {
@@ -272,5 +289,43 @@
     "updateAvailable": "Update Available",
     "updateMessage": "A new version is available.",
     "update": "Update Now"
+  },
+  "lessons": {
+    "updated": "Lesson updated",
+    "created": "Lesson created",
+    "conflictGeneric": "Scheduling conflict detected",
+    "editLesson": "Edit Lesson",
+    "addLesson": "Add Lesson",
+    "conflictError": "Scheduling Conflict",
+    "selectClass": "Select a class (optional)",
+    "selectTeacher": "Select teacher",
+    "title": "Title (optional)",
+    "titlePlaceholder": "e.g. Theory lesson, Group makeup",
+    "lessonType": "Lesson Type",
+    "recurring": "Recurring",
+    "oneOff": "One-off",
+    "dayOfWeek": "Day of Week",
+    "count": "Number of occurrences (leave blank for open-ended)",
+    "until": "End date (alternative to count)",
+    "specificDate": "Date",
+    "selectTime": "Select time",
+    "duration": "Duration (minutes)",
+    "createLesson": "Create Lesson",
+    "deleteConfirm": "Are you sure you want to delete this lesson?",
+    "type": "Type",
+    "lessons": "Lessons",
+    "noLessons": "No lessons yet. Add one to start scheduling.",
+    "occurrenceUpdated": "Occurrence updated",
+    "deleteSeriesConfirm": "Are you sure you want to delete this lesson series entirely?",
+    "canceled": "CANCELED",
+    "rescheduled": "MOVED",
+    "occurrenceActions": "Occurrence Actions",
+    "originalDate": "Original date",
+    "revertToSeries": "Revert to Series (Undo Cancel)",
+    "cancelOccurrence": "Cancel This Occurrence",
+    "rescheduleOccurrence": "Reschedule to:",
+    "confirmReschedule": "Confirm Reschedule",
+    "editSeries": "Edit Lesson Series",
+    "deleteSeries": "Delete Lesson Series"
   }
 }

@@ -132,24 +132,8 @@ export default function StudentForm() {
             />
           </Form.Item>
 
-          <Form.Item name="learning_speed" label={t('students.learningSpeed')}>
-            <Select
-              id="learning-speed-select"
-              allowClear
-              options={[
-                { label: t('students.speedFast'), value: 'Fast' },
-                { label: t('students.speedNormal'), value: 'Normal' },
-                { label: t('students.speedSlow'), value: 'Slow' },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item name="personality_notes" label={t('students.personalityNotes')}>
-            <TextArea id="personality-notes" rows={3} placeholder={t('students.notesPlaceholder')} />
-          </Form.Item>
-
-          <Form.Item name="current_issues" label={t('students.currentIssues')}>
-            <TextArea id="current-issues" rows={3} />
+          <Form.Item name="notes" label={t('common.notes')}>
+            <TextArea id="student-notes" rows={4} placeholder={t('students.notesPlaceholder')} />
           </Form.Item>
 
           <Collapse 

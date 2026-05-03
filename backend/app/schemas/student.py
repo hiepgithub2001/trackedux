@@ -27,9 +27,7 @@ class StudentCreate(BaseModel):
     date_of_birth: date | None = None
     age: int | None = None
 
-    personality_notes: str | None = None
-    learning_speed: str | None = None
-    current_issues: str | None = None
+    notes: str | None = None
     enrollment_status: str = Field(default="trial", pattern="^(trial|active|paused|withdrawn)$")
     contact: ContactInfo | None = None
     class_ids: list[UUID] | None = None
@@ -43,9 +41,7 @@ class StudentUpdate(BaseModel):
     date_of_birth: date | None = None
     age: int | None = None
 
-    personality_notes: str | None = None
-    learning_speed: str | None = None
-    current_issues: str | None = None
+    notes: str | None = None
     contact: ContactInfo | None = None
     class_ids: list[UUID] | None = None
 
@@ -66,9 +62,7 @@ class StudentResponse(BaseModel):
     date_of_birth: date | None = None
     age: int | None = None
 
-    personality_notes: str | None = None
-    learning_speed: str | None = None
-    current_issues: str | None = None
+    notes: str | None = None
     enrollment_status: str
     enrolled_at: date
     contact: ContactInfo | None = None

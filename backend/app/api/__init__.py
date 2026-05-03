@@ -7,6 +7,7 @@ from app.api.auth import router as auth_router
 from app.api.classes import router as classes_router
 from app.api.dashboard import router as dashboard_router
 from app.api.lesson_kinds import router as lesson_kinds_router
+from app.api.lessons import router as lessons_router
 from app.api.schedule import router as schedule_router
 from app.api.students import router as students_router
 from app.api.system.centers import router as system_router
@@ -19,6 +20,7 @@ api_router.include_router(auth_router)
 api_router.include_router(students_router)
 api_router.include_router(teachers_router)
 api_router.include_router(classes_router)
+api_router.include_router(lessons_router)
 api_router.include_router(schedule_router)
 api_router.include_router(attendance_router)
 api_router.include_router(tuition_router)

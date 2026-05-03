@@ -26,7 +26,7 @@ async def create_student(db: AsyncSession, data: StudentCreate, center_id: UUID)
     await db.flush()
 
     for cid in class_ids:
-        db.add(ClassEnrollment(class_session_id=cid, student_id=student.id, center_id=center_id))
+        db.add(ClassEnrollment(class_id=cid, student_id=student.id, center_id=center_id))
 
     await db.commit()
     await db.refresh(student, ["enrollments"])
@@ -104,7 +104,7 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
 
     if class_ids is not None:
         # Sync enrollments
-        existing = {e.class_session_id: e for e in student.enrollments}
+        existing = {e.class_id: e for e in student.enrollments}
         new_set = set(class_ids)
 
         # Deactivate removed ones
@@ -117,7 +117,7 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
         # Add new ones
         for cid in new_set:
             if cid not in existing:
-                db.add(ClassEnrollment(class_session_id=cid, student_id=student.id, center_id=center_id))
+                db.add(ClassEnrollment(class_id=cid, student_id=student.id, center_id=center_id))
 
     await db.commit()
     # Refresh to get updated enrollments

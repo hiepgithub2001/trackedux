@@ -232,7 +232,10 @@ async def make_teacher(db_session):
 async def make_class(db_session):
     from datetime import time
 
-    from app.models.class_session import ClassSession
+    from app.models.class_ import Class
+    from app.models.lesson import Lesson
+
+    _byday = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
 
     async def _make(
         center,
@@ -243,19 +246,26 @@ async def make_class(db_session):
         duration_minutes: int = 60,
         name: str = "Class",
     ):
-        cs = ClassSession(
+        cls = Class(
             teacher_id=teacher.id,
             name=f"{name}-{uuid4().hex[:6]}",
-            day_of_week=day_of_week,
-            start_time=time.fromisoformat(start_time),
-            duration_minutes=duration_minutes,
-            is_recurring=True,
-            recurring_pattern="weekly",
             center_id=center.id,
         )
-        db_session.add(cs)
+        db_session.add(cls)
+        await db_session.flush()
+        # Attach a recurring lesson so schedule-conflict and roster tests have data.
+        lesson = Lesson(
+            class_id=cls.id,
+            teacher_id=teacher.id,
+            start_time=time.fromisoformat(start_time),
+            duration_minutes=duration_minutes,
+            day_of_week=day_of_week,
+            rrule=f"FREQ=WEEKLY;BYDAY={_byday[day_of_week]}",
+            center_id=center.id,
+        )
+        db_session.add(lesson)
         await db_session.commit()
-        await db_session.refresh(cs)
-        return cs
+        await db_session.refresh(cls)
+        return cls
 
     return _make
