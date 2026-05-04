@@ -4,10 +4,17 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DbSession
-from app.core.security import create_access_token, create_refresh_token, verify_password, verify_token
+from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password, verify_token
 from app.crud.user import get_user_by_id, get_user_by_username
 from app.models.center import Center
-from app.schemas.user import LoginRequest, RefreshRequest, TokenResponse, UserResponse
+from app.schemas.user import (
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+    UpdateMeRequest,
+    UpdatePasswordRequest,
+    UserResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -87,3 +94,34 @@ async def logout():
 async def get_me(current_user: CurrentUser):
     """Get current authenticated user profile."""
     return UserResponse.model_validate(current_user)
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(request: UpdateMeRequest, current_user: CurrentUser, db: DbSession):
+    """Update current user profile info."""
+    update_data = request.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
+
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+
+    return UserResponse.model_validate(current_user)
+
+
+@router.put("/me/password")
+async def update_my_password(request: UpdatePasswordRequest, current_user: CurrentUser, db: DbSession):
+    """Update current user password."""
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password",
+        )
+
+    current_user.password_hash = hash_password(request.new_password)
+    db.add(current_user)
+    await db.commit()
+
+    return {"detail": "Password updated successfully"}

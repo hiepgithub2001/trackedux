@@ -26,6 +26,21 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class UpdateMeRequest(BaseModel):
+    """Schema for updating current user's profile."""
+
+    email: str | None = None
+    full_name: str | None = None
+    language: str | None = Field(default=None, pattern="^(vi|en)$")
+
+
+class UpdatePasswordRequest(BaseModel):
+    """Schema for updating password."""
+
+    current_password: str
+    new_password: str = Field(..., min_length=6)
+
+
 class CenterBasicInfo(BaseModel):
     """Basic center info for user context."""
 

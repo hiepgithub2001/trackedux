@@ -1,22 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Table, Button, Input, Tag, Space, Typography, Card, Modal, message, Layout } from 'antd';
-import { PlusOutlined, SearchOutlined, SafetyCertificateOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Tag, Space, Typography, Card, Modal, message } from 'antd';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { centersApi } from '../../api/centers';
-import { useAuth } from '../../auth/AuthContext';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
-const { Header, Content } = Layout;
 
 export default function CenterListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout, user } = useAuth();
   const [searchText, setSearchText] = useState('');
 
   const { data: centers, isLoading } = useQuery({
@@ -103,23 +99,8 @@ export default function CenterListPage() {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0' }}>
-        <Space>
-          <SafetyCertificateOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-          <Title level={4} style={{ margin: 0 }}>System Console</Title>
-        </Space>
-        <Space>
-          <LanguageSwitcher />
-          <Text>{user?.full_name}</Text>
-          <Button type="text" icon={<LogoutOutlined />} onClick={logout}>
-            {t('auth.logout', 'Logout')}
-          </Button>
-        </Space>
-      </Header>
-      
-      <Content style={{ padding: '24px 48px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <Title level={2} style={{ marginBottom: 24 }}>{t('system.centers.title', 'Edu-Centers Management')}</Title>
+    <>
+      <Title level={2} style={{ marginBottom: 24 }}>{t('system.centers.title', 'Edu-Centers Management')}</Title>
 
         <Card bodyStyle={{ padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
@@ -146,7 +127,6 @@ export default function CenterListPage() {
             pagination={{ defaultPageSize: 10 }}
           />
         </Card>
-      </Content>
-    </Layout>
+    </>
   );
 }

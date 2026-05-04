@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Modal, Space, Layout, Alert, message } from 'antd';
-import { ArrowLeftOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Modal, Space, Alert, message } from 'antd';
+import { SafetyCertificateOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { centersApi } from '../../api/centers';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 const { Title, Text, Paragraph } = Typography;
-const { Header, Content } = Layout;
 
 export default function CenterFormPage() {
   const { t } = useTranslation();
@@ -48,17 +46,8 @@ export default function CenterFormPage() {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/system/centers')} style={{ marginRight: 16 }} />
-        <Space>
-          <LanguageSwitcher />
-          <SafetyCertificateOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-          <Title level={4} style={{ margin: 0 }}>System Console</Title>
-        </Space>
-      </Header>
-      
-      <Content style={{ padding: '24px 48px', display: 'flex', justifyContent: 'center' }}>
+    <>
+      <div style={{ padding: '24px 48px', display: 'flex', justifyContent: 'center' }}>
         <Card 
           style={{ width: '100%', maxWidth: 600, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
           title={<Title level={3} style={{ margin: 0 }}>{t('system.centers.addCenter', 'Register New Center')}</Title>}
@@ -182,7 +171,7 @@ export default function CenterFormPage() {
             </Space>
           )}
         </Modal>
-      </Content>
-    </Layout>
+      </div>
+    </>
   );
 }

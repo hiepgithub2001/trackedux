@@ -75,6 +75,17 @@ export default function Layout() {
 
   const userMenuItems = [
     {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: t('nav.profile', 'My Profile'),
+      onClick: () => {
+        navigate('/profile');
+      },
+    },
+    {
+      type: 'divider',
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: t('auth.logout'),

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import SuperadminRoute from '../auth/SuperadminRoute';
@@ -17,9 +17,11 @@ import ClassDetail from '../features/schedule/ClassDetail';
 import AttendancePage from '../features/attendance/AttendancePage';
 import TuitionPage from '../features/tuition/TuitionPage';
 import StudentLedgerPage from '../features/tuition/StudentLedger';
+import ProfilePage from '../auth/ProfilePage';
 
 import CenterListPage from '../features/system/CenterListPage';
 import CenterFormPage from '../features/system/CenterFormPage';
+import SystemLayout from '../components/SystemLayout';
 import PlaceholderPage from '../components/PlaceholderPage';
 
 const router = createBrowserRouter([
@@ -33,6 +35,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: 'profile', element: <ProfilePage /> },
       { path: 'students', element: <StudentList /> },
       { path: 'students/new', element: <StudentForm /> },
       { path: 'students/:id', element: <StudentDetail /> },
@@ -63,11 +66,16 @@ const router = createBrowserRouter([
   },
   {
     path: '/system',
-    element: <SuperadminRoute><Outlet /></SuperadminRoute>,
+    element: (
+      <SuperadminRoute>
+        <SystemLayout />
+      </SuperadminRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="centers" replace /> },
       { path: 'centers', element: <CenterListPage /> },
       { path: 'centers/new', element: <CenterFormPage /> },
+      { path: 'profile', element: <ProfilePage /> },
     ]
   },
   { path: '*', element: <Navigate to="/" replace /> },

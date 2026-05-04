@@ -54,12 +54,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateProfile = useCallback(async (data) => {
+    const res = await client.put('/auth/me', data);
+    setUser(res.data);
+    localStorage.setItem('user', JSON.stringify(res.data));
+    return res.data;
+  }, []);
+
+  const updatePassword = useCallback(async (data) => {
+    const res = await client.put('/auth/me/password', data);
+    return res.data;
+  }, []);
+
   const value = {
     user,
     isAuthenticated,
     loading,
     login,
     logout,
+    updateProfile,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
