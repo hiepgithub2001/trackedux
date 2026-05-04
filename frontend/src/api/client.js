@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setPersistentItem, getPersistentItem, removePersistentItem, setSessionItem, getSessionItem, removeSessionItem } from '../utils/storage';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -12,7 +13,7 @@ const client = axios.create({
 // Request interceptor — attach JWT token
 client.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    const token = getPersistentItem('access_token') || getSessionItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,7 +36,7 @@ client.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+      const refreshToken = getPersistentItem('refresh_token') || getSessionItem('refresh_token');
       if (refreshToken) {
         try {
           const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
@@ -43,31 +44,40 @@ client.interceptors.response.use(
           });
 
           const { access_token, refresh_token: newRefresh } = res.data;
-          const storage = localStorage.getItem('refresh_token') ? localStorage : sessionStorage;
-          storage.setItem('access_token', access_token);
-          storage.setItem('refresh_token', newRefresh);
+          if (getPersistentItem('refresh_token')) {
+            setPersistentItem('access_token', access_token);
+            setPersistentItem('refresh_token', newRefresh);
+          } else {
+            setSessionItem('access_token', access_token);
+            setSessionItem('refresh_token', newRefresh);
+          }
 
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return client(originalRequest);
         } catch (refreshError) {
-          // Refresh failed — clear tokens and redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('access_token');
-          sessionStorage.removeItem('refresh_token');
-          sessionStorage.removeItem('user');
+          // If it's a network error (like waking up PWA without internet), do NOT wipe tokens
+          if (!refreshError.response) {
+            return Promise.reject(refreshError);
+          }
+          
+          // Refresh failed with a true server error (e.g. 401) — clear tokens and redirect to login
+          removePersistentItem('access_token');
+          removePersistentItem('refresh_token');
+          removePersistentItem('user');
+          removeSessionItem('access_token');
+          removeSessionItem('refresh_token');
+          removeSessionItem('user');
           window.location.href = '/login';
           return Promise.reject(refreshError);
         }
       }
 
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('refresh_token');
-      sessionStorage.removeItem('user');
+      removePersistentItem('access_token');
+      removePersistentItem('refresh_token');
+      removePersistentItem('user');
+      removeSessionItem('access_token');
+      removeSessionItem('refresh_token');
+      removeSessionItem('user');
       window.location.href = '/login';
     }
 

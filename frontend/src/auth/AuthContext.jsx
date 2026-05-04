@@ -1,13 +1,13 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { setPersistentItem, getPersistentItem, removePersistentItem, setSessionItem, getSessionItem, removeSessionItem } from '../utils/storage';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const stored = getPersistentItem('user') || getSessionItem('user');
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
@@ -15,13 +15,16 @@ export function AuthProvider({ children }) {
 
   // Sync user profile on load to get fresh data (like center details)
   useEffect(() => {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    const token = getPersistentItem('access_token') || getSessionItem('access_token');
     if (token) {
       client.get('/auth/me').then(res => {
         setUser(res.data);
-        const storage = localStorage.getItem('access_token') ? localStorage : sessionStorage;
-        storage.setItem('user', JSON.stringify(res.data));
-      }).catch(() => { });
+        if (getPersistentItem('access_token')) {
+          setPersistentItem('user', JSON.stringify(res.data));
+        } else {
+          setSessionItem('user', JSON.stringify(res.data));
+        }
+      }).catch(() => {});
     }
   }, []);
 
@@ -33,10 +36,15 @@ export function AuthProvider({ children }) {
       const response = await client.post('/auth/login', { username, password });
       const { access_token, refresh_token, user: userData } = response.data;
 
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('access_token', access_token);
-      storage.setItem('refresh_token', refresh_token);
-      storage.setItem('user', JSON.stringify(userData));
+      if (rememberMe) {
+        setPersistentItem('access_token', access_token);
+        setPersistentItem('refresh_token', refresh_token);
+        setPersistentItem('user', JSON.stringify(userData));
+      } else {
+        setSessionItem('access_token', access_token);
+        setSessionItem('refresh_token', refresh_token);
+        setSessionItem('user', JSON.stringify(userData));
+      }
       setUser(userData);
 
       return userData;
@@ -51,12 +59,12 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore logout errors
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('refresh_token');
-      sessionStorage.removeItem('user');
+      removePersistentItem('access_token');
+      removePersistentItem('refresh_token');
+      removePersistentItem('user');
+      removeSessionItem('access_token');
+      removeSessionItem('refresh_token');
+      removeSessionItem('user');
       setUser(null);
       queryClient.clear();
     }
@@ -65,8 +73,11 @@ export function AuthProvider({ children }) {
   const updateProfile = useCallback(async (data) => {
     const res = await client.put('/auth/me', data);
     setUser(res.data);
-    const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
-    storage.setItem('user', JSON.stringify(res.data));
+    if (getPersistentItem('user')) {
+      setPersistentItem('user', JSON.stringify(res.data));
+    } else {
+      setSessionItem('user', JSON.stringify(res.data));
+    }
     return res.data;
   }, []);
 
