@@ -14,8 +14,28 @@ from app.db.base import Base
 # Import all models so Alembic can detect them
 from app.models import *  # noqa: F401, F403
 
+def process_db_url(url: str):
+    connect_args = {}
+    if url and "sslmode=" in url:
+        from urllib.parse import parse_qs, urlparse, urlunparse
+        parsed_url = urlparse(url)
+        query = parse_qs(parsed_url.query)
+        query.pop('sslmode', None)
+        query.pop('channel_binding', None)
+        new_query = '&'.join([f"{k}={v[0]}" for k, v in query.items()])
+        url = urlunparse(parsed_url._replace(query=new_query))
+        
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ctx
+    return url, connect_args
+
+db_url, db_connect_args = process_db_url(settings.DATABASE_URL)
+
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -79,6 +99,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=db_connect_args,
     )
 
     async with connectable.connect() as connection:
