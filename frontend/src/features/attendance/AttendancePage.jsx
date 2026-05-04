@@ -141,6 +141,16 @@ export default function AttendancePage() {
   const pageSize = 5;
   const paginatedPending = pendingSessions.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
 
+  const sortedAllSessions = [...allSessions].sort((a, b) => {
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  const [allWeekPage, setAllWeekPage] = useState(1);
+  const paginatedAllWeek = sortedAllSessions.slice((allWeekPage - 1) * pageSize, allWeekPage * pageSize);
+
   const SessionCard = ({ session, isHighlighted }) => (
     <Card
       size="small"
@@ -207,6 +217,22 @@ export default function AttendancePage() {
             <Space direction="vertical" style={{ width: '100%' }}>
               {todaySessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
               {todaySessions.map(s => <SessionCard key={s.id + s.date} session={s} />)}
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24}>
+          <Card title={t('schedule.allSessionsThisWeek', 'All Sessions This Week')}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {paginatedAllWeek.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
+              {paginatedAllWeek.map(s => <SessionCard key={s.id + s.date} session={s} />)}
+              {sortedAllSessions.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                  <Pagination current={allWeekPage} pageSize={pageSize} total={sortedAllSessions.length} onChange={setAllWeekPage} />
+                </div>
+              )}
             </Space>
           </Card>
         </Col>
