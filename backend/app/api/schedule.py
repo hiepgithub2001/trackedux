@@ -148,7 +148,14 @@ async def get_weekly_schedule(
     lesson_map = {str(lesson.id): lesson for lesson in lessons}
 
     # 2. Past portion (effective_date < today)
+    from app.crud.lesson import bulk_upsert_occurrences
     from app.models.lesson_occurrence import LessonOccurrence
+
+    if week_start < today:
+        # Materialize any unmaterialized past occurrences for the requested week
+        past_range_end = min(week_end, today - timedelta(days=1))
+        await bulk_upsert_occurrences(db, lessons, week_start, past_range_end, center_id)
+        await db.commit()
 
     result = await db.execute(
         select(LessonOccurrence).where(
