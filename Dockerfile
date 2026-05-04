@@ -39,4 +39,4 @@ ENV PYTHONPATH=/app/backend
 ENV PORT=8000
 EXPOSE ${PORT}
 
-CMD cd backend && alembic upgrade head && python -m app.scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+CMD cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
