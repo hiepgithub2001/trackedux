@@ -81,9 +81,7 @@ async def get_student_ledger(
 
         from app.models.student import Student
 
-        result = await db.execute(
-            select(Student).where(Student.id == student_id, Student.center_id == center_id)
-        )
+        result = await db.execute(select(Student).where(Student.id == student_id, Student.center_id == center_id))
         student = result.scalar_one_or_none()
         if not student:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
@@ -122,9 +120,7 @@ async def get_child_balance(
     from app.models.tuition_ledger_entry import TuitionLedgerEntry
 
     # Verify student belongs to parent
-    result = await db.execute(
-        select(Student).where(Student.id == student_id, Student.center_id == center_id)
-    )
+    result = await db.execute(select(Student).where(Student.id == student_id, Student.center_id == center_id))
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")

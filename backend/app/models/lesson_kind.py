@@ -13,9 +13,7 @@ class LessonKind(Base, UUIDMixin, TimestampMixin):
     """A passive, append-only vocabulary entry for classifying course lessons."""
 
     __tablename__ = "lesson_kinds"
-    __table_args__ = (
-        UniqueConstraint("center_id", "name_normalized", name="uq_lesson_kind_center_name"),
-    )
+    __table_args__ = (UniqueConstraint("center_id", "name_normalized", name="uq_lesson_kind_center_name"),)
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     name_normalized: Mapped[str] = mapped_column(String(100), nullable=False, index=True)

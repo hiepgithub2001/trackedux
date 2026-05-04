@@ -38,12 +38,8 @@ async def create_class(db: AsyncSession, data: ClassCreate, center_id: uuid.UUID
     return class_
 
 
-async def get_class_by_id(
-    db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID
-) -> Class | None:
-    result = await db.execute(
-        select(Class).where(Class.id == class_id, Class.center_id == center_id)
-    )
+async def get_class_by_id(db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID) -> Class | None:
+    result = await db.execute(select(Class).where(Class.id == class_id, Class.center_id == center_id))
     return result.scalar_one_or_none()
 
 
@@ -62,9 +58,7 @@ async def list_classes(
     return list(result.scalars().all())
 
 
-async def update_class(
-    db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate, center_id: uuid.UUID
-) -> Class | None:
+async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate, center_id: uuid.UUID) -> Class | None:
     class_ = await get_class_by_id(db, class_id, center_id)
     if class_ is None:
         return None
@@ -75,9 +69,7 @@ async def update_class(
     return class_
 
 
-async def deactivate_class(
-    db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID
-) -> bool:
+async def deactivate_class(db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID) -> bool:
     class_ = await get_class_by_id(db, class_id, center_id)
     if class_ is None:
         return False

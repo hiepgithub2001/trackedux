@@ -134,10 +134,7 @@ def compute_week_occurrences(
             orig_date = lesson.specific_date
             key = (lesson_id_str, orig_date)
             override = overrides.get(key)
-            occ = _build_occurrence(
-                lesson, lesson_id_str, class_name, display_name, teacher_id,
-                orig_date, override
-            )
+            occ = _build_occurrence(lesson, lesson_id_str, class_name, display_name, teacher_id, orig_date, override)
             # Include if effective_date falls in the requested week
             if week_start <= occ.effective_date <= week_end:
                 results.append(occ)
@@ -162,8 +159,7 @@ def compute_week_occurrences(
                 key = (lesson_id_str, orig_date)
                 override = overrides.get(key)
                 occ = _build_occurrence(
-                    lesson, lesson_id_str, class_name, display_name, teacher_id,
-                    orig_date, override
+                    lesson, lesson_id_str, class_name, display_name, teacher_id, orig_date, override
                 )
                 # Include only occurrences whose effective_date falls in the requested week
                 if week_start <= occ.effective_date <= week_end:

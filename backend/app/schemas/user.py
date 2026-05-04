@@ -28,11 +28,13 @@ class UserUpdate(BaseModel):
 
 class CenterBasicInfo(BaseModel):
     """Basic center info for user context."""
+
     id: UUID
     name: str
     code: str
 
     model_config = {"from_attributes": True}
+
 
 class UserResponse(BaseModel):
     """Schema for user response data."""

@@ -19,9 +19,7 @@ class LessonOccurrence(Base, UUIDMixin, TimestampMixin):
     """
 
     __tablename__ = "lesson_occurrences"
-    __table_args__ = (
-        UniqueConstraint("lesson_id", "original_date", name="uq_lesson_occurrence_lesson_date"),
-    )
+    __table_args__ = (UniqueConstraint("lesson_id", "original_date", name="uq_lesson_occurrence_lesson_date"),)
 
     lesson_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lessons.id"), nullable=False, index=True

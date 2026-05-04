@@ -86,8 +86,8 @@ async def create_lesson_endpoint(data: LessonCreate, db: DbSession, current_user
     # Get enrolled students if class is attached
     student_ids: list[UUID] = []
     if data.class_id:
-
         from app.crud.class_ import get_class_by_id
+
         cls = await get_class_by_id(db, data.class_id, center_id)
         if cls is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
@@ -117,6 +117,7 @@ async def create_lesson_endpoint(data: LessonCreate, db: DbSession, current_user
     from datetime import timedelta
 
     from app.crud.lesson import bulk_upsert_occurrences
+
     today = dt_date.today()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
@@ -171,10 +172,9 @@ async def delete_lesson_endpoint(lesson_id: UUID, db: DbSession, current_user: C
 
 # ─── Per-Occurrence Override Endpoints ──────────────────────────────────────
 
+
 @router.get("/{lesson_id}/occurrences/{original_date}", response_model=OccurrenceResponse)
-async def get_occurrence_endpoint(
-    lesson_id: UUID, original_date: str, db: DbSession, current_user: CurrentUser
-):
+async def get_occurrence_endpoint(lesson_id: UUID, original_date: str, db: DbSession, current_user: CurrentUser):
     """Get the override record for a single occurrence. 404 if still virtual."""
     center_id = get_center_id(current_user)
     occ_date = date.fromisoformat(original_date)

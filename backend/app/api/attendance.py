@@ -84,8 +84,7 @@ async def get_weekly_attendance(
         teacher_id_str = str(lesson.teacher_id)
 
         v_occ = _build_occurrence(
-            lesson, str(lesson.id), class_name, display_name, teacher_id_str,
-            occ_row.original_date, occ_row
+            lesson, str(lesson.id), class_name, display_name, teacher_id_str, occ_row.original_date, occ_row
         )
         virtual_occs.append(v_occ)
 
@@ -96,7 +95,6 @@ async def get_weekly_attendance(
         "week_end": week_end.isoformat(),
         "sessions": sessions,
     }
-
 
 
 @router.post("/batch")
@@ -157,10 +155,12 @@ async def get_session_attendance(
         return []
 
     result = await db.execute(
-        select(AttendanceRecord).where(
+        select(AttendanceRecord)
+        .where(
             AttendanceRecord.lesson_occurrence_id == occ.id,
             AttendanceRecord.center_id == center_id,
-        ).order_by(AttendanceRecord.created_at.desc())
+        )
+        .order_by(AttendanceRecord.created_at.desc())
     )
     records = result.scalars().all()
 
@@ -183,8 +183,6 @@ async def get_session_attendance(
         }
         for r in deduped
     ]
-
-
 
 
 @router.get("/student/{student_id}")

@@ -107,10 +107,12 @@ async def mark_batch_attendance(
 
     for item in data.records:
         student_result = await db.execute(
-            select(Student).where(
+            select(Student)
+            .where(
                 Student.id == item.student_id,
                 Student.center_id == center_id,
-            ).with_for_update()
+            )
+            .with_for_update()
         )
         student = student_result.scalar_one_or_none()
         if not student:
@@ -161,8 +163,14 @@ async def mark_batch_attendance(
             existing_record.marked_by = marked_by
 
             fee_deducted, balance_after = await _upsert_ledger_entry(
-                db, student, fee, description, existing_record, center_id,
-                charge_fee=item.charge_fee, lesson_id=data.lesson_id
+                db,
+                student,
+                fee,
+                description,
+                existing_record,
+                center_id,
+                charge_fee=item.charge_fee,
+                lesson_id=data.lesson_id,
             )
         else:
             record = AttendanceRecord(
@@ -179,8 +187,7 @@ async def mark_batch_attendance(
             await db.flush()
 
             fee_deducted, balance_after = await _upsert_ledger_entry(
-                db, student, fee, description, record, center_id,
-                charge_fee=item.charge_fee, lesson_id=data.lesson_id
+                db, student, fee, description, record, center_id, charge_fee=item.charge_fee, lesson_id=data.lesson_id
             )
 
         results.append(

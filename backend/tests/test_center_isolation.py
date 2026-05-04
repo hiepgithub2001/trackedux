@@ -15,9 +15,7 @@ pytestmark = pytest.mark.asyncio
 # ── User Story 1: Read isolation ───────────────────────────────────────────
 
 
-async def test_cross_center_class_lookup_returns_404(
-    client, login, make_center, make_admin, make_teacher, make_class
-):
+async def test_cross_center_class_lookup_returns_404(client, login, make_center, make_admin, make_teacher, make_class):
     """Center A's admin must get 404 (not 403) on Center B's class ID."""
     a = await make_center()
     b = await make_center()
@@ -30,9 +28,7 @@ async def test_cross_center_class_lookup_returns_404(
     assert resp.status_code == 404
 
 
-async def test_cross_center_class_delete_returns_404(
-    client, login, make_center, make_admin, make_teacher, make_class
-):
+async def test_cross_center_class_delete_returns_404(client, login, make_center, make_admin, make_teacher, make_class):
     """Deleting another center's class must 404 and leave the row intact (G1)."""
     a = await make_center()
     b = await make_center()
@@ -68,9 +64,7 @@ async def test_cross_center_enrollment_blocked(
     assert resp.status_code == 404
 
 
-async def test_create_class_with_other_center_teacher_blocked(
-    client, login, make_center, make_admin, make_teacher
-):
+async def test_create_class_with_other_center_teacher_blocked(client, login, make_center, make_admin, make_teacher):
     """Creating a class with a teacher from another center must 404 (Rule 2)."""
     a = await make_center()
     b = await make_center()
@@ -106,24 +100,18 @@ async def test_unenroll_other_center_returns_404(
     class_b = await make_class(b, teacher_b)
     student_b = await make_student(b)
 
-    db_session.add(
-        ClassEnrollment(class_id=class_b.id, student_id=student_b.id, center_id=b.id)
-    )
+    db_session.add(ClassEnrollment(class_id=class_b.id, student_id=student_b.id, center_id=b.id))
     await db_session.commit()
 
     headers = await login(admin_a)
-    resp = await client.delete(
-        f"/api/v1/classes/{class_b.id}/enroll/{student_b.id}", headers=headers
-    )
+    resp = await client.delete(f"/api/v1/classes/{class_b.id}/enroll/{student_b.id}", headers=headers)
     assert resp.status_code == 404
 
 
 # ── User Story 3: Schedule conflict isolation ──────────────────────────────
 
 
-async def test_schedule_conflicts_isolated_by_center(
-    client, login, make_center, make_admin, make_teacher, make_class
-):
+async def test_schedule_conflicts_isolated_by_center(client, login, make_center, make_admin, make_teacher, make_class):
     """A teacher in Center A with same time slot as Center B does not conflict (G3).
 
     Two centers happen to use the same day/time. Center A creates a class. Even
@@ -158,9 +146,7 @@ async def test_schedule_conflicts_isolated_by_center(
 # ── Phase 2 Foundational: Center deactivation ──────────────────────────────
 
 
-async def test_login_blocked_for_deactivated_center(
-    client, db_session, make_center, make_admin
-):
+async def test_login_blocked_for_deactivated_center(client, db_session, make_center, make_admin):
     """Login must reject users whose center has been deactivated (G5)."""
     c = await make_center()
     admin = await make_admin(c)
@@ -175,9 +161,7 @@ async def test_login_blocked_for_deactivated_center(
     assert "deactivated" in resp.json()["detail"].lower()
 
 
-async def test_existing_token_blocked_after_center_deactivation(
-    client, login, db_session, make_center, make_admin
-):
+async def test_existing_token_blocked_after_center_deactivation(client, login, db_session, make_center, make_admin):
     """JWT issued before deactivation is rejected on next request (G6)."""
     c = await make_center()
     admin = await make_admin(c)

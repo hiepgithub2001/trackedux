@@ -14,23 +14,27 @@ from app.db.base import Base
 # Import all models so Alembic can detect them
 from app.models import *  # noqa: F401, F403
 
+
 def process_db_url(url: str):
     connect_args = {}
     if url and "sslmode=" in url:
         from urllib.parse import parse_qs, urlparse, urlunparse
+
         parsed_url = urlparse(url)
         query = parse_qs(parsed_url.query)
-        query.pop('sslmode', None)
-        query.pop('channel_binding', None)
-        new_query = '&'.join([f"{k}={v[0]}" for k, v in query.items()])
+        query.pop("sslmode", None)
+        query.pop("channel_binding", None)
+        new_query = "&".join([f"{k}={v[0]}" for k, v in query.items()])
         url = urlunparse(parsed_url._replace(query=new_query))
-        
+
         import ssl
+
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         connect_args["ssl"] = ctx
     return url, connect_args
+
 
 db_url, db_connect_args = process_db_url(settings.DATABASE_URL)
 
@@ -58,13 +62,13 @@ def process_revision_directives(migration_context, revision, directives):
     if head_rev is None:
         new_rev_id = 1
     else:
-        m = re.match(r'^(\d+)', head_rev)
+        m = re.match(r"^(\d+)", head_rev)
         if m:
             new_rev_id = int(m.group(1)) + 1
         else:
             new_rev_id = 1
 
-    script.rev_id = f'{new_rev_id:03d}'
+    script.rev_id = f"{new_rev_id:03d}"
 
 
 def run_migrations_offline() -> None:

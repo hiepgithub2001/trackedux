@@ -191,9 +191,7 @@ async def get_student_ledger(
 ) -> StudentLedgerResponse:
     """Get chronological ledger for a student."""
     # Get student info
-    student_result = await db.execute(
-        select(Student).where(Student.id == student_id, Student.center_id == center_id)
-    )
+    student_result = await db.execute(select(Student).where(Student.id == student_id, Student.center_id == center_id))
     student = student_result.scalar_one_or_none()
     if not student:
         raise ValueError(f"Student {student_id} not found in this center")

@@ -116,9 +116,7 @@ async def delete_class_endpoint(class_id: UUID, db: DbSession, current_user: Cur
 
 
 @router.post("/{class_id}/enroll")
-async def enroll_student_endpoint(
-    class_id: UUID, data: ClassEnrollRequest, db: DbSession, current_user: CurrentUser
-):
+async def enroll_student_endpoint(class_id: UUID, data: ClassEnrollRequest, db: DbSession, current_user: CurrentUser):
     """Enroll a student in a class. Admin only. Returns 409 on scheduling conflict."""
     if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
@@ -130,11 +128,13 @@ async def enroll_student_endpoint(
 
     # Cross-center student reference must look like "not found" (Rule 2).
     from app.crud.student import get_student_by_id
+
     if await get_student_by_id(db, data.student_id, center_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
     # Check conflicts for each lesson attached to this class
     from app.crud.lesson import list_lessons
+
     lessons = await list_lessons(db, center_id=center_id, class_id=class_id, is_active=True)
     for lesson in lessons:
         if lesson.day_of_week is not None:
@@ -158,6 +158,7 @@ async def enroll_student_endpoint(
     enrolled_since: date | None = None
     if data.enrolled_since:
         from datetime import date as date_type
+
         enrolled_since = date_type.fromisoformat(data.enrolled_since)
 
     await enroll_student(db, class_id, data.student_id, center_id, enrolled_since)
@@ -180,6 +181,7 @@ async def unenroll_student_endpoint(
     unenrolled_at_date: date | None = None
     if unenrolled_at:
         from datetime import date as date_type
+
         unenrolled_at_date = date_type.fromisoformat(unenrolled_at)
 
     success = await unenroll_student(db, class_id, student_id, center_id, unenrolled_at_date)

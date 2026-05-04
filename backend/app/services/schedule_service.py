@@ -67,21 +67,21 @@ async def check_scheduling_conflicts(
         lesson_end = _add_minutes(lesson.start_time, lesson.duration_minutes)
         if lesson_end > st:
             class_name = lesson.title or (lesson.class_.name if lesson.class_ else str(lesson.id))
-            conflicts.append({
-                "type": "teacher",
-                "lesson_id": str(lesson.id),
-                "message": (
-                    f"Teacher has lesson '{class_name}' at "
-                    f"{lesson.start_time.strftime('%H:%M')}-{lesson_end.strftime('%H:%M')}"
-                ),
-            })
+            conflicts.append(
+                {
+                    "type": "teacher",
+                    "lesson_id": str(lesson.id),
+                    "message": (
+                        f"Teacher has lesson '{class_name}' at "
+                        f"{lesson.start_time.strftime('%H:%M')}-{lesson_end.strftime('%H:%M')}"
+                    ),
+                }
+            )
 
     # Student conflict — check via class_enrollments → class_id → lessons
     for student_id in student_ids:
         student_result = await db.execute(
-            base_query
-            .join(ClassEnrollment, ClassEnrollment.class_id == Lesson.class_id)
-            .where(
+            base_query.join(ClassEnrollment, ClassEnrollment.class_id == Lesson.class_id).where(
                 ClassEnrollment.student_id == student_id,
                 ClassEnrollment.is_active == True,  # noqa: E712
             )
@@ -92,14 +92,16 @@ async def check_scheduling_conflicts(
             lesson_end = _add_minutes(lesson.start_time, lesson.duration_minutes)
             if lesson_end > st:
                 class_name = lesson.title or (lesson.class_.name if lesson.class_ else str(lesson.id))
-                conflicts.append({
-                    "type": "student",
-                    "student_id": str(student_id),
-                    "lesson_id": str(lesson.id),
-                    "message": (
-                        f"Student has lesson '{class_name}' at "
-                        f"{lesson.start_time.strftime('%H:%M')}-{lesson_end.strftime('%H:%M')}"
-                    ),
-                })
+                conflicts.append(
+                    {
+                        "type": "student",
+                        "student_id": str(student_id),
+                        "lesson_id": str(lesson.id),
+                        "message": (
+                            f"Student has lesson '{class_name}' at "
+                            f"{lesson.start_time.strftime('%H:%M')}-{lesson_end.strftime('%H:%M')}"
+                        ),
+                    }
+                )
 
     return conflicts

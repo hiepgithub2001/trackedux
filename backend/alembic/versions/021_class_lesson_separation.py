@@ -110,8 +110,10 @@ def upgrade() -> None:
     op.add_column("class_enrollments", sa.Column("unenrolled_at", sa.Date, nullable=True))
     op.create_foreign_key(
         "fk_class_enrollments_class_id",
-        "class_enrollments", "classes",
-        ["class_id"], ["id"],
+        "class_enrollments",
+        "classes",
+        ["class_id"],
+        ["id"],
     )
     op.create_index("ix_class_enrollments_class_id", "class_enrollments", ["class_id"])
 
@@ -124,8 +126,10 @@ def upgrade() -> None:
     )
     op.create_foreign_key(
         "fk_attendance_lesson_occurrence",
-        "attendance_records", "lesson_occurrences",
-        ["lesson_occurrence_id"], ["id"],
+        "attendance_records",
+        "lesson_occurrences",
+        ["lesson_occurrence_id"],
+        ["id"],
     )
 
     op.add_column(
@@ -134,8 +138,10 @@ def upgrade() -> None:
     )
     op.create_foreign_key(
         "fk_tuition_ledger_lesson",
-        "tuition_ledger_entries", "lessons",
-        ["lesson_id"], ["id"],
+        "tuition_ledger_entries",
+        "lessons",
+        ["lesson_id"],
+        ["id"],
     )
 
     # ──────────────────────────────────────────────
@@ -144,14 +150,16 @@ def upgrade() -> None:
     conn = op.get_bind()
 
     # Fetch all class_sessions
-    sessions = conn.execute(sa.text(
-        """
+    sessions = conn.execute(
+        sa.text(
+            """
         SELECT id, name, teacher_id, tuition_fee_per_lesson, lesson_kind_id,
                is_active, center_id, day_of_week, start_time, duration_minutes,
                is_recurring, recurring_pattern, specific_date, created_at, updated_at
         FROM class_sessions
         """
-    )).fetchall()
+        )
+    ).fetchall()
 
     # Map: class_session_id → new class_id (str)
     session_to_class: dict[str, str] = {}
@@ -178,28 +186,32 @@ def upgrade() -> None:
             specific_date_val = row.specific_date
 
         # Insert into classes
-        conn.execute(sa.text(
-            """
+        conn.execute(
+            sa.text(
+                """
             INSERT INTO classes (id, name, teacher_id, tuition_fee_per_lesson,
                                  lesson_kind_id, is_active, center_id, created_at, updated_at)
             VALUES (:id, :name, :teacher_id, :fee, :lk_id, :is_active,
                     :center_id, :created_at, :updated_at)
             """
-        ), {
-            "id": new_class_id,
-            "name": row.name,
-            "teacher_id": str(row.teacher_id),
-            "fee": row.tuition_fee_per_lesson,
-            "lk_id": str(row.lesson_kind_id) if row.lesson_kind_id else None,
-            "is_active": row.is_active,
-            "center_id": str(row.center_id),
-            "created_at": row.created_at,
-            "updated_at": row.updated_at,
-        })
+            ),
+            {
+                "id": new_class_id,
+                "name": row.name,
+                "teacher_id": str(row.teacher_id),
+                "fee": row.tuition_fee_per_lesson,
+                "lk_id": str(row.lesson_kind_id) if row.lesson_kind_id else None,
+                "is_active": row.is_active,
+                "center_id": str(row.center_id),
+                "created_at": row.created_at,
+                "updated_at": row.updated_at,
+            },
+        )
 
         # Insert into lessons
-        conn.execute(sa.text(
-            """
+        conn.execute(
+            sa.text(
+                """
             INSERT INTO lessons (id, class_id, teacher_id, title, start_time,
                                  duration_minutes, day_of_week, specific_date,
                                  rrule, is_active, center_id, created_at, updated_at)
@@ -207,28 +219,31 @@ def upgrade() -> None:
                     :duration, :dow, :spec_date,
                     :rrule, :is_active, :center_id, :created_at, :updated_at)
             """
-        ), {
-            "id": new_lesson_id,
-            "class_id": new_class_id,
-            "teacher_id": str(row.teacher_id),
-            "start_time": row.start_time,
-            "duration": row.duration_minutes,
-            "dow": day_of_week_val,
-            "spec_date": specific_date_val,
-            "rrule": rrule_val,
-            "is_active": row.is_active,
-            "center_id": str(row.center_id),
-            "created_at": row.created_at,
-            "updated_at": row.updated_at,
-        })
+            ),
+            {
+                "id": new_lesson_id,
+                "class_id": new_class_id,
+                "teacher_id": str(row.teacher_id),
+                "start_time": row.start_time,
+                "duration": row.duration_minutes,
+                "dow": day_of_week_val,
+                "spec_date": specific_date_val,
+                "rrule": rrule_val,
+                "is_active": row.is_active,
+                "center_id": str(row.center_id),
+                "created_at": row.created_at,
+                "updated_at": row.updated_at,
+            },
+        )
 
     # ──────────────────────────────────────────────
     # 7. Update class_enrollments.class_id from the mapping
     # ──────────────────────────────────────────────
     for session_id_str, class_id_str in session_to_class.items():
-        conn.execute(sa.text(
-            "UPDATE class_enrollments SET class_id = :class_id WHERE class_session_id = :session_id"
-        ), {"class_id": class_id_str, "session_id": session_id_str})
+        conn.execute(
+            sa.text("UPDATE class_enrollments SET class_id = :class_id WHERE class_session_id = :session_id"),
+            {"class_id": class_id_str, "session_id": session_id_str},
+        )
 
 
 def downgrade() -> None:

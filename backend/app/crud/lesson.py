@@ -14,9 +14,7 @@ from app.schemas.lesson import LessonCreate, LessonSeriesUpdate, OccurrenceOverr
 from app.services.recurrence_service import parse_rrule_day
 
 
-async def create_lesson(
-    db: AsyncSession, data: LessonCreate, center_id: uuid.UUID
-) -> Lesson:
+async def create_lesson(db: AsyncSession, data: LessonCreate, center_id: uuid.UUID) -> Lesson:
     """Create a new lesson (one-off or recurring)."""
     st = time.fromisoformat(data.start_time)
     day_of_week = None
@@ -40,12 +38,8 @@ async def create_lesson(
     return lesson
 
 
-async def get_lesson_by_id(
-    db: AsyncSession, lesson_id: uuid.UUID, center_id: uuid.UUID
-) -> Lesson | None:
-    result = await db.execute(
-        select(Lesson).where(Lesson.id == lesson_id, Lesson.center_id == center_id)
-    )
+async def get_lesson_by_id(db: AsyncSession, lesson_id: uuid.UUID, center_id: uuid.UUID) -> Lesson | None:
+    result = await db.execute(select(Lesson).where(Lesson.id == lesson_id, Lesson.center_id == center_id))
     return result.scalar_one_or_none()
 
 
@@ -85,6 +79,7 @@ async def update_lesson_series(
             from datetime import date
 
             from sqlalchemy import update
+
             today = date.today()
             # Freeze the old start_time for past occurrences so they don't inherit the new time
             stmt = (
@@ -93,7 +88,7 @@ async def update_lesson_series(
                     LessonOccurrence.lesson_id == lesson_id,
                     LessonOccurrence.center_id == center_id,
                     LessonOccurrence.override_start_time.is_(None),
-                    LessonOccurrence.original_date < today
+                    LessonOccurrence.original_date < today,
                 )
                 .values(override_start_time=lesson.start_time)
             )
@@ -116,9 +111,7 @@ async def update_lesson_series(
     return lesson
 
 
-async def deactivate_lesson(
-    db: AsyncSession, lesson_id: uuid.UUID, center_id: uuid.UUID
-) -> bool:
+async def deactivate_lesson(db: AsyncSession, lesson_id: uuid.UUID, center_id: uuid.UUID) -> bool:
     lesson = await get_lesson_by_id(db, lesson_id, center_id)
     if lesson is None:
         return False
@@ -268,12 +261,14 @@ async def bulk_upsert_occurrences(
     for lesson in lessons:
         if lesson.specific_date is not None:
             if range_start <= lesson.specific_date <= range_end:
-                rows.append({
-                    "lesson_id": lesson.id,
-                    "original_date": lesson.specific_date,
-                    "status": "active",
-                    "center_id": center_id,
-                })
+                rows.append(
+                    {
+                        "lesson_id": lesson.id,
+                        "original_date": lesson.specific_date,
+                        "status": "active",
+                        "center_id": center_id,
+                    }
+                )
         elif lesson.rrule:
             dtstart = _find_dtstart(lesson)
             try:
@@ -286,20 +281,20 @@ async def bulk_upsert_occurrences(
                 inc=True,
             )
             for d in expanded:
-                rows.append({
-                    "lesson_id": lesson.id,
-                    "original_date": d.date(),
-                    "status": "active",
-                    "center_id": center_id,
-                })
+                rows.append(
+                    {
+                        "lesson_id": lesson.id,
+                        "original_date": d.date(),
+                        "status": "active",
+                        "center_id": center_id,
+                    }
+                )
 
     if not rows:
         return 0
 
     stmt = (
-        pg_insert(LessonOccurrence)
-        .values(rows)
-        .on_conflict_do_nothing(index_elements=["lesson_id", "original_date"])
+        pg_insert(LessonOccurrence).values(rows).on_conflict_do_nothing(index_elements=["lesson_id", "original_date"])
     )
     result = await db.execute(stmt)
     await db.flush()
@@ -324,23 +319,19 @@ async def cleanup_future_ghosts(
     from app.models.attendance import AttendanceRecord
 
     today = date.today()
-    stmt = (
-        delete(LessonOccurrence)
-        .where(
-            LessonOccurrence.lesson_id == lesson_id,
-            LessonOccurrence.center_id == center_id,
-            LessonOccurrence.original_date >= today,
-            LessonOccurrence.status == "active",
-            LessonOccurrence.override_date.is_(None),
-            LessonOccurrence.override_start_time.is_(None),
-            ~exists(
-                select(AttendanceRecord.id).where(
-                    AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id,
-                )
-            ),
-        )
+    stmt = delete(LessonOccurrence).where(
+        LessonOccurrence.lesson_id == lesson_id,
+        LessonOccurrence.center_id == center_id,
+        LessonOccurrence.original_date >= today,
+        LessonOccurrence.status == "active",
+        LessonOccurrence.override_date.is_(None),
+        LessonOccurrence.override_start_time.is_(None),
+        ~exists(
+            select(AttendanceRecord.id).where(
+                AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id,
+            )
+        ),
     )
     result = await db.execute(stmt)
     await db.flush()
     return result.rowcount  # type: ignore[return-value]
-

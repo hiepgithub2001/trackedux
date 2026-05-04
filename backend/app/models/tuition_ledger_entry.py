@@ -19,9 +19,7 @@ class TuitionLedgerEntry(Base, UUIDMixin):
 
     __tablename__ = "tuition_ledger_entries"
 
-    student_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("students.id"), nullable=False
-    )
+    student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("students.id"), nullable=False)
     entry_type: Mapped[str] = mapped_column(String(20), nullable=False)  # "payment" or "class_fee"
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)  # always positive
     balance_after: Mapped[int] = mapped_column(BigInteger, nullable=False)  # running balance snapshot
@@ -34,18 +32,12 @@ class TuitionLedgerEntry(Base, UUIDMixin):
         UUID(as_uuid=True), ForeignKey("attendance_records.id"), nullable=True
     )
     # lesson_id: populated for lesson-based fee deductions (migration 021+)
-    lesson_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("lessons.id"), nullable=True
-    )
+    lesson_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"), nullable=True)
 
     entry_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(String(200), nullable=False)
-    center_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    center_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # Relationships
     student = relationship("Student", lazy="selectin")

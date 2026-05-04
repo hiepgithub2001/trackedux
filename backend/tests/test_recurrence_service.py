@@ -13,6 +13,7 @@ from app.services.recurrence_service import (
 # Helpers
 # ──────────────────────────────────────────────────────────
 
+
 def make_lesson(
     lesson_id="aaaaaaaa-0000-0000-0000-000000000001",
     class_id="bbbbbbbb-0000-0000-0000-000000000001",
@@ -51,14 +52,18 @@ def make_lesson(
 # parse_rrule_day
 # ──────────────────────────────────────────────────────────
 
+
 def test_parse_rrule_day_monday():
     assert parse_rrule_day("FREQ=WEEKLY;BYDAY=MO") == 0
+
 
 def test_parse_rrule_day_friday():
     assert parse_rrule_day("FREQ=WEEKLY;BYDAY=FR") == 4
 
+
 def test_parse_rrule_day_sunday():
     assert parse_rrule_day("FREQ=WEEKLY;BYDAY=SU") == 6
+
 
 def test_parse_rrule_day_missing_byday():
     # Should return 0 (Monday) as default
@@ -69,6 +74,7 @@ def test_parse_rrule_day_missing_byday():
 # build_rrule_string
 # ──────────────────────────────────────────────────────────
 
+
 def test_build_rrule_weekly_open():
     result = build_rrule_string(0)  # Monday, open-ended
     assert "FREQ=WEEKLY" in result
@@ -76,10 +82,12 @@ def test_build_rrule_weekly_open():
     assert "COUNT" not in result
     assert "UNTIL" not in result
 
+
 def test_build_rrule_with_count():
     result = build_rrule_string(2, count=10)  # Wednesday, 10 occurrences
     assert "BYDAY=WE" in result
     assert "COUNT=10" in result
+
 
 def test_build_rrule_with_until():
     result = build_rrule_string(4, until=date(2025, 6, 30))  # Friday until date
@@ -91,6 +99,7 @@ def test_build_rrule_with_until():
 # compute_week_occurrences — recurring lesson
 # ──────────────────────────────────────────────────────────
 
+
 def test_recurring_monday_appears_in_correct_week():
     """A Monday recurring lesson must appear exactly once in a Monday-anchored week."""
     lesson = make_lesson(rrule="FREQ=WEEKLY;BYDAY=MO", day_of_week=0)
@@ -99,6 +108,7 @@ def test_recurring_monday_appears_in_correct_week():
     results = compute_week_occurrences([lesson], {}, week_start, week_end)
     assert len(results) == 1
     assert results[0].effective_date.weekday() == 0  # Monday
+
 
 def test_recurring_lesson_does_not_appear_in_wrong_week():
     """A Monday lesson must NOT appear in a Wednesday-anchored non-matching week."""
@@ -109,6 +119,7 @@ def test_recurring_lesson_does_not_appear_in_wrong_week():
     results = compute_week_occurrences([lesson], {}, week_start, week_end)
     # Should contain the Monday that falls inside this window (May 12)
     assert all(week_start <= o.effective_date <= week_end for o in results)
+
 
 def test_inactive_lesson_excluded():
     lesson = make_lesson(rrule="FREQ=WEEKLY;BYDAY=TU", day_of_week=1, is_active=False)
@@ -122,6 +133,7 @@ def test_inactive_lesson_excluded():
 # compute_week_occurrences — one-off lesson
 # ──────────────────────────────────────────────────────────
 
+
 def test_oneoff_appears_only_in_matching_week():
     """A one-off lesson on a specific Saturday must appear only in that week."""
     target_date = date(2025, 5, 10)  # Saturday
@@ -131,6 +143,7 @@ def test_oneoff_appears_only_in_matching_week():
     results = compute_week_occurrences([lesson], {}, week_start, week_end)
     assert len(results) == 1
     assert results[0].effective_date == target_date
+
 
 def test_oneoff_not_in_different_week():
     """Same one-off lesson must NOT appear in a different week."""
@@ -145,6 +158,7 @@ def test_oneoff_not_in_different_week():
 # ──────────────────────────────────────────────────────────
 # compute_week_occurrences — override overlay
 # ──────────────────────────────────────────────────────────
+
 
 def test_canceled_occurrence_is_flagged():
     """A canceled override must be returned with is_canceled=True."""
@@ -166,6 +180,7 @@ def test_canceled_occurrence_is_flagged():
     assert len(results) == 1
     assert results[0].is_canceled is True
     assert results[0].is_rescheduled is False
+
 
 def test_rescheduled_occurrence_appears_on_new_date():
     """A rescheduled occurrence must appear on override_date week, NOT original_date week."""
@@ -198,6 +213,7 @@ def test_rescheduled_occurrence_appears_on_new_date():
     assert len(rescheduled) == 1
     assert rescheduled[0].effective_date == new_date
     assert rescheduled[0].is_rescheduled is True
+
 
 def test_series_edit_does_not_override_occurrence_record():
     """After series start_time is updated, persisted override still wins over new series rule."""

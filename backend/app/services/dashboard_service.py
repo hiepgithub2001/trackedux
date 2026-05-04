@@ -42,7 +42,6 @@ async def get_dashboard_metrics(db: AsyncSession, user_role: str, center_id: UUI
         if s_dt <= now <= e_dt:
             running_sessions += 1
 
-
     # Today's absences count (scoped to center)
     result = await db.execute(
         select(func.count()).where(

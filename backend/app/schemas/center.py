@@ -22,7 +22,9 @@ class CenterCreate(BaseModel):
 
 class CenterUpdateStatus(BaseModel):
     """Schema for updating a center's status."""
+
     is_active: bool
+
 
 class CenterResponse(BaseModel):
     """Schema for a center."""

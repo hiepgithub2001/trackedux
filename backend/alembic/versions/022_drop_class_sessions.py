@@ -160,9 +160,7 @@ def downgrade() -> None:
         "class_enrollments",
         ["class_session_id", "student_id"],
     )
-    op.create_index(
-        "ix_class_enrollments_student_id", "class_enrollments", ["student_id"], if_not_exists=True
-    )
+    op.create_index("ix_class_enrollments_student_id", "class_enrollments", ["student_id"], if_not_exists=True)
 
     # Restore attendance_records legacy columns
     op.add_column(
