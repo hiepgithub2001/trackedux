@@ -1,75 +1,26 @@
-# Progressive Web App (PWA) Guidelines
+# PWA Functional Requirements
 
-This document outlines the configurations and best practices implemented in TrackEduX to ensure the Progressive Web App feels and behaves like a native mobile application.
+This document outlines the functional features and user experience requirements for the TrackEduX Progressive Web App (PWA) to ensure it behaves and feels exactly like a native mobile application.
 
-## 1. Installation Experience
+## 1. Brand Identity & Home Screen Presence
+**Feature:** The application must present a cohesive and professional identity when installed on any device.
+- **App Icon:** A high-quality app icon must be properly displayed on the home screen of both Android and iOS devices without visual clipping.
+- **Adaptive UI:** The top status bar of the mobile device must seamlessly blend with the application's primary brand color.
+- **Standalone Launch:** When launched from the device home screen, the application must open in full-screen standalone mode, hiding the browser URL bar and navigation controls to simulate a native app experience.
 
-We implemented a custom installation experience to handle the differences between Android and iOS natively.
+## 2. Cross-Platform Installation
+**Feature:** Users must be able to easily install the application directly from their web browser.
+- **Android Experience:** Android users must be presented with an inline "Install TrackEduX" button on the login screen. Tapping this button must immediately trigger the native device installation dialog.
+- **iOS Experience:** iOS users must be presented with specific, manual instructions ("Tap Share → Add to Home Screen") directly on the login screen, accommodating Apple's native restrictions.
+- **Context Awareness:** The installation prompt must remain hidden for users who have already installed the app or are using unsupported desktop browsers to keep the UI clean.
 
-- **Android (Chrome/Edge):** The app intercepts the native `beforeinstallprompt` event. When the user visits the login page, an inline "Install TrackEduX" button is shown. Clicking this button triggers a native Android installation modal.
-- **iOS (Safari):** Apple does not support the `beforeinstallprompt` event. For iOS users, the same inline prompt appears on the login page, but instead of an install button, it provides explicit instructions to manually tap the "Share" icon and select "Add to Home Screen".
+## 3. Native Application Feel
+**Feature:** The application must feel rigid, responsive, and tactile, eliminating web-browser quirks.
+- **Zoom Locking:** Users must not be able to accidentally pinch-to-zoom in or out of the application interface, regardless of their device or operating system.
+- **Double-Tap Prevention:** Rapidly double-tapping on buttons, forms, or interactive elements must not cause the screen to suddenly magnify or shift.
+- **Responsive Interactions:** Tapping on elements must be instantaneous, with no perceptible web-delay.
 
-## 2. iOS Icon and Branding Support
-
-iOS Safari ignores the standard PWA `manifest.json` for app icons. To ensure the app icon appears correctly on the iOS home screen:
-- We added an explicit `<link rel="apple-touch-icon" href="/apple-touch-icon.png" />` tag to `index.html`.
-- A high-resolution 192x192 icon is explicitly placed in the `public/` directory for Apple devices to consume.
-- A `<meta name="theme-color" content="#1677ff" />` tag is included to ensure the mobile device's top status bar matches the application's primary brand color.
-- The web browser tab uses a cleanly centered SVG emoji (`favicon.svg`) to prevent rendering artifacts on macOS.
-
-## 3. Native App Feel: Disabling Browser Zoom
-
-To prevent the web app from feeling like a standard webpage (which ruins the illusion of a native app when the screen accidentally zooms in), we implemented a three-layer approach to completely disable double-tap and pinch-to-zoom:
-
-1. **Viewport Meta Tag (`index.html`)**
-   We enforce a strict `maximum-scale=1.0` and `user-scalable=no` in the viewport. This is respected by Android and older iOS devices to prevent zooming.
-   ```html
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-   ```
-
-2. **CSS Touch Action (`index.css`)**
-   We enforce `touch-action: manipulation;` on the `body`. This disables the native 300ms click delay and prevents the double-tap-to-zoom gesture on all interactive elements across modern browsers.
-   ```css
-   body {
-     touch-action: manipulation;
-   }
-   ```
-
-3. **Javascript Event Interception (`main.jsx`)**
-   Because modern iOS Safari often ignores `user-scalable=no` for accessibility reasons, we added a global event listener to explicitly intercept and prevent the native Apple pinch-to-zoom gesture (`gesturestart`).
-   ```javascript
-   // Prevent pinch-to-zoom on iOS Safari
-   document.addEventListener('gesturestart', function(e) {
-     e.preventDefault();
-   });
-   ```
-
-These optimizations combined ensure that when TrackEduX is launched from the home screen, it feels rigid, responsive, and native to the device.
-
-## 4. Comprehensive PWA Launch Checklist
-
-Use this checklist to ensure all PWA features are functioning perfectly when deploying or updating the app.
-
-### 📱 A. Branding & App Icons
-- [x] **Web Icon (Favicon):** Properly centered and linked.
-- [x] **Android PWA Icons:** Required sizes (192x192, 512x512) exist and are registered.
-- [x] **Maskable Icons:** Registered to ensure safe cropping on Android.
-- [x] **iOS Apple Touch Icon:** Created and explicitly linked.
-- [x] **Theme Color:** Status bar color matches the app design.
-
-### 📥 B. Installation Experience
-- [x] **Install Prompt Logic:** correctly listens and reacts to installation availability.
-- [x] **Android Installation:** Inline button triggers native modal.
-- [x] **iOS Installation:** Instructional text guides user to add manually.
-- [x] **Desktop Fallback:** Fails gracefully for unsupported browsers or already-installed states.
-
-### 🚀 C. Native App Feel
-- [x] **Viewport Lock:** Pinch-to-zoom is disabled on Android.
-- [x] **Double-Tap Prevention:** Double-tap-to-zoom is disabled globally.
-- [x] **iOS Safari Prevention:** Native pinch-to-zoom gestures are intercepted and disabled.
-- [x] **Standalone Mode:** Browser URL bar and navigation buttons are hidden when launched.
-
-### ⚡ D. Service Worker & Offline Capability
-- [x] **Service Worker Registration:** Core workers generate correctly on build.
-- [x] **Asset Pre-caching:** Fast subsequent load times via cached core assets.
-- [x] **Updates:** Background detection of new app versions functions properly.
+## 4. Offline Resilience & Fast Loading
+**Feature:** The application must start up instantly on subsequent visits and handle network latency gracefully.
+- **Instant Load:** Core structural assets (images, fonts, stylesheets) must be cached locally to guarantee a near-instant launch experience after the first visit.
+- **Seamless Updates:** When a new version of the application is deployed, the system must detect the update in the background and ensure the user transitions to the latest version seamlessly.
