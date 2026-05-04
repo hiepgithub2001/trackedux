@@ -154,8 +154,9 @@ async def get_weekly_schedule(
     if week_start < today:
         # Materialize any unmaterialized past occurrences for the requested week
         past_range_end = min(week_end, today - timedelta(days=1))
-        await bulk_upsert_occurrences(db, lessons, week_start, past_range_end, center_id)
-        await db.commit()
+        inserted = await bulk_upsert_occurrences(db, lessons, week_start, past_range_end, center_id)
+        if inserted > 0:
+            await db.commit()
 
     result = await db.execute(
         select(LessonOccurrence).where(
@@ -240,7 +241,9 @@ async def get_past_sessions(
         if l_created < min_created_at:
             min_created_at = l_created
 
-    await bulk_upsert_occurrences(db, lessons, min_created_at, today - timedelta(days=1), center_id)
+    inserted = await bulk_upsert_occurrences(db, lessons, min_created_at, today - timedelta(days=1), center_id)
+    if inserted > 0:
+        await db.commit()
 
     # 2. Query materialized past rows
     base_query = select(LessonOccurrence).where(
