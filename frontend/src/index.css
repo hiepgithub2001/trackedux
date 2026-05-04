@@ -1,4 +1,9 @@
 :root {
+  /* Native App Feel */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -53,6 +58,13 @@
 body {
   margin: 0;
   touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
+
+/* Allow text selection inside inputs and textareas */
+input, textarea {
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 #root {
