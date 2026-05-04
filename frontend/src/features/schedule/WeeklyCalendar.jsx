@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Select, Tag, Modal, Button, DatePicker, TimePicker, Space, message, Table, Typography } from 'antd';
+import { Card, Select, Tag, Modal, Button, DatePicker, Space, message, Table, Typography } from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,15 +8,23 @@ import { useNavigate } from 'react-router-dom';
 import { getWeeklySchedule } from '../../api/classes';
 import { listTeachers } from '../../api/teachers';
 import { overrideOccurrence, deleteLesson } from '../../api/lessons';
-import { UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import LessonForm from '../lessons/LessonForm';
-import dayjs from 'dayjs';
 import './WeeklyCalendar.css';
 
 const CANCELED_COLOR = '#d9d9d9';
 const RESCHEDULED_COLOR = '#faad14';
 const REGULAR_COLOR = '#1677ff';
 const MAKEUP_COLOR = '#fa8c16';
+
+const TIME_OPTIONS = [];
+for (let h = 6; h <= 23; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    const hour = h.toString().padStart(2, '0');
+    const min = m.toString().padStart(2, '0');
+    TIME_OPTIONS.push({ label: `${hour}:${min}`, value: `${hour}:${min}` });
+  }
+}
 
 export default function WeeklyCalendar() {
   const { t } = useTranslation();
@@ -30,7 +38,7 @@ export default function WeeklyCalendar() {
   const [overrideModal, setOverrideModal] = useState(null); // { lessonId, originalDate, currentStatus }
   const [rescheduleDate, setRescheduleDate] = useState(null);
   const [rescheduleTime, setRescheduleTime] = useState(null);
-  const [timeRange, setTimeRange] = useState([dayjs('07:00', 'HH:mm'), dayjs('23:00', 'HH:mm')]);
+  const [timeRange, setTimeRange] = useState(['07:00', '23:00']);
 
   const { data: scheduleData } = useQuery({
     queryKey: ['schedule', weekStart, teacherFilter],
@@ -256,20 +264,23 @@ export default function WeeklyCalendar() {
       {contextHolder}
       <Card className="calendar-card" bordered={false}>
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', marginBottom: 12, gap: 12 }}>
-          <TimePicker.RangePicker
-            format="HH:mm"
-            value={timeRange}
-            onChange={(dates) => {
-              if (dates && dates[0] && dates[1]) {
-                setTimeRange(dates);
-              }
-            }}
-            allowClear={false}
-            minuteStep={30}
-            style={{ width: isMobile ? '100%' : 180 }}
-            suffixIcon={<ClockCircleOutlined />}
-            placeholder={[t('schedule.startTime', 'Start'), t('schedule.endTime', 'End')]}
-          />
+          <Space style={{ width: isMobile ? '100%' : 220 }} align="center">
+            <Select
+              value={timeRange[0]}
+              onChange={val => setTimeRange([val, timeRange[1]])}
+              options={TIME_OPTIONS}
+              style={{ width: 90 }}
+              showSearch
+            />
+            <span style={{ color: '#888' }}>-</span>
+            <Select
+              value={timeRange[1]}
+              onChange={val => setTimeRange([timeRange[0], val])}
+              options={TIME_OPTIONS}
+              style={{ width: 90 }}
+              showSearch
+            />
+          </Space>
           <Select
             id="teacher-filter"
             placeholder={t('schedule.teacher')}
@@ -295,14 +306,19 @@ export default function WeeklyCalendar() {
           events={events}
           eventContent={renderEventContent}
           datesSet={handleDatesSet}
-          slotMinTime={timeRange[0].format('HH:mm:ss')}
-          slotMaxTime={timeRange[1].format('HH:mm:ss')}
+          slotMinTime={`${timeRange[0]}:00`}
+          slotMaxTime={`${timeRange[1]}:00`}
           allDaySlot={false}
           height="auto"
           headerToolbar={{
-            left: 'prev,next today',
+            left: 'prev next today',
             center: 'title',
-            right: isMobile ? 'timeGridDay' : 'timeGridWeek,timeGridDay',
+            right: isMobile ? 'timeGridDay' : 'timeGridWeek timeGridDay',
+          }}
+          buttonText={{
+            today: t('schedule.today', 'Today'),
+            week: t('schedule.week', 'Week'),
+            day: t('schedule.day', 'Day'),
           }}
           eventClick={handleEventClick}
           locale={localStorage.getItem('language') || 'vi'}
@@ -364,11 +380,14 @@ export default function WeeklyCalendar() {
                       onChange={setRescheduleDate}
                       format="YYYY-MM-DD"
                     />
-                    <TimePicker
+                    <Select
                       value={rescheduleTime}
                       onChange={setRescheduleTime}
-                      format="HH:mm"
+                      options={TIME_OPTIONS}
                       placeholder="Override time (optional)"
+                      style={{ width: 120 }}
+                      allowClear
+                      showSearch
                     />
                   </Space>
                   <Button
@@ -383,7 +402,7 @@ export default function WeeklyCalendar() {
                         data: {
                           action: 'reschedule',
                           override_date: rescheduleDate?.format('YYYY-MM-DD'),
-                          override_start_time: rescheduleTime?.format('HH:mm') || undefined,
+                          override_start_time: rescheduleTime || undefined,
                         },
                       })
                     }
