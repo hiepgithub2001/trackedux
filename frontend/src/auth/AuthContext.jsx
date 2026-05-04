@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
         setUser(res.data);
         const storage = localStorage.getItem('access_token') ? localStorage : sessionStorage;
         storage.setItem('user', JSON.stringify(res.data));
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, []);
 
