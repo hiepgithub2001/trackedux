@@ -19,8 +19,3 @@ This document outlines the functional features and user experience requirements 
 - **Zoom Locking:** Users must not be able to accidentally pinch-to-zoom in or out of the application interface, regardless of their device or operating system.
 - **Double-Tap Prevention:** Rapidly double-tapping on buttons, forms, or interactive elements must not cause the screen to suddenly magnify or shift.
 - **Responsive Interactions:** Tapping on elements must be instantaneous, with no perceptible web-delay.
-
-## 4. Offline Resilience & Fast Loading
-**Feature:** The application must start up instantly on subsequent visits and handle network latency gracefully.
-- **Instant Load:** Core structural assets (images, fonts, stylesheets) must be cached locally to guarantee a near-instant launch experience after the first visit.
-- **Seamless Updates:** When a new version of the application is deployed, the system must detect the update in the background and ensure the user transitions to the latest version seamlessly.
