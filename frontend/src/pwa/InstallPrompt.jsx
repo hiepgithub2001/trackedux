@@ -62,16 +62,19 @@ export default function InstallPrompt() {
         gap: 12,
       }}
     >
-      <div>
-        <Text strong style={{ fontSize: 14 }}>
-          {t('pwa.installTitle')}
-        </Text>
-        <br />
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {isIOS
-            ? 'Tap Share → Add to Home Screen'
-            : t('pwa.installMessage')}
-        </Text>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 32, lineHeight: 1 }}>🎓</div>
+        <div>
+          <Text strong style={{ fontSize: 14 }}>
+            TrackEduX
+          </Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {isIOS
+              ? 'Tap Share → Add to Home Screen'
+              : t('pwa.installMessage')}
+          </Text>
+        </div>
       </div>
       <Space>
         {!isIOS && (
