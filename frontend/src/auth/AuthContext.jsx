@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
@@ -10,6 +11,7 @@ export function AuthProvider({ children }) {
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // Sync user profile on load to get fresh data (like center details)
   useEffect(() => {
@@ -51,8 +53,9 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       setUser(null);
+      queryClient.clear();
     }
-  }, []);
+  }, [queryClient]);
 
   const updateProfile = useCallback(async (data) => {
     const res = await client.put('/auth/me', data);
