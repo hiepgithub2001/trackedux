@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Select, Tag, Modal, Button, DatePicker, TimePicker, Space, message } from 'antd';
+import { Card, Select, Tag, Modal, Button, DatePicker, TimePicker, Space, message, Table, Typography } from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -177,6 +177,80 @@ export default function WeeklyCalendar() {
     setWeekStart(`${year}-${month}-${day}`);
   };
 
+  const sessionColumns = [
+    {
+      title: t('schedule.date', 'Date'),
+      dataIndex: 'date',
+      key: 'date',
+      render: (text, record) => {
+        const isRescheduled = record.is_rescheduled;
+        return (
+          <Space direction="vertical" size={0}>
+            <span>{text}</span>
+            {isRescheduled && record.original_date && (
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                (from: {record.original_date})
+              </Typography.Text>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
+      title: t('schedule.time', 'Time'),
+      key: 'time',
+      render: (_, record) => `${record.start_time} - ${record.end_time}`,
+    },
+    {
+      title: t('schedule.class', 'Class'),
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: t('schedule.teacher', 'Teacher'),
+      key: 'teacher',
+      render: (_, record) => record.teacher?.full_name || '',
+    },
+    {
+      title: t('schedule.status', 'Status'),
+      key: 'status',
+      render: (_, record) => {
+        if (record.is_canceled) return <Tag color="default">{t('lessons.canceled', 'CANCELED')}</Tag>;
+        if (record.is_rescheduled) return <Tag color="gold">{t('lessons.rescheduled', 'MOVED')}</Tag>;
+        if (record.is_makeup) return <Tag color="volcano">{t('schedule.makeupBadge', 'MAKEUP')}</Tag>;
+        return <Tag color="blue">{t('lessons.active', 'ACTIVE')}</Tag>;
+      },
+    },
+    {
+      title: t('common.actions', 'Actions'),
+      key: 'actions',
+      render: (_, record) => (
+        <Button 
+          type="link" 
+          size="small" 
+          onClick={() => {
+            setOverrideModal({
+              lessonId: record.lesson_id,
+              originalDate: record.original_date || record.date,
+              currentStatus: record.is_canceled ? 'canceled' : record.is_rescheduled ? 'rescheduled' : 'active',
+              className: record.name,
+              classId: record.class_id,
+            });
+          }}
+        >
+          {t('common.edit', 'Edit')}
+        </Button>
+      ),
+    },
+  ];
+
+  const sortedSessions = [...(scheduleData?.sessions || [])].sort((a, b) => {
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
   return (
     <div className="fade-in">
       {contextHolder}
@@ -236,6 +310,17 @@ export default function WeeklyCalendar() {
           nowIndicator={true}
           slotLabelFormat={{ hour: '2-digit', minute: '2-digit', omitZeroMinute: false, meridiem: 'short' }}
           dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric' }}
+        />
+      </Card>
+
+      <Card title={t('schedule.allSessionsThisWeek', 'All Sessions This Week')} bordered={false} style={{ marginTop: 24 }}>
+        <Table 
+          columns={sessionColumns} 
+          dataSource={sortedSessions} 
+          rowKey={(record) => `${record.lesson_id}_${record.original_date || record.date}`}
+          pagination={false}
+          scroll={{ x: 600 }}
+          size="small"
         />
       </Card>
 
