@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: trackedux
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        value: "postgresql+asyncpg://neondb_owner:npg_l8WhVuCmxLU1@ep-purple-hat-ak6ao3bj-pooler.c-3.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_TTL_DAYS
+        value: "30"
+      - key: REFRESH_TOKEN_TTL_DAYS
+        value: "90"
+      - key: DEFAULT_LANGUAGE
+        value: "vi"
+      - key: CORS_ORIGINS
+        value: ""
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: VITE_API_BASE_URL
+        value: ""
