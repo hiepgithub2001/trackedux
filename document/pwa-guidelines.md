@@ -19,3 +19,9 @@ This document outlines the functional features and user experience requirements 
 - **Zoom Locking:** Users must not be able to accidentally pinch-to-zoom in or out of the application interface, regardless of their device or operating system.
 - **Double-Tap Prevention:** Rapidly double-tapping on buttons, forms, or interactive elements must not cause the screen to suddenly magnify or shift.
 - **Responsive Interactions:** Tapping on elements must be instantaneous, with no perceptible web-delay.
+
+## 4. Persistent Authentication
+**Feature:** The application must keep users securely logged in across sessions to provide a seamless, app-like experience.
+- **Session Persistence:** Once a user logs into the app, their session must be saved securely on the device so they do not have to repeatedly enter their credentials upon subsequent launches.
+- **Seamless Re-entry:** Launching the app from the home screen must immediately open the user's dashboard or last active state, bypassing the login screen entirely.
+- **Secure Sign-Out:** Users must have a clear option to explicitly log out, which must instantly clear all locally cached credentials, session tokens, and center-specific data to prevent unauthorized access.
