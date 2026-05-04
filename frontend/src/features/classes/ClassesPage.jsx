@@ -26,7 +26,7 @@ export default function ClassesPage() {
       title: t('common.name', 'Class Name'),
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <Text strong style={{ color: '#1890ff' }}>{text}</Text>,
+      render: (text) => <Text strong style={{ color: '#1890ff', wordBreak: 'break-word' }}>{text}</Text>,
       sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
     },
     {
@@ -105,6 +105,7 @@ export default function ClassesPage() {
           loading={isLoading}
           locale={{ emptyText: t('classes.noClasses') }}
           pagination={{ pageSize: 15 }}
+          scroll={{ x: 'max-content' }}
           onRow={(record) => ({
             onClick: () => navigate(`/classes/${record.id}`),
             style: { cursor: 'pointer' },

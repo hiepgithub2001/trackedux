@@ -248,6 +248,7 @@ export default function AttendancePage() {
             dataSource={selectedSession.students}
             rowKey="id"
             pagination={false}
+            scroll={{ x: 'max-content' }}
             columns={[
               { title: t('students.studentName'), dataIndex: 'name', key: 'name', width: 150 },
               {

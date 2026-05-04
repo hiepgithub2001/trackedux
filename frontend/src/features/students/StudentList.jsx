@@ -37,7 +37,7 @@ export default function StudentList() {
       key: 'name',
       sorter: true,
       render: (text, record) => (
-        <a onClick={() => navigate(`/students/${record.id}`)}>
+        <a onClick={() => navigate(`/students/${record.id}`)} style={{ wordBreak: 'break-word' }}>
           {text}
           {record.nickname ? ` (${record.nickname})` : ''}
         </a>
@@ -134,6 +134,7 @@ export default function StudentList() {
           rowKey="id"
           loading={isLoading}
           onChange={handleTableChange}
+          scroll={{ x: 'max-content' }}
           pagination={{
             current: data?.page || 1,
             pageSize: data?.page_size || 20,

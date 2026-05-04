@@ -21,8 +21,8 @@ export default function TeacherList() {
       key: 'full_name',
       render: (text, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: record.color || '#1677ff' }} />
-          <span>{text}</span>
+          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: record.color || '#1677ff', flexShrink: 0 }} />
+          <span style={{ wordBreak: 'break-word' }}>{text}</span>
         </div>
       )
     },
@@ -46,6 +46,7 @@ export default function TeacherList() {
       </div>
       <Card>
         <Table id="teacher-table" columns={columns} dataSource={teachers || []} rowKey="id" loading={isLoading}
+          scroll={{ x: 'max-content' }}
           onRow={(record) => ({ onClick: () => navigate(`/teachers/${record.id}`), style: { cursor: 'pointer' } })} />
       </Card>
     </div>

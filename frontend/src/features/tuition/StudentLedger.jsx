@@ -233,7 +233,7 @@ export default function StudentLedgerPage() {
                 rowKey="id"
                 pagination={{ pageSize: 20, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
                 size="middle"
-                scroll={{ x: 900 }}
+                scroll={{ x: 'max-content' }}
               />
             ) : (
               <div style={{ padding: 40 }}>

@@ -145,19 +145,18 @@ export default function ClassDetail() {
   return (
     <div className="fade-in">
       {contextHolder}
-      <Space style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <Space>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <Space wrap>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/classes')}>{t('common.back')}</Button>
-          <Title level={3} style={{ margin: 0 }}>{classData.name}</Title>
+          <Title level={3} style={{ margin: 0, wordBreak: 'break-word' }}>{classData.name}</Title>
         </Space>
         {isAdmin && (
-          <Space>
+          <Space wrap>
             <Button icon={<EditOutlined />} onClick={() => navigate(`/classes/${id}/edit`)}>{t('common.edit')}</Button>
             <Button danger icon={<DeleteOutlined />} onClick={handleDelete} loading={deleteMutation.isPending}>{t('common.delete')}</Button>
           </Space>
         )}
-      </Space>
-
+      </div>
       <Card>
         <Descriptions column={{ xs: 1, sm: 2 }} bordered>
           <Descriptions.Item label={t('schedule.teacher')}>{classData.teacher_name}</Descriptions.Item>
@@ -189,6 +188,7 @@ export default function ClassDetail() {
           rowKey="id"
           columns={lessonColumns}
           pagination={false}
+          scroll={{ x: 'max-content' }}
           locale={{ emptyText: t('lessons.noLessons', 'No lessons yet. Add one to start scheduling.') }}
         />
 
@@ -201,6 +201,7 @@ export default function ClassDetail() {
           dataSource={classData.enrolled_students || []}
           rowKey="id"
           pagination={false}
+          scroll={{ x: 'max-content' }}
           columns={[{ title: t('students.studentName'), dataIndex: 'name', key: 'name' }]}
         />
       </Card>

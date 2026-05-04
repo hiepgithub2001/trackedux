@@ -95,14 +95,14 @@ export default function TuitionPage() {
     <div className="fade-in">
       {contextHolder}
       <Card bodyStyle={{ padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
           {isAdmin && (
-            <Space>
+            <Space wrap style={{ flex: 1 }}>
               <Select
                 id="balance-filter"
                 value={balanceFilter}
                 onChange={setBalanceFilter}
-                style={{ width: 180 }}
+                style={{ width: '100%', minWidth: 150, maxWidth: 180 }}
                 options={[
                   { value: 'all', label: t('tuition.filterAll', 'All Students') },
                   { value: 'positive', label: t('tuition.filterPositive', 'Positive Balance') },
@@ -115,7 +115,7 @@ export default function TuitionPage() {
                 placeholder={t('students.enrollmentStatus')}
                 value={statusFilter}
                 onChange={setStatusFilter}
-                style={{ width: 160 }}
+                style={{ width: '100%', minWidth: 120, maxWidth: 160 }}
                 allowClear
                 options={[
                   { label: t('students.statusTrial'), value: 'trial' },
@@ -144,6 +144,7 @@ export default function TuitionPage() {
           dataSource={balances ? balances.filter(b => !statusFilter || b.enrollment_status === statusFilter) : []}
           rowKey="student_id"
           loading={isLoading}
+          scroll={{ x: 'max-content' }}
           onRow={(record) => ({
             onClick: () => {
               if (isAdmin) {

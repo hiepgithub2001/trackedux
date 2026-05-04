@@ -142,6 +142,7 @@ export default function CenterListPage() {
             dataSource={centers}
             rowKey="id"
             loading={isLoading}
+            scroll={{ x: 'max-content' }}
             pagination={{ defaultPageSize: 10 }}
           />
         </Card>

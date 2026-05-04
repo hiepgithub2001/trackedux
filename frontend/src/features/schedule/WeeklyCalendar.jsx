@@ -23,6 +23,7 @@ export default function WeeklyCalendar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [teacherFilter, setTeacherFilter] = useState(undefined);
   const [weekStart, setWeekStart] = useState(null);
   const [editLessonModal, setEditLessonModal] = useState(null);
@@ -180,7 +181,7 @@ export default function WeeklyCalendar() {
     <div className="fade-in">
       {contextHolder}
       <Card className="calendar-card" bordered={false}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12, gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', marginBottom: 12, gap: 12 }}>
           <TimePicker.RangePicker
             format="HH:mm"
             value={timeRange}
@@ -191,7 +192,7 @@ export default function WeeklyCalendar() {
             }}
             allowClear={false}
             minuteStep={30}
-            style={{ width: 180 }}
+            style={{ width: isMobile ? '100%' : 180 }}
             suffixIcon={<ClockCircleOutlined />}
             placeholder={[t('schedule.startTime', 'Start'), t('schedule.endTime', 'End')]}
           />
@@ -200,14 +201,14 @@ export default function WeeklyCalendar() {
             placeholder={t('schedule.teacher')}
             value={teacherFilter}
             onChange={setTeacherFilter}
-            style={{ width: 220 }}
+            style={{ width: isMobile ? '100%' : 220 }}
             allowClear
             size="large"
             options={(teachers || []).map((teacher) => ({
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: teacher.color || '#1677ff' }} />
-                  <span>{teacher.full_name}</span>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: teacher.color || '#1677ff', flexShrink: 0 }} />
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{teacher.full_name}</span>
                 </div>
               ),
               value: teacher.id,
@@ -216,7 +217,7 @@ export default function WeeklyCalendar() {
         </div>
         <FullCalendar
           plugins={[timeGridPlugin]}
-          initialView="timeGridWeek"
+          initialView={isMobile ? 'timeGridDay' : 'timeGridWeek'}
           events={events}
           eventContent={renderEventContent}
           datesSet={handleDatesSet}
@@ -227,7 +228,7 @@ export default function WeeklyCalendar() {
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
-            right: '',
+            right: isMobile ? 'timeGridDay' : 'timeGridWeek,timeGridDay',
           }}
           eventClick={handleEventClick}
           locale={localStorage.getItem('language') || 'vi'}

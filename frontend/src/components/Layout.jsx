@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout as AntLayout, Menu, Typography, Avatar, Dropdown, Space } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Avatar, Dropdown, Space, Grid } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -18,6 +18,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 const { Header, Sider, Content } = AntLayout;
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -25,6 +26,8 @@ export default function Layout() {
   const location = useLocation();
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const screens = useBreakpoint();
+  const isMobile = screens.md === false; // true on small screens (<768px)
 
   const allMenuItems = [
     { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
@@ -84,6 +87,9 @@ export default function Layout() {
 
   const handleMenuClick = ({ key }) => {
     navigate(key);
+    if (isMobile) {
+      setCollapsed(true);
+    }
   };
 
   // Determine selected key from current path
@@ -115,11 +121,15 @@ export default function Layout() {
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         breakpoint="lg"
+        collapsedWidth={isMobile ? 0 : 80}
         onBreakpoint={(broken) => setCollapsed(broken)}
-        trigger={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        trigger={null}
         style={{
           background: '#001529',
           boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+          position: isMobile ? 'absolute' : 'relative',
+          height: '100vh',
+          zIndex: 100,
         }}
       >
         <div
@@ -137,6 +147,7 @@ export default function Layout() {
               fontSize: collapsed ? 18 : 20,
               fontWeight: 700,
               letterSpacing: -0.5,
+              whiteSpace: 'nowrap',
             }}
           >
             {collapsed ? '🎓' : '🎓 TrackEduX'}
@@ -153,10 +164,27 @@ export default function Layout() {
           style={{ borderRight: 0, marginTop: 8 }}
         />
       </Sider>
-      <AntLayout>
+      
+      {/* Overlay for mobile when sidebar is open */}
+      {isMobile && !collapsed && (
+        <div 
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: 'rgba(0,0,0,0.45)', 
+            zIndex: 99 
+          }} 
+          onClick={() => setCollapsed(true)}
+        />
+      )}
+
+      <AntLayout style={{ width: isMobile ? '100%' : 'auto' }}>
         <Header
           style={{
-            padding: '0 24px',
+            padding: isMobile ? '0 16px' : '0 24px',
             background: '#fff',
             display: 'flex',
             alignItems: 'center',
@@ -165,33 +193,43 @@ export default function Layout() {
             zIndex: 10,
           }}
         >
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-            <Typography.Title level={4} style={{ margin: 0 }}>
-              {currentMenuItem?.label}
-            </Typography.Title>
-          </div>
+          {isMobile && (
+            <div style={{ marginRight: 16, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? <MenuUnfoldOutlined style={{ fontSize: 18 }} /> : <MenuFoldOutlined style={{ fontSize: 18 }} />}
+            </div>
+          )}
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {!isMobile && (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>
+                {currentMenuItem?.label}
+              </Typography.Title>
+            </div>
+          )}
+
+          <div style={{ flex: isMobile ? 1 : 1, display: 'flex', justifyContent: isMobile ? 'flex-start' : 'center', alignItems: 'center', overflow: 'hidden' }}>
             {user?.center?.name && (
-              <Typography.Text strong style={{ fontSize: '18px', color: '#1a1a2e' }}>
+              <Typography.Text strong style={{ fontSize: isMobile ? '16px' : '18px', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.center.name}
               </Typography.Text>
             )}
           </div>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <Space size="middle">
+          <div style={{ flex: isMobile ? 'none' : 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <Space size={isMobile ? 'small' : 'middle'}>
               <LanguageSwitcher />
-              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
                 <Space style={{ cursor: 'pointer' }}>
                   <Avatar
                     style={{ backgroundColor: '#667eea' }}
                     icon={<UserOutlined />}
                     size="small"
                   />
-                  <Text strong style={{ fontSize: 13 }}>
-                    {user?.full_name || 'User'}
-                  </Text>
+                  {!isMobile && (
+                    <Text strong style={{ fontSize: 13 }}>
+                      {user?.full_name || 'User'}
+                    </Text>
+                  )}
                 </Space>
               </Dropdown>
             </Space>
@@ -199,11 +237,12 @@ export default function Layout() {
         </Header>
         <Content
           style={{
-            margin: 16,
-            padding: 24,
+            margin: isMobile ? '12px' : '16px',
+            padding: isMobile ? '12px' : '24px',
             background: '#f5f5f5',
             borderRadius: 8,
             minHeight: 280,
+            overflowX: 'hidden',
           }}
         >
           <Outlet />
