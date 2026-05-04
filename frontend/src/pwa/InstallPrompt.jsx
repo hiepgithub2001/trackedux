@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
-export default function InstallPrompt() {
+export default function InstallPrompt({ inline = false }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS] = useState(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
   const [showPrompt, setShowPrompt] = useState(() => {
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    return !dismissed && ios && !window.navigator.standalone;
+    return inline ? true : (!dismissed && ios && !window.navigator.standalone); // if inline, always show but wait for deferredPrompt or iOS instructions
   });
   const { t } = useTranslation();
 
@@ -33,7 +33,7 @@ export default function InstallPrompt() {
       await deferredPrompt.userChoice;
       setDeferredPrompt(null);
     }
-    setShowPrompt(false);
+    if (!inline) setShowPrompt(false);
   };
 
   const handleDismiss = () => {
@@ -42,11 +42,24 @@ export default function InstallPrompt() {
   };
 
   if (!showPrompt) return null;
+  // If inline and no deferredPrompt and not iOS, we might not want to show it, or we can just show instructions
+  // Usually, if not iOS and no deferredPrompt, PWA is already installed or unsupported.
+  if (inline && !isIOS && !deferredPrompt) return null;
 
   return (
     <div
-      id="pwa-install-prompt"
-      style={{
+      id={inline ? "pwa-install-inline" : "pwa-install-prompt"}
+      style={inline ? {
+        background: '#f8f9fa',
+        borderRadius: 8,
+        padding: '16px',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginTop: 16
+      } : {
         position: 'fixed',
         bottom: 16,
         left: 16,
@@ -87,12 +100,14 @@ export default function InstallPrompt() {
             {t('pwa.install')}
           </Button>
         )}
-        <Button
-          type="text"
-          icon={<CloseOutlined />}
-          onClick={handleDismiss}
-          size="small"
-        />
+        {!inline && (
+          <Button
+            type="text"
+            icon={<CloseOutlined />}
+            onClick={handleDismiss}
+            size="small"
+          />
+        )}
       </Space>
     </div>
   );

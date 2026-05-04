@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import InstallPrompt from '../pwa/InstallPrompt';
 
 const { Title, Text } = Typography;
 
@@ -111,6 +112,8 @@ export default function LoginPage() {
               </Button>
             </Form.Item>
           </Form>
+
+          <InstallPrompt inline />
         </Space>
       </Card>
     </div>
