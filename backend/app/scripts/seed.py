@@ -12,6 +12,31 @@ from app.models.center import Center
 from app.models.user import User
 
 
+async def seed_superadmin():
+    """Create default superadmin user if not exists."""
+    async with async_session_factory() as db:
+        result = await db.execute(select(User).where(User.username == "superadmin"))
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            print("Superadmin user already exists, skipping.")
+            return
+
+        superadmin = User(
+            username="superadmin",
+            email="superadmin@trackedux.local",
+            password_hash=hash_password("superadmin123"),
+            role="superadmin",
+            full_name="System Super Administrator",
+            language="vi",
+            is_active=True,
+            center_id=None,
+        )
+        db.add(superadmin)
+        await db.commit()
+        print("✅ Superadmin user created (superadmin / superadmin123)")
+
+
 async def seed_admin():
     """Create default admin user if not exists."""
     async with async_session_factory() as db:
@@ -90,6 +115,7 @@ async def seed_lesson_kinds(center_id: UUID):
 async def main():
     """Run all seed operations."""
     print("🌱 Seeding database...")
+    await seed_superadmin()
     await seed_admin()
     center_id = await seed_default_center()
     await seed_lesson_kinds(center_id)
