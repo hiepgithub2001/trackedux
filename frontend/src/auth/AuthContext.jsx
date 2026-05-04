@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('user');
+    const stored = localStorage.getItem('user') || sessionStorage.getItem('user');
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
@@ -15,26 +15,28 @@ export function AuthProvider({ children }) {
 
   // Sync user profile on load to get fresh data (like center details)
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     if (token) {
       client.get('/auth/me').then(res => {
         setUser(res.data);
-        localStorage.setItem('user', JSON.stringify(res.data));
+        const storage = localStorage.getItem('access_token') ? localStorage : sessionStorage;
+        storage.setItem('user', JSON.stringify(res.data));
       }).catch(() => {});
     }
   }, []);
 
   const isAuthenticated = !!user;
 
-  const login = useCallback(async (username, password) => {
+  const login = useCallback(async (username, password, rememberMe = true) => {
     setLoading(true);
     try {
       const response = await client.post('/auth/login', { username, password });
       const { access_token, refresh_token, user: userData } = response.data;
 
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('access_token', access_token);
+      storage.setItem('refresh_token', refresh_token);
+      storage.setItem('user', JSON.stringify(userData));
       setUser(userData);
 
       return userData;
@@ -52,6 +54,9 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('user');
       setUser(null);
       queryClient.clear();
     }
@@ -60,7 +65,8 @@ export function AuthProvider({ children }) {
   const updateProfile = useCallback(async (data) => {
     const res = await client.put('/auth/me', data);
     setUser(res.data);
-    localStorage.setItem('user', JSON.stringify(res.data));
+    const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
+    storage.setItem('user', JSON.stringify(res.data));
     return res.data;
   }, []);
 

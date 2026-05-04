@@ -12,7 +12,7 @@ const client = axios.create({
 // Request interceptor — attach JWT token
 client.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,7 +35,7 @@ client.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
           const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
@@ -43,8 +43,9 @@ client.interceptors.response.use(
           });
 
           const { access_token, refresh_token: newRefresh } = res.data;
-          localStorage.setItem('access_token', access_token);
-          localStorage.setItem('refresh_token', newRefresh);
+          const storage = localStorage.getItem('refresh_token') ? localStorage : sessionStorage;
+          storage.setItem('access_token', access_token);
+          storage.setItem('refresh_token', newRefresh);
 
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return client(originalRequest);
@@ -53,6 +54,9 @@ client.interceptors.response.use(
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user');
+          sessionStorage.removeItem('access_token');
+          sessionStorage.removeItem('refresh_token');
+          sessionStorage.removeItem('user');
           window.location.href = '/login';
           return Promise.reject(refreshError);
         }
@@ -61,6 +65,9 @@ client.interceptors.response.use(
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('refresh_token');
+      sessionStorage.removeItem('user');
       window.location.href = '/login';
     }
 

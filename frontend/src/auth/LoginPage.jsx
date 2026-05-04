@@ -1,4 +1,4 @@
-import { Form, Input, Button, Card, Typography, message, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, message, Space, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
   const onFinish = async (values) => {
     try {
-      const user = await login(values.username, values.password);
+      const user = await login(values.username, values.password, values.remember);
       if (user.role === 'parent') {
         navigate('/portal');
       } else if (user.role === 'superadmin') {
@@ -68,7 +68,7 @@ export default function LoginPage() {
             <LanguageSwitcher />
           </div>
 
-          <Form name="login" onFinish={onFinish} layout="vertical" size="large">
+          <Form name="login" onFinish={onFinish} layout="vertical" size="large" initialValues={{ remember: true }}>
             <Form.Item
               name="username"
               rules={[{ required: true, message: t('auth.usernameRequired', 'Please enter username') }]}
@@ -91,6 +91,10 @@ export default function LoginPage() {
                 placeholder={t('auth.password', 'Password')}
                 autoComplete="current-password"
               />
+            </Form.Item>
+
+            <Form.Item name="remember" valuePropName="checked" style={{ marginBottom: 16 }}>
+              <Checkbox>{t('auth.rememberMe', 'Remember me')}</Checkbox>
             </Form.Item>
 
             <Form.Item>
