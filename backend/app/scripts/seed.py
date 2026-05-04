@@ -116,9 +116,6 @@ async def main():
     """Run all seed operations."""
     print("🌱 Seeding database...")
     await seed_superadmin()
-    await seed_admin()
-    center_id = await seed_default_center()
-    await seed_lesson_kinds(center_id)
     print("🌱 Seeding complete!")
 
 
