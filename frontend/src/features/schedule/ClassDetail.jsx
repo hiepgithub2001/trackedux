@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { getClass, deleteClass } from '../../api/classes';
 import { listLessons, deleteLesson } from '../../api/lessons';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../auth/useAuth';
 import LessonForm from '../lessons/LessonForm';
 
 const { Title, Text } = Typography;

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { getStudent, changeStudentStatus } from '../../api/students';
 import { listClasses } from '../../api/classes';
 import { getStudentLedger } from '../../api/tuition';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../auth/useAuth';
 
 const { Title, Text } = Typography;
 

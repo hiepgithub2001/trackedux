@@ -3,7 +3,7 @@ import { UserOutlined, CalendarOutlined, ExclamationCircleOutlined, DollarOutlin
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDashboard } from '../../api/tuition';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../auth/useAuth';
 
 const STAT_CARDS = [
   { key: 'active_students', icon: <UserOutlined />, color: '#667eea', tKey: 'dashboard.activeStudents' },

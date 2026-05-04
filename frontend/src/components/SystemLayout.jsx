@@ -2,7 +2,7 @@ import { Layout, Typography, Space, Button, Dropdown, Avatar } from 'antd';
 import { SafetyCertificateOutlined, LogoutOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const { Header, Content } = Layout;

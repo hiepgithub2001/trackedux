@@ -1,9 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { setPersistentItem, getPersistentItem, removePersistentItem, setSessionItem, getSessionItem, removeSessionItem } from '../utils/storage';
 import client from '../api/client';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './AuthContext';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -24,7 +23,7 @@ export function AuthProvider({ children }) {
         } else {
           setSessionItem('user', JSON.stringify(res.data));
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, []);
 
@@ -98,13 +97,3 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export default AuthContext;

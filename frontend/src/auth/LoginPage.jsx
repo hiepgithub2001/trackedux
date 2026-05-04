@@ -2,7 +2,7 @@ import { Form, Input, Button, Card, Typography, message, Space, Checkbox } from 
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import InstallPrompt from '../pwa/InstallPrompt';
 

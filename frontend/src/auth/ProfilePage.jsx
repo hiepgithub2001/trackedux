@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, Form, Input, Button, message, Typography, Select } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import { useTranslation } from 'react-i18next';
 
 const { Title } = Typography;
