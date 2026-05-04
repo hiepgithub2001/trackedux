@@ -53,6 +53,7 @@ async def get_weekly_attendance(
     # 2. Materialize rows for active lessons for the requested week
     active_lessons = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
     await bulk_upsert_occurrences(db, active_lessons, week_start, week_end, center_id)
+    await db.commit()
 
     # 3. Apply unified read model: fetch from DB
     result = await db.execute(
