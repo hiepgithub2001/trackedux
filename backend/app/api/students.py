@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.deps import CurrentUser, DbSession, get_center_id
-from app.crud.student import create_student, get_student_by_id, list_students, update_student
+from app.crud.student import create_student, delete_student, get_student_by_id, list_students, update_student
 from app.schemas.student import (
     PaginatedStudents,
     StudentCreate,
@@ -105,3 +105,22 @@ async def change_status(student_id: UUID, data: StudentStatusChange, db: DbSessi
 
     student = await get_student_by_id(db, student_id, center_id)
     return StudentResponse.model_validate(student)
+
+
+@router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_student_endpoint(student_id: UUID, db: DbSession, current_user: CurrentUser):
+    """Delete a student. Admin only. Also removes related enrollments, attendance, and tuition entries."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+    center_id = get_center_id(current_user)
+    success = await delete_student(db, student_id, center_id)
+    if not success:
+        # Either not found or integrity error. Let's check if they exist.
+        student = await get_student_by_id(db, student_id, center_id)
+        if not student:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete student due to database constraints."
+        )

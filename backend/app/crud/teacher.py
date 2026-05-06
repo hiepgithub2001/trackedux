@@ -3,12 +3,17 @@
 from datetime import time
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.attendance import AttendanceRecord
+from app.models.lesson import Lesson
+from app.models.lesson_occurrence import LessonOccurrence
 from app.models.teacher import Teacher
 from app.models.teacher_availability import TeacherAvailability
+from app.models.tuition_ledger_entry import TuitionLedgerEntry
 from app.schemas.teacher import AvailabilitySlot, TeacherCreate, TeacherUpdate
 
 
@@ -111,3 +116,48 @@ async def replace_availability(
     await db.commit()
     await db.refresh(teacher)
     return teacher
+
+async def delete_teacher(db: AsyncSession, teacher_id: UUID, center_id: UUID) -> bool:
+    """Delete a teacher and all associated records (classes, lessons, attendance, etc)."""
+    teacher = await get_teacher_by_id(db, teacher_id, center_id)
+    if not teacher:
+        return False
+
+    try:
+        # Delete Lessons taught by this teacher
+        lessons_result = await db.execute(select(Lesson).where(Lesson.teacher_id == teacher_id))
+        lessons = lessons_result.scalars().all()
+        for lesson in lessons:
+            occurrences_result = await db.execute(
+                select(LessonOccurrence).where(LessonOccurrence.lesson_id == lesson.id)
+            )
+            occurrences = occurrences_result.scalars().all()
+            for occ in occurrences:
+                attendances_result = await db.execute(
+                    select(AttendanceRecord).where(AttendanceRecord.lesson_occurrence_id == occ.id)
+                )
+                attendances = attendances_result.scalars().all()
+                for att in attendances:
+                    await db.execute(
+                        update(TuitionLedgerEntry)
+                        .where(TuitionLedgerEntry.attendance_id == att.id)
+                        .values(attendance_id=None, lesson_id=None)
+                    )
+                    await db.delete(att)
+                await db.delete(occ)
+
+            # Also unlink any ledger entries tied directly to the lesson
+            await db.execute(
+                update(TuitionLedgerEntry)
+                .where(TuitionLedgerEntry.lesson_id == lesson.id)
+                .values(lesson_id=None)
+            )
+            await db.delete(lesson)
+
+        await db.delete(teacher)
+        await db.commit()
+        return True
+    except IntegrityError:
+        await db.rollback()
+        return False
+

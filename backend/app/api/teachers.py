@@ -5,7 +5,14 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.deps import CurrentUser, DbSession, get_center_id
-from app.crud.teacher import create_teacher, get_teacher_by_id, list_teachers, replace_availability, update_teacher
+from app.crud.teacher import (
+    create_teacher,
+    delete_teacher,
+    get_teacher_by_id,
+    list_teachers,
+    replace_availability,
+    update_teacher,
+)
 from app.schemas.teacher import AvailabilityUpdate, TeacherCreate, TeacherResponse, TeacherUpdate
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
@@ -88,3 +95,21 @@ async def set_availability(teacher_id: UUID, data: AvailabilityUpdate, db: DbSes
     if teacher is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
     return _teacher_to_response(teacher)
+
+
+@router.delete("/{teacher_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_teacher_endpoint(teacher_id: UUID, db: DbSession, current_user: CurrentUser):
+    """Delete a teacher. Admin only. Also removes their classes, lessons, and related schedule data."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+    center_id = get_center_id(current_user)
+    success = await delete_teacher(db, teacher_id, center_id)
+    if not success:
+        teacher = await get_teacher_by_id(db, teacher_id, center_id)
+        if not teacher:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete teacher due to database constraints."
+        )

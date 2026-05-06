@@ -3,12 +3,17 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.attendance import AttendanceRecord
 from app.models.class_enrollment import ClassEnrollment
 from app.models.student import Student
+from app.models.student_status_history import StudentStatusHistory
+from app.models.tuition_ledger_entry import TuitionLedgerEntry
+from app.models.tuition_payment import TuitionPayment
 from app.schemas.student import StudentCreate, StudentUpdate
 
 
@@ -123,3 +128,23 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
     # Refresh to get updated enrollments
     await db.refresh(student, ["enrollments"])
     return student
+
+
+async def delete_student(db: AsyncSession, student_id: UUID, center_id: UUID) -> bool:
+    """Delete a student and related enrollments/history. Returns False if blocked by other records."""
+    student = await get_student_by_id(db, student_id, center_id)
+    if not student:
+        return False
+
+    try:
+        await db.execute(delete(TuitionLedgerEntry).where(TuitionLedgerEntry.student_id == student_id))
+        await db.execute(delete(TuitionPayment).where(TuitionPayment.student_id == student_id))
+        await db.execute(delete(AttendanceRecord).where(AttendanceRecord.student_id == student_id))
+        await db.execute(delete(StudentStatusHistory).where(StudentStatusHistory.student_id == student_id))
+        await db.execute(delete(ClassEnrollment).where(ClassEnrollment.student_id == student_id))
+        await db.delete(student)
+        await db.commit()
+        return True
+    except IntegrityError:
+        await db.rollback()
+        return False

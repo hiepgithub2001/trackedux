@@ -5,3 +5,4 @@ export const getStudent = (id) => client.get(`/students/${id}`);
 export const createStudent = (data) => client.post('/students', data);
 export const updateStudent = (id, data) => client.patch(`/students/${id}`, data);
 export const changeStudentStatus = (id, data) => client.patch(`/students/${id}/status`, data);
+export const deleteStudent = (id) => client.delete(`/students/${id}`);

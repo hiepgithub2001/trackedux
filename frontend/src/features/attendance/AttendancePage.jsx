@@ -141,34 +141,28 @@ export default function AttendancePage() {
   const pageSize = 5;
   const paginatedPending = pendingSessions.slice((pendingPage - 1) * pageSize, pendingPage * pageSize);
 
-  const sortedAllSessions = [...allSessions].sort((a, b) => {
-    const dateA = a.date || '';
-    const dateB = b.date || '';
-    if (dateA !== dateB) return dateA.localeCompare(dateB);
-    return (a.start_time || '').localeCompare(b.start_time || '');
-  });
-
-  const [allWeekPage, setAllWeekPage] = useState(1);
-  const paginatedAllWeek = sortedAllSessions.slice((allWeekPage - 1) * pageSize, allWeekPage * pageSize);
 
   const SessionCard = ({ session, isHighlighted }) => (
     <Card
       size="small"
-      hoverable
-      onClick={() => openSession(session)}
+      hoverable={!session.is_canceled}
+      onClick={() => !session.is_canceled && openSession(session)}
       style={{
         border: selectedSession?.id === session.id ? '2px solid #667eea' : undefined,
         background: isHighlighted ? '#e6f4ff' : undefined,
+        opacity: session.is_canceled ? 0.6 : 1,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space wrap>
           <Tag color={isHighlighted ? 'processing' : 'blue'}>{session.start_time} - {session.end_time}</Tag>
           {session.date !== todayDateStr && <Tag color="default">{session.date}</Tag>}
-          {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge')}</Tag>}
-          <span style={{ fontWeight: 600 }}>{session.name}</span>
+          {session.is_canceled && <Tag color="default">{t('lessons.canceled', 'CANCELED')}</Tag>}
+          {session.is_rescheduled && <Tag color="gold">{t('lessons.rescheduled', 'MOVED')}</Tag>}
+          {session.is_makeup && <Tag color="orange">{t('schedule.makeupBadge', 'MAKEUP')}</Tag>}
+          <span style={{ fontWeight: 600, textDecoration: session.is_canceled ? 'line-through' : 'none' }}>{session.name}</span>
           <span>({session.teacher.full_name})</span>
-          <Tag>{session.students.length} students</Tag>
+          <Tag>{session.students?.length || 0} students</Tag>
         </Space>
         <div>
           {session.attendance_marked ? (
@@ -180,6 +174,16 @@ export default function AttendancePage() {
       </div>
     </Card>
   );
+
+  const sortedAllSessions = [...allSessions].sort((a, b) => {
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+
+  const [allWeekPage, setAllWeekPage] = useState(1);
+  const paginatedAllWeek = sortedAllSessions.slice((allWeekPage - 1) * pageSize, allWeekPage * pageSize);
 
   return (
     <div className="fade-in">
@@ -237,6 +241,7 @@ export default function AttendancePage() {
           </Card>
         </Col>
       </Row>
+
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24}>

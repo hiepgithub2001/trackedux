@@ -1,10 +1,10 @@
 import { Descriptions, Tag, Card, Typography, Button, Space, Tabs, Modal, Input, Select, message, Table } from 'antd';
-import { EditOutlined, ArrowLeftOutlined, SwapOutlined } from '@ant-design/icons';
+import { EditOutlined, ArrowLeftOutlined, SwapOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { getStudent, changeStudentStatus } from '../../api/students';
+import { getStudent, changeStudentStatus, deleteStudent } from '../../api/students';
 import { listClasses } from '../../api/classes';
 import { getStudentLedger } from '../../api/tuition';
 import { useAuth } from '../../auth/useAuth';
@@ -59,6 +59,34 @@ export default function StudentDetail() {
       messageApi.error(err.response?.data?.detail || 'Error updating status');
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteStudent(id),
+    onSuccess: () => {
+      messageApi.success(t('common.deletedSuccess', 'Deleted successfully'));
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      navigate('/students');
+    },
+    onError: (err) => {
+      messageApi.error(err.response?.data?.detail || t('common.errorDeleting', 'Error deleting'));
+    },
+  });
+
+  const handleDelete = () => {
+    Modal.confirm({
+      title: t('common.confirmDelete', 'Are you sure you want to delete this?'),
+      content: t('common.cannotUndo', 'This action cannot be undone.'),
+      okText: t('common.yes', 'Yes'),
+      okType: 'danger',
+      cancelText: t('common.no', 'No'),
+      onOk: () => deleteMutation.mutate(),
+    });
+  };
 
   if (isLoading || !student) {
     return <div>{t('common.loading')}</div>;
@@ -152,6 +180,16 @@ export default function StudentDetail() {
                 onClick={() => setStatusModal(true)}
               >
                 {t('students.changeStatus')}
+              </Button>
+            )}
+            {user?.role === 'admin' && (
+              <Button
+                id="delete-student-btn"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDelete}
+              >
+                {t('common.delete', 'Delete')}
               </Button>
             )}
             <Button

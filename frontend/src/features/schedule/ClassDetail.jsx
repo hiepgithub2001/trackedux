@@ -217,6 +217,8 @@ export default function ClassDetail() {
             queryClient.invalidateQueries({ queryKey: ['lessons', { class_id: id }] });
             queryClient.invalidateQueries({ queryKey: ['lesson'] });
             queryClient.invalidateQueries({ queryKey: ['schedule'] });
+            queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+            queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
             queryClient.invalidateQueries({ queryKey: ['class', id] });
             queryClient.invalidateQueries({ queryKey: ['classes'] });
             setShowLessonForm(false);
