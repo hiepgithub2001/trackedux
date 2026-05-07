@@ -61,9 +61,25 @@ async def check_scheduling_conflicts(
     if exclude_lesson_id:
         base_query = base_query.where(Lesson.id != exclude_lesson_id)
 
+    from dateutil.rrule import rrulestr
+    from app.services.recurrence_service import _find_dtstart
+
+    def _is_lesson_active_today(lesson: Lesson) -> bool:
+        if not lesson.rrule or ("UNTIL" not in lesson.rrule and "COUNT" not in lesson.rrule):
+            return True
+        try:
+            dtstart = _find_dtstart(lesson)
+            rule = rrulestr(lesson.rrule, dtstart=dtstart, ignoretz=True)
+            anchor = datetime.combine(date.today(), time.min)
+            return rule.after(anchor, inc=True) is not None
+        except Exception:
+            return True
+
     # Teacher conflict
     teacher_result = await db.execute(base_query.where(Lesson.teacher_id == teacher_id))
     for lesson in teacher_result.scalars().all():
+        if not _is_lesson_active_today(lesson):
+            continue
         lesson_end = _add_minutes(lesson.start_time, lesson.duration_minutes)
         if lesson_end > st:
             class_name = lesson.title or (lesson.class_.name if lesson.class_ else str(lesson.id))
@@ -88,6 +104,8 @@ async def check_scheduling_conflicts(
         )
         for lesson in student_result.scalars().all():
             if exclude_lesson_id and lesson.id == exclude_lesson_id:
+                continue
+            if not _is_lesson_active_today(lesson):
                 continue
             lesson_end = _add_minutes(lesson.start_time, lesson.duration_minutes)
             if lesson_end > st:
