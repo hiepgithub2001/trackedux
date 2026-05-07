@@ -62,6 +62,7 @@ async def check_scheduling_conflicts(
         base_query = base_query.where(Lesson.id != exclude_lesson_id)
 
     from dateutil.rrule import rrulestr
+
     from app.services.recurrence_service import _find_dtstart
 
     def _is_lesson_active_today(lesson: Lesson) -> bool:
