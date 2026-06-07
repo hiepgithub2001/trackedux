@@ -148,11 +148,13 @@ async def get_pending_attendance(
 ):
     """Get all past and today's lesson occurrences that have not been marked for attendance."""
     from datetime import date as dt_date
-    from sqlalchemy import select, exists, func
-    from app.models.lesson_occurrence import LessonOccurrence
-    from app.models.attendance import AttendanceRecord
-    from app.crud.lesson import bulk_upsert_occurrences, list_lessons
+
+    from sqlalchemy import exists, func, select
+
     from app.api.schedule import _build_session_dicts
+    from app.crud.lesson import bulk_upsert_occurrences, list_lessons
+    from app.models.attendance import AttendanceRecord
+    from app.models.lesson_occurrence import LessonOccurrence
     from app.services.recurrence_service import _build_occurrence
 
     center_id = get_center_id(current_user)

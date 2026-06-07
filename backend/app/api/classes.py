@@ -86,7 +86,7 @@ async def create_class_endpoint(data: ClassCreate, db: DbSession, current_user: 
     # Cross-center teacher reference must look like "not found" (Rule 2).
     if await get_teacher_by_id(db, data.teacher_id, center_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
-        
+
     if data.lesson_kind_name:
         from app.crud.lesson_kind import find_or_create_lesson_kind
         lk = await find_or_create_lesson_kind(db, data.lesson_kind_name, center_id)
@@ -103,12 +103,12 @@ async def update_class_endpoint(class_id: UUID, data: ClassUpdate, db: DbSession
     if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     center_id = get_center_id(current_user)
-    
+
     if data.lesson_kind_name:
         from app.crud.lesson_kind import find_or_create_lesson_kind
         lk = await find_or_create_lesson_kind(db, data.lesson_kind_name, center_id)
         data.lesson_kind_id = lk.id
-        
+
     cls = await update_class(db, class_id, data, center_id)
     if cls is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")

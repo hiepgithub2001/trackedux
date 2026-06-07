@@ -77,7 +77,9 @@ async def update_lesson_series(
         new_start_time = time.fromisoformat(data.start_time)
         if new_start_time != lesson.start_time:
             from datetime import date
-            from sqlalchemy import update, exists, select
+
+            from sqlalchemy import exists, select, update
+
             from app.models.attendance import AttendanceRecord
 
             today = date.today()

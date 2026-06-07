@@ -72,7 +72,9 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
 
     if student_ids is not None:
         from datetime import date
+
         from sqlalchemy import select
+
         from app.models.class_enrollment import ClassEnrollment
 
         # 1. Unenroll students not in student_ids
@@ -80,7 +82,7 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
             select(ClassEnrollment).where(
                 ClassEnrollment.class_id == class_id,
                 ClassEnrollment.center_id == center_id,
-                ClassEnrollment.is_active == True,
+                ClassEnrollment.is_active,
             )
         )
         current_enrollments = result.scalars().all()
