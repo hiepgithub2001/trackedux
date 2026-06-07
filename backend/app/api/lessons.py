@@ -122,6 +122,7 @@ async def create_lesson_endpoint(data: LessonCreate, db: DbSession, current_user
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
     await bulk_upsert_occurrences(db, [lesson], week_start, week_end, center_id)
+    await db.commit()
 
     return _lesson_to_response(lesson)
 
@@ -154,6 +155,7 @@ async def update_lesson_series_endpoint(
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
         await bulk_upsert_occurrences(db, [lesson], week_start, week_end, center_id)
+        await db.commit()
 
     return _lesson_to_response(lesson)
 
