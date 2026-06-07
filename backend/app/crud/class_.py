@@ -131,15 +131,17 @@ async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_
         return False
 
     import re
-    from datetime import date
+    from datetime import datetime
 
-    from sqlalchemy import delete, or_, select
+    from sqlalchemy import and_, delete, func, or_, select
 
     from app.models.attendance import AttendanceRecord
     from app.models.lesson import Lesson
     from app.models.lesson_occurrence import LessonOccurrence
 
-    today = date.today()
+    now = datetime.now()
+    today = now.date()
+    current_time = now.time()
 
     # Get lesson ids
     lesson_res = await db.execute(select(Lesson).where(Lesson.class_id == class_id))
@@ -150,11 +152,14 @@ async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_
 
         # 1. Delete future occurrences and their attendance
         occ_res = await db.execute(
-            select(LessonOccurrence).where(
+            select(LessonOccurrence).join(Lesson).where(
                 LessonOccurrence.lesson_id.in_(lesson_ids),
                 or_(
-                    LessonOccurrence.original_date > today,
-                    LessonOccurrence.override_date > today
+                    func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date) > today,
+                    and_(
+                        func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date) == today,
+                        func.coalesce(LessonOccurrence.override_start_time, Lesson.start_time) >= current_time
+                    )
                 )
             )
         )
@@ -170,16 +175,19 @@ async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_
                 delete(LessonOccurrence).where(LessonOccurrence.id.in_(future_occ_ids))
             )
 
-        # 2. Update recurring lessons to end today, delete future one-off lessons
+        # 2. Update recurring lessons to end now, delete future one-off lessons
         for lesson in lessons:
-            if lesson.specific_date and lesson.specific_date > today:
-                await db.execute(delete(Lesson).where(Lesson.id == lesson.id))
+            if lesson.specific_date:
+                if lesson.specific_date > today or (
+                    lesson.specific_date == today and lesson.start_time >= current_time
+                ):
+                    await db.execute(delete(Lesson).where(Lesson.id == lesson.id))
             elif lesson.rrule:
                 # Add or update UNTIL clause in RRULE
-                # Format: UNTIL=YYYYMMDD
-                until_str = today.strftime("UNTIL=%Y%m%d")
+                # Format: UNTIL=YYYYMMDDTHHMMSS
+                until_str = now.strftime("UNTIL=%Y%m%dT%H%M%S")
                 if "UNTIL=" in lesson.rrule:
-                    lesson.rrule = re.sub(r"UNTIL=\d{8}(T\d{6}Z)?", until_str, lesson.rrule)
+                    lesson.rrule = re.sub(r"UNTIL=\d{8}(T\d{6}Z?)?", until_str, lesson.rrule)
                 else:
                     lesson.rrule += f";{until_str}"
 
