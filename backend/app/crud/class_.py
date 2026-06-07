@@ -130,42 +130,65 @@ async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_
     if class_ is None:
         return False
 
-    from sqlalchemy import delete, select
+    import re
+    from datetime import date
+
+    from sqlalchemy import delete, or_, select
 
     from app.models.attendance import AttendanceRecord
-    from app.models.class_enrollment import ClassEnrollment
     from app.models.lesson import Lesson
     from app.models.lesson_occurrence import LessonOccurrence
 
+    today = date.today()
+
     # Get lesson ids
-    lesson_res = await db.execute(select(Lesson.id).where(Lesson.class_id == class_id))
-    lesson_ids = list(lesson_res.scalars().all())
+    lesson_res = await db.execute(select(Lesson).where(Lesson.class_id == class_id))
+    lessons = list(lesson_res.scalars().all())
 
-    if lesson_ids:
-        # Get occurrence ids
+    if lessons:
+        lesson_ids = [lesson_obj.id for lesson_obj in lessons]
+
+        # 1. Delete future occurrences and their attendance
         occ_res = await db.execute(
-            select(LessonOccurrence.id).where(LessonOccurrence.lesson_id.in_(lesson_ids))
+            select(LessonOccurrence).where(
+                LessonOccurrence.lesson_id.in_(lesson_ids),
+                or_(
+                    LessonOccurrence.original_date > today,
+                    LessonOccurrence.override_date > today
+                )
+            )
         )
-        occ_ids = list(occ_res.scalars().all())
-
-        if occ_ids:
+        future_occs = list(occ_res.scalars().all())
+        if future_occs:
+            future_occ_ids = [o.id for o in future_occs]
             # Delete attendance records
             await db.execute(
-                delete(AttendanceRecord).where(AttendanceRecord.lesson_occurrence_id.in_(occ_ids))
+                delete(AttendanceRecord).where(AttendanceRecord.lesson_occurrence_id.in_(future_occ_ids))
             )
             # Delete lesson occurrences
             await db.execute(
-                delete(LessonOccurrence).where(LessonOccurrence.id.in_(occ_ids))
+                delete(LessonOccurrence).where(LessonOccurrence.id.in_(future_occ_ids))
             )
 
-        # Delete lessons
-        await db.execute(delete(Lesson).where(Lesson.id.in_(lesson_ids)))
+        # 2. Update recurring lessons to end today, delete future one-off lessons
+        for lesson in lessons:
+            if lesson.specific_date and lesson.specific_date > today:
+                await db.execute(delete(Lesson).where(Lesson.id == lesson.id))
+            elif lesson.rrule:
+                # Add or update UNTIL clause in RRULE
+                # Format: UNTIL=YYYYMMDD
+                until_str = today.strftime("UNTIL=%Y%m%d")
+                if "UNTIL=" in lesson.rrule:
+                    lesson.rrule = re.sub(r"UNTIL=\d{8}(T\d{6}Z)?", until_str, lesson.rrule)
+                else:
+                    lesson.rrule += f";{until_str}"
 
-    # Delete class enrollments
-    await db.execute(delete(ClassEnrollment).where(ClassEnrollment.class_id == class_id))
+                # if the lesson was created recently and all occurrences are now in the future or not started,
+                # the rrule just stops. The lesson definition stays for history.
 
-    # Delete the class itself
-    await db.delete(class_)
+    # Soft delete the class
+    class_.is_active = False
+
     await db.commit()
     return True
 
