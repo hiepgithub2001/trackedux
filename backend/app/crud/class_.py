@@ -125,15 +125,49 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
     await db.refresh(class_)
     return class_
 
-
-async def deactivate_class(db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID) -> bool:
+async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID) -> bool:
     class_ = await get_class_by_id(db, class_id, center_id)
     if class_ is None:
         return False
-    class_.is_active = False
+
+    from sqlalchemy import delete, select
+
+    from app.models.attendance import AttendanceRecord
+    from app.models.class_enrollment import ClassEnrollment
+    from app.models.lesson import Lesson
+    from app.models.lesson_occurrence import LessonOccurrence
+
+    # Get lesson ids
+    lesson_res = await db.execute(select(Lesson.id).where(Lesson.class_id == class_id))
+    lesson_ids = list(lesson_res.scalars().all())
+
+    if lesson_ids:
+        # Get occurrence ids
+        occ_res = await db.execute(
+            select(LessonOccurrence.id).where(LessonOccurrence.lesson_id.in_(lesson_ids))
+        )
+        occ_ids = list(occ_res.scalars().all())
+
+        if occ_ids:
+            # Delete attendance records
+            await db.execute(
+                delete(AttendanceRecord).where(AttendanceRecord.lesson_occurrence_id.in_(occ_ids))
+            )
+            # Delete lesson occurrences
+            await db.execute(
+                delete(LessonOccurrence).where(LessonOccurrence.id.in_(occ_ids))
+            )
+
+        # Delete lessons
+        await db.execute(delete(Lesson).where(Lesson.id.in_(lesson_ids)))
+
+    # Delete class enrollments
+    await db.execute(delete(ClassEnrollment).where(ClassEnrollment.class_id == class_id))
+
+    # Delete the class itself
+    await db.delete(class_)
     await db.commit()
     return True
-
 
 async def enroll_student(
     db: AsyncSession,

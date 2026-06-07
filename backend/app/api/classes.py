@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.core.deps import CurrentUser, DbSession, get_center_id
 from app.crud.class_ import (
     create_class,
-    deactivate_class,
+    delete_class_completely,
     enroll_student,
     get_class_by_id,
     list_classes,
@@ -117,14 +117,14 @@ async def update_class_endpoint(class_id: UUID, data: ClassUpdate, db: DbSession
 
 @router.delete("/{class_id}")
 async def delete_class_endpoint(class_id: UUID, db: DbSession, current_user: CurrentUser):
-    """Soft-delete a class (is_active=false). Admin only."""
+    """Delete a class completely along with its lessons and occurrences. Admin only."""
     if current_user.role not in ("admin", "superadmin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     center_id = get_center_id(current_user)
-    success = await deactivate_class(db, class_id, center_id)
+    success = await delete_class_completely(db, class_id, center_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
-    return {"detail": "Class deactivated"}
+    return {"detail": "Class completely deleted"}
 
 
 @router.post("/{class_id}/enroll")
