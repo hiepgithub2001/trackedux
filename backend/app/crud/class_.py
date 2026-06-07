@@ -62,8 +62,63 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
     class_ = await get_class_by_id(db, class_id, center_id)
     if class_ is None:
         return None
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    student_ids = update_data.pop("student_ids", None)
+    # lesson_kind_name is not on the ORM model, so we must not pass it to setattr
+    update_data.pop("lesson_kind_name", None)
+
+    for field, value in update_data.items():
         setattr(class_, field, value)
+
+    if student_ids is not None:
+        from datetime import date
+        from sqlalchemy import select
+        from app.models.class_enrollment import ClassEnrollment
+
+        # 1. Unenroll students not in student_ids
+        result = await db.execute(
+            select(ClassEnrollment).where(
+                ClassEnrollment.class_id == class_id,
+                ClassEnrollment.center_id == center_id,
+                ClassEnrollment.is_active == True,
+            )
+        )
+        current_enrollments = result.scalars().all()
+        current_ids = {e.student_id for e in current_enrollments}
+
+        target_ids = set(student_ids)
+
+        to_unenroll = current_ids - target_ids
+        to_enroll = target_ids - current_ids
+
+        for e in current_enrollments:
+            if e.student_id in to_unenroll:
+                e.is_active = False
+                e.unenrolled_at = date.today()
+
+        # 2. Enroll new students
+        for sid in to_enroll:
+            result = await db.execute(
+                select(ClassEnrollment).where(
+                    ClassEnrollment.class_id == class_id,
+                    ClassEnrollment.student_id == sid,
+                    ClassEnrollment.center_id == center_id,
+                )
+            )
+            existing = result.scalar_one_or_none()
+            if existing:
+                existing.is_active = True
+                existing.enrolled_since = date.today()
+                existing.unenrolled_at = None
+            else:
+                new_e = ClassEnrollment(
+                    class_id=class_id,
+                    student_id=sid,
+                    center_id=center_id,
+                    enrolled_since=date.today(),
+                )
+                db.add(new_e)
+
     await db.commit()
     await db.refresh(class_)
     return class_

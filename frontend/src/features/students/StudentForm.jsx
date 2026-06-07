@@ -107,11 +107,18 @@ export default function StudentForm() {
 
           <Space size="large">
             <Form.Item name="date_of_birth" label={t('students.dateOfBirth')}>
-              <DatePicker id="student-dob" />
+              <DatePicker id="student-dob" onChange={(date) => {
+                if (date) {
+                  const age = dayjs().diff(date, 'year');
+                  form.setFieldsValue({ age });
+                } else {
+                  form.setFieldsValue({ age: null });
+                }
+              }} />
             </Form.Item>
 
             <Form.Item name="age" label={t('students.age')}>
-              <InputNumber id="student-age" min={1} max={99} />
+              <InputNumber id="student-age" disabled min={1} max={99} />
             </Form.Item>
           </Space>
 

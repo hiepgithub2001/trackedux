@@ -146,9 +146,9 @@ async def update_lesson_series_endpoint(
         from datetime import date as dt_date
         from datetime import timedelta
 
-        from app.crud.lesson import bulk_upsert_occurrences, cleanup_future_ghosts
+        from app.crud.lesson import bulk_upsert_occurrences, cleanup_ghosts
 
-        await cleanup_future_ghosts(db, lesson_id, center_id)
+        await cleanup_ghosts(db, lesson_id, center_id)
 
         today = dt_date.today()
         week_start = today - timedelta(days=today.weekday())

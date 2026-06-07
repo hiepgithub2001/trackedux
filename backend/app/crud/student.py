@@ -22,6 +22,11 @@ async def create_student(db: AsyncSession, data: StudentCreate, center_id: UUID)
     class_ids = data.class_ids or []
     student_data = data.model_dump(exclude={"class_ids"})
 
+    if student_data.get("date_of_birth"):
+        dob = student_data["date_of_birth"]
+        today = date.today()
+        student_data["age"] = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
     student = Student(
         **student_data,
         enrolled_at=date.today(),
@@ -103,6 +108,13 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
 
     class_ids = data.class_ids
     update_data = data.model_dump(exclude_unset=True, exclude={"class_ids"})
+
+    dob = update_data.get("date_of_birth", student.date_of_birth)
+    if dob:
+        today = date.today()
+        update_data["age"] = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    elif "date_of_birth" in update_data and update_data["date_of_birth"] is None:
+        update_data["age"] = None
 
     for field, value in update_data.items():
         setattr(student, field, value)

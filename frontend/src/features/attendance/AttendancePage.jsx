@@ -4,7 +4,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, Do
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getPastSessions } from '../../api/classes';
-import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly } from '../../api/attendance';
+import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly, getPendingAttendance } from '../../api/attendance';
 import dayjs from 'dayjs';
 
 const PAST_PAGE_SIZE = 5;
@@ -38,6 +38,11 @@ export default function AttendancePage() {
   const { data: scheduleData } = useQuery({
     queryKey: ['attendance-weekly'],
     queryFn: () => getAttendanceWeekly({}).then((r) => r.data),
+  });
+
+  const { data: pendingData } = useQuery({
+    queryKey: ['attendance-pending'],
+    queryFn: () => getPendingAttendance({}).then((r) => r.data),
   });
 
   const [pastPage, setPastPage] = useState(1);
@@ -89,6 +94,7 @@ export default function AttendancePage() {
       messageApi.success('Attendance marked');
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-pending'] });
       queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
@@ -123,7 +129,7 @@ export default function AttendancePage() {
     return (now.isAfter(start) || now.isSame(start)) && now.isBefore(end);
   });
 
-  const pendingSessions = allSessions.filter((s) => !s.attendance_marked)
+  const pendingSessions = (pendingData?.sessions || [])
     .sort((a, b) => dayjs(`${a.date}T${a.start_time}`).valueOf() - dayjs(`${b.date}T${b.start_time}`).valueOf());
 
   const todaySessions = allSessions.filter((s) => {

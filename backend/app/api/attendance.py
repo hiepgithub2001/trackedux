@@ -140,6 +140,82 @@ async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_u
     return {"records": results}
 
 
+@router.get("/pending")
+async def get_pending_attendance(
+    db: DbSession,
+    current_user: CurrentUser,
+    teacher_id: UUID | None = None,
+):
+    """Get all past and today's lesson occurrences that have not been marked for attendance."""
+    from datetime import date as dt_date
+    from sqlalchemy import select, exists, func
+    from app.models.lesson_occurrence import LessonOccurrence
+    from app.models.attendance import AttendanceRecord
+    from app.crud.lesson import bulk_upsert_occurrences, list_lessons
+    from app.api.schedule import _build_session_dicts
+    from app.services.recurrence_service import _build_occurrence
+
+    center_id = get_center_id(current_user)
+    today = dt_date.today()
+
+    lessons = await list_lessons(db, center_id=center_id, teacher_id=teacher_id, is_active=None)
+    if not lessons:
+        return {"sessions": []}
+
+    lesson_map = {str(lesson.id): lesson for lesson in lessons}
+
+    active_lessons = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
+    min_created_at = today
+    for lesson_obj in active_lessons:
+        l_created = (
+            lesson_obj.created_at.date() if hasattr(lesson_obj, "created_at") and lesson_obj.created_at else today
+        )
+        if l_created < min_created_at:
+            min_created_at = l_created
+
+    inserted = await bulk_upsert_occurrences(db, active_lessons, min_created_at, today, center_id)
+    if inserted > 0:
+        await db.commit()
+
+    eff_date = func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date)
+    result = await db.execute(
+        select(LessonOccurrence)
+        .where(
+            LessonOccurrence.lesson_id.in_([lesson_obj.id for lesson_obj in lessons]),
+            LessonOccurrence.center_id == center_id,
+            LessonOccurrence.status == "active",
+            eff_date <= today,
+            ~exists(
+                select(AttendanceRecord.id).where(
+                    AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id
+                )
+            )
+        )
+    )
+    pending_rows = result.scalars().all()
+
+    virtual_occs = []
+    for occ_row in pending_rows:
+        lesson = lesson_map.get(str(occ_row.lesson_id))
+        if not lesson:
+            continue
+        class_name = lesson.class_.name if lesson.class_ else None
+        display_name = lesson.title or class_name or ""
+        teacher_id_str = str(lesson.teacher_id)
+
+        v_occ = _build_occurrence(
+            lesson, str(lesson.id), class_name, display_name, teacher_id_str, occ_row.original_date, occ_row
+        )
+        virtual_occs.append(v_occ)
+
+    sessions = await _build_session_dicts(db, virtual_occs, lesson_map, center_id)
+    for s in sessions:
+        s["attendance_marked"] = False
+
+    return {"sessions": sessions}
+
+
+
 @router.get("/session/{lesson_id}/{session_date}")
 async def get_session_attendance(
     lesson_id: UUID,

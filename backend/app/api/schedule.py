@@ -154,7 +154,8 @@ async def get_weekly_schedule(
     if week_start < today:
         # Materialize any unmaterialized past occurrences for the requested week
         past_range_end = min(week_end, today - timedelta(days=1))
-        inserted = await bulk_upsert_occurrences(db, lessons, week_start, past_range_end, center_id)
+        active_lessons_for_past = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
+        inserted = await bulk_upsert_occurrences(db, active_lessons_for_past, week_start, past_range_end, center_id)
         if inserted > 0:
             await db.commit()
 
@@ -232,8 +233,9 @@ async def get_past_sessions(
     # 1. Self-heal materialization
     # Anchor at the oldest lesson created_at (or just pass each lesson to the helper
     # which uses its own created_at). The helper accepts a global range start.
+    active_lessons = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
     min_created_at = today
-    for lesson_obj in lessons:
+    for lesson_obj in active_lessons:
         l_created = (
             lesson_obj.created_at.date() if hasattr(lesson_obj, "created_at") and lesson_obj.created_at else today
         )
@@ -241,7 +243,7 @@ async def get_past_sessions(
         if l_created < min_created_at:
             min_created_at = l_created
 
-    inserted = await bulk_upsert_occurrences(db, lessons, min_created_at, today - timedelta(days=1), center_id)
+    inserted = await bulk_upsert_occurrences(db, active_lessons, min_created_at, today - timedelta(days=1), center_id)
     if inserted > 0:
         await db.commit()
 

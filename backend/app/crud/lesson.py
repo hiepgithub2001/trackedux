@@ -77,11 +77,12 @@ async def update_lesson_series(
         new_start_time = time.fromisoformat(data.start_time)
         if new_start_time != lesson.start_time:
             from datetime import date
-
-            from sqlalchemy import update
+            from sqlalchemy import update, exists, select
+            from app.models.attendance import AttendanceRecord
 
             today = date.today()
             # Freeze the old start_time for past occurrences so they don't inherit the new time
+            # Only freeze if they have attendance, or are explicitly overridden (canceled/rescheduled)
             stmt = (
                 update(LessonOccurrence)
                 .where(
@@ -89,6 +90,15 @@ async def update_lesson_series(
                     LessonOccurrence.center_id == center_id,
                     LessonOccurrence.override_start_time.is_(None),
                     LessonOccurrence.original_date < today,
+                    (
+                        (LessonOccurrence.status != "active") |
+                        (LessonOccurrence.override_date.is_not(None)) |
+                        exists(
+                            select(AttendanceRecord.id).where(
+                                AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id
+                            )
+                        )
+                    )
                 )
                 .values(override_start_time=lesson.start_time)
             )
@@ -116,6 +126,7 @@ async def deactivate_lesson(db: AsyncSession, lesson_id: uuid.UUID, center_id: u
     if lesson is None:
         return False
     lesson.is_active = False
+    await cleanup_all_ghosts(db, lesson_id, center_id)
     await db.commit()
     return True
 
@@ -301,15 +312,15 @@ async def bulk_upsert_occurrences(
     return result.rowcount  # type: ignore[return-value]
 
 
-async def cleanup_future_ghosts(
+async def cleanup_ghosts(
     db: AsyncSession,
     lesson_id: uuid.UUID,
     center_id: uuid.UUID,
 ) -> int:
-    """Delete clean future LessonOccurrence rows for a lesson (ghost cleanup).
+    """Delete clean LessonOccurrence rows for a lesson (ghost cleanup).
 
-    Called after an RRULE edit to re-align future occurrences to the new rule.
-    Preserves: past rows, canceled rows, rescheduled rows, time-overridden rows,
+    Called after an RRULE edit to re-align occurrences to the new rule.
+    Preserves: canceled rows, rescheduled rows, time-overridden rows,
     and rows with attendance records.
 
     Returns the number of rows deleted.
@@ -318,14 +329,38 @@ async def cleanup_future_ghosts(
 
     from app.models.attendance import AttendanceRecord
 
-    today = date.today()
     stmt = delete(LessonOccurrence).where(
         LessonOccurrence.lesson_id == lesson_id,
         LessonOccurrence.center_id == center_id,
-        LessonOccurrence.original_date >= today,
         LessonOccurrence.status == "active",
         LessonOccurrence.override_date.is_(None),
         LessonOccurrence.override_start_time.is_(None),
+        ~exists(
+            select(AttendanceRecord.id).where(
+                AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id,
+            )
+        ),
+    )
+    result = await db.execute(stmt)
+    await db.flush()
+    return result.rowcount  # type: ignore[return-value]
+
+
+async def cleanup_all_ghosts(
+    db: AsyncSession,
+    lesson_id: uuid.UUID,
+    center_id: uuid.UUID,
+) -> int:
+    """Delete ALL LessonOccurrence rows for a lesson that have no attendance records.
+    Called when a lesson is completely deleted (deactivated).
+    """
+    from sqlalchemy import delete, exists
+
+    from app.models.attendance import AttendanceRecord
+
+    stmt = delete(LessonOccurrence).where(
+        LessonOccurrence.lesson_id == lesson_id,
+        LessonOccurrence.center_id == center_id,
         ~exists(
             select(AttendanceRecord.id).where(
                 AttendanceRecord.lesson_occurrence_id == LessonOccurrence.id,

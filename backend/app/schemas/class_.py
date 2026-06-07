@@ -11,6 +11,7 @@ class ClassCreate(BaseModel):
     teacher_id: uuid.UUID
     tuition_fee_per_lesson: int | None = Field(None, ge=0)
     lesson_kind_id: uuid.UUID | None = None
+    lesson_kind_name: str | None = None
     student_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
@@ -19,7 +20,9 @@ class ClassUpdate(BaseModel):
     teacher_id: uuid.UUID | None = None
     tuition_fee_per_lesson: int | None = None
     lesson_kind_id: uuid.UUID | None = None
+    lesson_kind_name: str | None = None
     is_active: bool | None = None
+    student_ids: list[uuid.UUID] | None = None
 
 
 class EnrolledStudent(BaseModel):
