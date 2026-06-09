@@ -99,6 +99,80 @@ async def get_weekly_attendance(
     }
 
 
+@router.get("/upcoming-oneoff")
+async def get_upcoming_oneoff(
+    db: DbSession,
+    current_user: CurrentUser,
+    teacher_id: UUID | None = None,
+):
+    """Get all upcoming one-off lessons (rrule is null) with an effective date after today.
+
+    One-off lessons are finite and discrete, so we surface every future one rather
+    than windowing them to the current week the way recurring lessons are handled.
+    Today and past one-off lessons are already covered by the Today/Pending sections.
+    """
+    from sqlalchemy import func
+
+    from app.api.schedule import _build_session_dicts
+    from app.crud.lesson import bulk_upsert_occurrences, list_lessons
+    from app.models.lesson_occurrence import LessonOccurrence
+    from app.services.recurrence_service import _build_occurrence
+
+    center_id = get_center_id(current_user)
+    today = date_type.today()
+
+    lessons = await list_lessons(db, center_id=center_id, teacher_id=teacher_id, is_active=None)
+    if not lessons:
+        return {"sessions": []}
+
+    lesson_map = {str(lesson.id): lesson for lesson in lessons}
+
+    # One-off = specific_date set, no rrule. Only active ones are surfaced going forward.
+    oneoff_active = [
+        lesson_obj
+        for lesson_obj in lessons
+        if lesson_obj.is_active and lesson_obj.rrule is None and lesson_obj.specific_date is not None
+    ]
+    if not oneoff_active:
+        return {"sessions": []}
+
+    # Materialize occurrence rows up to the furthest scheduled one-off date.
+    max_date = max(lesson_obj.specific_date for lesson_obj in oneoff_active)
+    if max_date > today:
+        inserted = await bulk_upsert_occurrences(db, oneoff_active, today, max_date, center_id)
+        if inserted > 0:
+            await db.commit()
+
+    eff_date = func.coalesce(LessonOccurrence.override_date, LessonOccurrence.original_date)
+    result = await db.execute(
+        select(LessonOccurrence).where(
+            LessonOccurrence.lesson_id.in_([lesson_obj.id for lesson_obj in oneoff_active]),
+            LessonOccurrence.center_id == center_id,
+            LessonOccurrence.status == "active",
+            eff_date > today,
+        )
+    )
+    occ_rows = result.scalars().all()
+
+    virtual_occs = []
+    for occ_row in occ_rows:
+        lesson = lesson_map.get(str(occ_row.lesson_id))
+        if not lesson:
+            continue
+        class_name = lesson.class_.name if lesson.class_ else None
+        display_name = lesson.title or class_name or ""
+        teacher_id_str = str(lesson.teacher_id)
+
+        v_occ = _build_occurrence(
+            lesson, str(lesson.id), class_name, display_name, teacher_id_str, occ_row.original_date, occ_row
+        )
+        virtual_occs.append(v_occ)
+
+    sessions = await _build_session_dicts(db, virtual_occs, lesson_map, center_id)
+
+    return {"sessions": sessions}
+
+
 @router.post("/batch")
 async def mark_attendance(data: AttendanceBatchRequest, db: DbSession, current_user: CurrentUser):
     """Mark attendance for a session (batch). Auto-deducts tuition balance for 'present' students.

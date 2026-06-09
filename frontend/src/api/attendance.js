@@ -5,3 +5,4 @@ export const getSessionAttendance = (classSessionId, sessionDate) => client.get(
 export const getStudentAttendance = (studentId) => client.get(`/attendance/student/${studentId}`);
 export const getAttendanceWeekly = (params) => client.get('/attendance/weekly', { params });
 export const getPendingAttendance = (params) => client.get('/attendance/pending', { params });
+export const getUpcomingOneoff = (params) => client.get('/attendance/upcoming-oneoff', { params });
