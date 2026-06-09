@@ -91,7 +91,7 @@ export default function StudentForm() {
           layout="vertical"
           onFinish={(values) => mutation.mutate(values)}
           onFinishFailed={onFinishFailed}
-          initialValues={{ enrollment_status: 'trial', contact: {}, class_ids: [] }}
+          initialValues={{ enrollment_status: 'active', contact: {}, class_ids: [] }}
         >
           <Form.Item
             name="name"

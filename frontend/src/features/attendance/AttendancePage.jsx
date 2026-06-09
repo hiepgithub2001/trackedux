@@ -4,7 +4,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, Do
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getPastSessions } from '../../api/classes';
-import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly, getPendingAttendance } from '../../api/attendance';
+import { markBatchAttendance, getSessionAttendance, getAttendanceWeekly, getPendingAttendance, getUpcomingOneoff } from '../../api/attendance';
 import dayjs from 'dayjs';
 
 const PAST_PAGE_SIZE = 5;
@@ -43,6 +43,11 @@ export default function AttendancePage() {
   const { data: pendingData } = useQuery({
     queryKey: ['attendance-pending'],
     queryFn: () => getPendingAttendance({}).then((r) => r.data),
+  });
+
+  const { data: upcomingOneoffData } = useQuery({
+    queryKey: ['attendance-upcoming-oneoff'],
+    queryFn: () => getUpcomingOneoff({}).then((r) => r.data),
   });
 
   const [pastPage, setPastPage] = useState(1);
@@ -95,6 +100,7 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-pending'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-upcoming-oneoff'] });
       queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
@@ -118,27 +124,14 @@ export default function AttendancePage() {
     mutation.mutate({ lesson_id: selectedSession.lesson_id, session_date: selectedSession.original_date || selectedSession.date, records });
   };
 
-  const now = dayjs();
-  const todayDateStr = now.format('YYYY-MM-DD');
+  const todayDateStr = dayjs().format('YYYY-MM-DD');
 
   const allSessions = scheduleData?.sessions || [];
-
-  const runningSessions = allSessions.filter((s) => {
-    const start = dayjs(`${s.date}T${s.start_time}`);
-    const end = dayjs(`${s.date}T${s.end_time}`);
-    return (now.isAfter(start) || now.isSame(start)) && now.isBefore(end);
-  });
 
   const pendingSessions = (pendingData?.sessions || [])
     .sort((a, b) => dayjs(`${a.date}T${a.start_time}`).valueOf() - dayjs(`${b.date}T${b.start_time}`).valueOf());
 
-  const todaySessions = allSessions.filter((s) => {
-    if (s.date !== todayDateStr) return false;
-    const start = dayjs(`${s.date}T${s.start_time}`);
-    const end = dayjs(`${s.date}T${s.end_time}`);
-    const isRunning = (now.isAfter(start) || now.isSame(start)) && now.isBefore(end);
-    return !isRunning;
-  });
+  const todaySessions = allSessions.filter((s) => s.date === todayDateStr);
 
   const paginatedPast = pastData?.sessions ?? [];
   const pastTotal = pastData?.total ?? 0;
@@ -191,6 +184,15 @@ export default function AttendancePage() {
   const [allWeekPage, setAllWeekPage] = useState(1);
   const paginatedAllWeek = sortedAllSessions.slice((allWeekPage - 1) * pageSize, allWeekPage * pageSize);
 
+  const sortedUpcomingOneoff = [...(upcomingOneoffData?.sessions || [])].sort((a, b) => {
+    const dateA = a.date || '';
+    const dateB = b.date || '';
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    return (a.start_time || '').localeCompare(b.start_time || '');
+  });
+  const [upcomingOneoffPage, setUpcomingOneoffPage] = useState(1);
+  const paginatedUpcomingOneoff = sortedUpcomingOneoff.slice((upcomingOneoffPage - 1) * pageSize, upcomingOneoffPage * pageSize);
+
   return (
     <div className="fade-in">
       {contextHolder}
@@ -213,16 +215,7 @@ export default function AttendancePage() {
       </Row>
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={24} md={12}>
-          <Card title={t('dashboard.runningSessions', 'Running Sessions')} style={{ height: '100%' }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              {runningSessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
-              {runningSessions.map(s => <SessionCard key={s.id + s.date} session={s} isHighlighted />)}
-            </Space>
-          </Card>
-        </Col>
-
-        <Col xs={24} md={12}>
+        <Col xs={24}>
           <Card title={t('attendance.todaySessions', 'Today\'s Sessions')} style={{ height: '100%' }}>
             <Space direction="vertical" style={{ width: '100%' }}>
               {todaySessions.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
@@ -248,6 +241,22 @@ export default function AttendancePage() {
         </Col>
       </Row>
 
+
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24}>
+          <Card title={t('attendance.upcomingOneoff', 'Upcoming One-off Lessons')}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {paginatedUpcomingOneoff.length === 0 && <p style={{ color: '#888' }}>{t('common.noData')}</p>}
+              {paginatedUpcomingOneoff.map(s => <SessionCard key={s.id + s.date} session={s} />)}
+              {sortedUpcomingOneoff.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                  <Pagination current={upcomingOneoffPage} pageSize={pageSize} total={sortedUpcomingOneoff.length} onChange={setUpcomingOneoffPage} />
+                </div>
+              )}
+            </Space>
+          </Card>
+        </Col>
+      </Row>
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24}>
