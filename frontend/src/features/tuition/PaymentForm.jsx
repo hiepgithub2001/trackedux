@@ -1,6 +1,7 @@
 import { Modal, Form, InputNumber, DatePicker, Select, Input, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { recordPayment } from '../../api/tuition';
 import { listStudents } from '../../api/students';
 import dayjs from 'dayjs';
@@ -9,10 +10,20 @@ export default function PaymentForm({ open, onCancel, onSuccess }) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const [studentSearch, setStudentSearch] = useState('');
+  const debounceRef = useRef();
 
-  const { data: students } = useQuery({
-    queryKey: ['students'],
-    queryFn: () => listStudents({}).then((r) => r.data),
+  // Debounce the search term so we don't fire a request on every keystroke.
+  const handleStudentSearch = (value) => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setStudentSearch(value), 300);
+  };
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  const { data: students, isFetching: studentsLoading } = useQuery({
+    queryKey: ['students', 'payment-picker', studentSearch],
+    queryFn: () => listStudents({ search: studentSearch || undefined, page_size: 100 }).then((r) => r.data),
     enabled: open,
   });
 
@@ -57,7 +68,10 @@ export default function PaymentForm({ open, onCancel, onSuccess }) {
           <Select
             showSearch
             placeholder={t('tuition.selectStudent', 'Select Student')}
-            optionFilterProp="label"
+            filterOption={false}
+            onSearch={handleStudentSearch}
+            loading={studentsLoading}
+            notFoundContent={studentsLoading ? t('common.loading', 'Loading...') : undefined}
             options={(students?.items || []).map((s) => ({
               value: s.id,
               label: s.name || s.student_name,
