@@ -1,5 +1,5 @@
-import { Table, Tag, Card, Button, Space, Select, message } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Tag, Card, Button, Space, Select, Input, message } from 'antd';
+import { PlusOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
@@ -24,6 +24,7 @@ export default function TuitionPage() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [balanceFilter, setBalanceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState(undefined);
+  const [nameFilter, setNameFilter] = useState('');
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -96,8 +97,18 @@ export default function TuitionPage() {
       {contextHolder}
       <Card bodyStyle={{ padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
-          {isAdmin && (
-            <Space wrap style={{ flex: 1 }}>
+          <Space wrap style={{ flex: 1 }}>
+            <Input
+              id="tuition-name-search"
+              prefix={<SearchOutlined />}
+              placeholder={t('common.search')}
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              style={{ width: '100%', minWidth: 180, maxWidth: 240 }}
+              allowClear
+            />
+            {isAdmin && (
+              <>
               <Select
                 id="balance-filter"
                 value={balanceFilter}
@@ -124,8 +135,9 @@ export default function TuitionPage() {
                   { label: t('students.statusWithdrawn'), value: 'withdrawn' },
                 ]}
               />
-            </Space>
-          )}
+              </>
+            )}
+          </Space>
           {isAdmin && (
             <Button
               id="add-payment-btn"
@@ -141,7 +153,10 @@ export default function TuitionPage() {
         <Table
           id="tuition-table"
           columns={columns}
-          dataSource={balances ? balances.filter(b => !statusFilter || b.enrollment_status === statusFilter) : []}
+          dataSource={balances ? balances.filter(b =>
+            (!statusFilter || b.enrollment_status === statusFilter) &&
+            (!nameFilter.trim() || (b.student_name || '').toLowerCase().includes(nameFilter.trim().toLowerCase()))
+          ) : []}
           rowKey="student_id"
           loading={isLoading}
           scroll={{ x: 'max-content' }}
