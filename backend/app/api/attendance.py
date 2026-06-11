@@ -241,15 +241,23 @@ async def get_pending_attendance(
     lesson_map = {str(lesson.id): lesson for lesson in lessons}
 
     active_lessons = [lesson_obj for lesson_obj in lessons if lesson_obj.is_active]
-    min_created_at = today
+
+    # Materialize from the earliest date any active lesson could have an occurrence, so every
+    # unmarked past lesson surfaces in Pending. For recurring lessons that anchor is created_at
+    # (the RRULE dtstart); for one-off lessons it's specific_date, which may be *before* the
+    # lesson was created when an admin enters a lesson after it happened. Reaching back to an old
+    # one-off's date is safe for recurring lessons too: rrule.between() never yields occurrences
+    # before each rule's own dtstart, so they aren't over-generated.
+    range_start = today
     for lesson_obj in active_lessons:
         l_created = (
             lesson_obj.created_at.date() if hasattr(lesson_obj, "created_at") and lesson_obj.created_at else today
         )
-        if l_created < min_created_at:
-            min_created_at = l_created
+        anchor = lesson_obj.specific_date if lesson_obj.specific_date is not None else l_created
+        if anchor < range_start:
+            range_start = anchor
 
-    inserted = await bulk_upsert_occurrences(db, active_lessons, min_created_at, today, center_id)
+    inserted = await bulk_upsert_occurrences(db, active_lessons, range_start, today, center_id)
     if inserted > 0:
         await db.commit()
 
