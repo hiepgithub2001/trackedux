@@ -33,6 +33,10 @@ class Lesson(Base, UUIDMixin, TimestampMixin):
     specific_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
     # RFC 5545 RRULE string, e.g. "FREQ=WEEKLY;BYDAY=MO;COUNT=10"
     rrule: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Effective-from date for the RRULE (dtstart anchor). Null → fall back to created_at.
+    # Bumped forward on a schedule edit so a changed recurrence never retroactively
+    # spawns past occurrences on the new weekday.
+    recurrence_anchor: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", index=True)
     center_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("centers.id"), nullable=False, index=True

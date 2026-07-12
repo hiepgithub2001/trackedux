@@ -85,10 +85,16 @@ def parse_rrule_day(rrule_str: str) -> int:
 def _find_dtstart(lesson: Lesson) -> datetime:
     """Determine the RRULE expansion anchor (dtstart).
 
-    Uses the lesson's created_at date directly. This is correct for all RRULE
-    types including COUNT-limited rules (COUNT starts counting from dtstart).
+    Uses ``recurrence_anchor`` when set — the date the current rule became
+    effective — otherwise the lesson's created_at date. This keeps a schedule
+    edit forward-only: after changing the recurrence (e.g. the weekday), the new
+    rule expands from the edit date, so it never retroactively generates past
+    occurrences on the new weekday. Correct for COUNT-limited rules too, since
+    COUNT starts counting from dtstart.
     """
-    anchor_date = lesson.created_at.date() if hasattr(lesson, "created_at") and lesson.created_at else date.today()
+    anchor_date = getattr(lesson, "recurrence_anchor", None)
+    if anchor_date is None:
+        anchor_date = lesson.created_at.date() if hasattr(lesson, "created_at") and lesson.created_at else date.today()
     return datetime.combine(anchor_date, lesson.start_time)
 
 
