@@ -110,9 +110,14 @@ async def update_lesson_series(
         lesson.duration_minutes = data.duration_minutes
     if data.title is not None:
         lesson.title = data.title
-    if data.rrule is not None:
+    if data.rrule is not None and data.rrule != lesson.rrule:
+        # A changed recurrence takes effect from today, never retroactively. Pinning the
+        # anchor forward stops the new rule from expanding back to created_at and spawning
+        # phantom past occurrences on the new weekday. Existing occurrences (attendance,
+        # cancels, reschedules) are persisted rows and remain untouched.
         lesson.rrule = data.rrule
         lesson.day_of_week = parse_rrule_day(data.rrule)
+        lesson.recurrence_anchor = date.today()
     if data.teacher_id is not None:
         lesson.teacher_id = data.teacher_id
     if data.specific_date is not None:

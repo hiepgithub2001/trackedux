@@ -253,7 +253,13 @@ async def get_pending_attendance(
         l_created = (
             lesson_obj.created_at.date() if hasattr(lesson_obj, "created_at") and lesson_obj.created_at else today
         )
-        anchor = lesson_obj.specific_date if lesson_obj.specific_date is not None else l_created
+        # For recurring lessons the reach-back floor is the RRULE's effective anchor
+        # (recurrence_anchor when a schedule edit pinned it forward, else created_at);
+        # for one-off lessons it's specific_date.
+        if lesson_obj.specific_date is not None:
+            anchor = lesson_obj.specific_date
+        else:
+            anchor = lesson_obj.recurrence_anchor or l_created
         if anchor < range_start:
             range_start = anchor
 
