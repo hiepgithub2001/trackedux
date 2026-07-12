@@ -45,6 +45,9 @@ def make_lesson(
     # For dtstart calculation
     lesson.created_at = MagicMock()
     lesson.created_at.date.return_value = date(2024, 1, 1)
+    # Real Lesson rows default to None; without this a MagicMock auto-vivifies a Mock
+    # and _find_dtstart tries to combine() it as a date.
+    lesson.recurrence_anchor = None
     return lesson
 
 
