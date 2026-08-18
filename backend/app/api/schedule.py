@@ -81,7 +81,12 @@ async def _build_session_dicts(
         students = []
         if lesson.class_ and lesson.class_.enrollments:
             for e in lesson.class_.enrollments:
-                if not e.is_active:
+                # is_active alone can't gate roster membership: unenrolling sets both
+                # is_active=False and unenrolled_at, but past occurrences before that
+                # date should still show the student. Only treat is_active as a hard
+                # exclusion when there's no unenrolled_at to date-range against (legacy
+                # rows / full removals).
+                if not e.is_active and not e.unenrolled_at:
                     continue
                 if e.enrolled_since and occ.effective_date < e.enrolled_since:
                     continue

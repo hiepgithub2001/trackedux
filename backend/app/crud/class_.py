@@ -7,6 +7,7 @@ from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.class_ import Class
 from app.models.class_enrollment import ClassEnrollment
@@ -67,15 +68,31 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
     # lesson_kind_name is not on the ORM model, so we must not pass it to setattr
     update_data.pop("lesson_kind_name", None)
 
+    old_name = class_.name
+
     for field, value in update_data.items():
         setattr(class_, field, value)
 
+    # Lesson.title is a denormalized display override; when it was only mirroring the
+    # class's old name (not a genuine custom label like "Theory lesson"), keep it in
+    # sync on rename so attendance/schedule views don't keep showing the stale name.
+    if "name" in update_data and update_data["name"] != old_name:
+        from app.models.lesson import Lesson
+
+        lesson_result = await db.execute(
+            select(Lesson).where(
+                Lesson.class_id == class_id,
+                Lesson.center_id == center_id,
+                Lesson.title == old_name,
+            )
+        )
+        for lesson in lesson_result.scalars().all():
+            lesson.title = update_data["name"]
+
     if student_ids is not None:
-        from datetime import date
-
-        from sqlalchemy import select
-
-        from app.models.class_enrollment import ClassEnrollment
+        # NB: `date`, `select` and `ClassEnrollment` are imported at module level.
+        # Re-importing them here would rebind them as function-locals for the whole
+        # function, breaking the earlier `select(...)` call above with UnboundLocalError.
 
         # 1. Unenroll students not in student_ids
         result = await db.execute(
@@ -122,8 +139,19 @@ async def update_class(db: AsyncSession, class_id: uuid.UUID, data: ClassUpdate,
                 db.add(new_e)
 
     await db.commit()
-    await db.refresh(class_)
-    return class_
+    # Re-select the class with its roster eagerly loaded, so the caller can serialize
+    # enrollment -> student without a lazy load (MissingGreenlet under asyncio).
+    # populate_existing is required: sessions run with expire_on_commit=False, so the
+    # enrollments collection loaded at the top of this function survives the commit and
+    # would otherwise shadow the rows we just wrote.
+    result = await db.execute(
+        select(Class)
+        .where(Class.id == class_id, Class.center_id == center_id)
+        .options(selectinload(Class.enrollments).selectinload(ClassEnrollment.student))
+        .execution_options(populate_existing=True)
+    )
+    return result.scalar_one()
+
 
 async def delete_class_completely(db: AsyncSession, class_id: uuid.UUID, center_id: uuid.UUID) -> bool:
     class_ = await get_class_by_id(db, class_id, center_id)
