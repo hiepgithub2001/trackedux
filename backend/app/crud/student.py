@@ -9,7 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.attendance import AttendanceRecord
+from app.models.class_ import Class
 from app.models.class_enrollment import ClassEnrollment
+from app.models.lesson import Lesson
+from app.models.lesson_occurrence import LessonOccurrence
 from app.models.student import Student
 from app.models.student_status_history import StudentStatusHistory
 from app.models.tuition_ledger_entry import TuitionLedgerEntry
@@ -142,11 +145,95 @@ async def update_student(db: AsyncSession, student_id: UUID, data: StudentUpdate
     return student
 
 
+async def _purge_emptied_classes(db: AsyncSession, class_ids: list[UUID], center_id: UUID) -> None:
+    """Drop classes left with an empty roster, together with their schedule.
+
+    A 1-1 class is named after its only student, so deleting that student leaves a
+    class nobody attends whose lessons keep materializing occurrences — those show up
+    forever in Pending attendance with 0 students. Anything still referenced by
+    surviving history (an attendance record or a tuition ledger entry) is kept and the
+    class is only deactivated, so another student's ledger is never rewritten.
+    """
+    for class_id in {cid for cid in class_ids if cid is not None}:
+        remaining = await db.scalar(
+            select(func.count())
+            .select_from(ClassEnrollment)
+            .where(ClassEnrollment.class_id == class_id)
+        )
+        if remaining:
+            continue
+
+        lesson_ids = list(
+            (
+                await db.execute(
+                    select(Lesson.id).where(Lesson.class_id == class_id, Lesson.center_id == center_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        kept_lesson_ids: set[UUID] = set()
+        if lesson_ids:
+            occurrences = list(
+                (
+                    await db.execute(
+                        select(LessonOccurrence.id, LessonOccurrence.lesson_id).where(
+                            LessonOccurrence.lesson_id.in_(lesson_ids)
+                        )
+                    )
+                ).all()
+            )
+            occ_ids = [occ_id for occ_id, _ in occurrences]
+            marked_occ_ids: set[UUID] = set()
+            if occ_ids:
+                marked_occ_ids = set(
+                    (
+                        await db.execute(
+                            select(AttendanceRecord.lesson_occurrence_id).where(
+                                AttendanceRecord.lesson_occurrence_id.in_(occ_ids)
+                            )
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+
+            removable_occ_ids = [occ_id for occ_id in occ_ids if occ_id not in marked_occ_ids]
+            if removable_occ_ids:
+                await db.execute(delete(LessonOccurrence).where(LessonOccurrence.id.in_(removable_occ_ids)))
+
+            kept_lesson_ids = {lesson_id for occ_id, lesson_id in occurrences if occ_id in marked_occ_ids}
+            kept_lesson_ids |= set(
+                (
+                    await db.execute(
+                        select(TuitionLedgerEntry.lesson_id).where(TuitionLedgerEntry.lesson_id.in_(lesson_ids))
+                    )
+                )
+                .scalars()
+                .all()
+            )
+
+            deletable = [lesson_id for lesson_id in lesson_ids if lesson_id not in kept_lesson_ids]
+            if deletable:
+                await db.execute(delete(Lesson).where(Lesson.id.in_(deletable)))
+
+        class_ = await db.get(Class, class_id)
+        if class_ is None:
+            continue
+        if kept_lesson_ids:
+            class_.is_active = False
+        else:
+            await db.delete(class_)
+
+
 async def delete_student(db: AsyncSession, student_id: UUID, center_id: UUID) -> bool:
     """Delete a student and related enrollments/history. Returns False if blocked by other records."""
     student = await get_student_by_id(db, student_id, center_id)
     if not student:
         return False
+
+    class_ids = [e.class_id for e in student.enrollments]
 
     try:
         await db.execute(delete(TuitionLedgerEntry).where(TuitionLedgerEntry.student_id == student_id))
@@ -155,6 +242,8 @@ async def delete_student(db: AsyncSession, student_id: UUID, center_id: UUID) ->
         await db.execute(delete(StudentStatusHistory).where(StudentStatusHistory.student_id == student_id))
         await db.execute(delete(ClassEnrollment).where(ClassEnrollment.student_id == student_id))
         await db.delete(student)
+        await db.flush()
+        await _purge_emptied_classes(db, class_ids, center_id)
         await db.commit()
         return True
     except IntegrityError:

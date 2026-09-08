@@ -52,6 +52,7 @@ export default function StudentDetail() {
       messageApi.success('Status updated');
       queryClient.invalidateQueries({ queryKey: ['student', id] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setStatusModal(false);
     },
@@ -68,7 +69,11 @@ export default function StudentDetail() {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-weekly'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-pending'] });
       queryClient.invalidateQueries({ queryKey: ['past-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['tuition-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['student-ledger'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       navigate('/students');
     },

@@ -299,6 +299,10 @@ async def get_pending_attendance(
         virtual_occs.append(v_occ)
 
     sessions = await _build_session_dicts(db, virtual_occs, lesson_map, center_id)
+    # An occurrence with an empty roster has nobody to mark, so it can never leave this
+    # list — it would sit here forever as noise. That happens when the class's only
+    # student was deleted, or when the roster's enrolled_since postdates the occurrence.
+    sessions = [s for s in sessions if s["students"]]
     for s in sessions:
         s["attendance_marked"] = False
 
